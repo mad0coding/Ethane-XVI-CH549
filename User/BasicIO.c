@@ -1,0 +1,354 @@
+
+#include "BasicIO.h"
+
+UINT8C turnL90[16] = {	3,	7,	11,	15,
+						2,	6,	10,	14,
+						1,	5,	9,	13,
+						0,	4,	8,	12};//左旋按键映射矩阵
+UINT8C turnR90[16] = {	12,	8,	4,	0,
+						13,	9,	5,	1,
+						14,	10,	6,	2,
+						15,	11,	7,	3};//右旋按键映射矩阵
+
+uint32_t Systime = 0;//系统时间
+
+uint8_t DebugBuf[64];
+
+uint16_t adcValue[2] = {2048,2048};
+uint16_t ANA_MID_SET[2] = {2048,2048};
+UINT8D keyFltNum = 2;//按键滤波参数
+
+uint8_t keyRaw[KP_num];//按键原始采样
+uint8_t keyFlt[KP_num];//按键滤波结果
+uint8_t fltOld[KP_num];//按键滤波用的旧值
+uint8_t fltCount[KP_num];//按键滤波计数
+
+uint8_t keyNow[KP_num];//按键映射结果
+uint8_t keyOld[KP_num];//按键映射结果旧值
+
+void arrayInit(){//数组初始化
+//	uint8_t seed;	srand(seed);//填入种子
+	memset(keyFlt,0,KP_num);
+	memset(fltOld,0,KP_num);
+	memset(fltCount,0,KP_num);
+	memset(keyNow,0,KP_num);
+	memset(keyOld,0,KP_num);
+}
+
+void adcRead(uint8_t ch){//摇杆读取
+	if(ADC_CTRL&bADC_IF){		//若ADC采样完成
+		ADC_CTRL = bADC_IF;			//清标志
+		adcValue[!ch] = ADC_DAT;	//记录采样值
+		ADC_ExChannelSelect(ch);	//选择通道ch
+		ADC_StartSample();			//启动一次ADC采样
+	}
+}
+
+void keyRead(){//按键读取
+	keyRaw[0] = !KP_1;		keyRaw[1] = !KP_2;		keyRaw[2] = !KP_3;		keyRaw[3] = !KP_4;
+	keyRaw[4] = !KP_5;		keyRaw[5] = !KP_6;		keyRaw[6] = !KP_7;		keyRaw[7] = !KP_8;
+	keyRaw[8] = !KP_9;		keyRaw[9] = !KP_10;		keyRaw[10] = !KP_11;	keyRaw[11] = !KP_12;
+	keyRaw[12] = !KP_13;	keyRaw[13] = !KP_14;	keyRaw[14] = !KP_15;	keyRaw[15] = !KP_16;
+	keyRaw[16] = !KP_E1;	keyRaw[17] = !KP_E2;
+	keyRaw[18] = !KP_R;
+}
+
+void keyFilter(uint8_t ts){//按键滤波
+	uint8_t i;
+	for(i = 0; i < KP_num; i++){
+		if(ts == 2){//若为滤波二阶段
+			if(fltCount[i]) fltCount[i]--;//若滤波计数未归零则递减
+			if(fltOld[i] == keyRaw[i] && keyFlt[i] != keyRaw[i]
+					&& fltCount[i] == 0){//两次相同且与之前不同且滤波计数已归零
+				keyFlt[i] = keyRaw[i];//更新滤波后的值
+				fltCount[i] = keyFltNum;//设置滤波计数值
+			}
+		}
+		fltOld[i] = keyRaw[i];//更新滤波旧值
+	}
+}
+
+void keyTurn(void){//按键旋转映射
+	uint8_t i;
+	memcpy(keyOld, keyNow, KP_num);//存储旧值
+	
+	if(CFG_KB_DIR == 0){//正常方向
+		memcpy(keyNow, keyFlt, 16);
+	}
+	else if(CFG_KB_DIR == 1){//右旋90度
+		for(i = 0; i < 16; i++){
+			keyNow[i] = keyFlt[turnR90[i]];
+		}
+	}
+	else if(CFG_KB_DIR == 2){//旋转180度
+		for(i = 0; i < 16; i++){
+			keyNow[i] = keyFlt[16 - i];
+		}
+	}
+	else if(CFG_KB_DIR == 3){//左旋90度
+		for(i = 0; i < 16; i++){
+			keyNow[i] = keyFlt[turnL90[i]];
+		}
+	}
+	memcpy(keyNow + 16, keyFlt + 16, 3);
+}
+
+void GetTime(){//时间获取
+	static UINT16D THTL0_old = 0;//计时器旧值
+	UINT16D THTL0;//计时器16位计数值
+	UINT8D incMs;//增加的毫秒数
+	THTL0 = (TH0 << 8) | TL0;//读取计时器
+	if((THTL0 & 0x0F) < 6){//若疑似发生进位
+		TR0 = STOP;//暂停定时器
+		THTL0 = (TH0 << 8) | TL0;//重新读取计时器
+		TR0 = START;//启动定时器
+	}
+	incMs = (uint16_t)(THTL0 - THTL0_old) >> 11 /*2000*/;//计算增加的毫秒数
+	Systime += incMs;//系统时间更新
+	THTL0_old += (uint16_t)incMs * 2000;//计时器旧值跟进
+}
+
+UINT16C toneTIM[] = {//声调定时器计数值表
+	15296,14421,13611,12864,12139,11456,10816,10197,9621,9088,8576,8107,
+	7637,7211,6805,6421,6059,5717,	5397,5099,4821,4544,4288,4053,
+	3819,3605,3413,3221,3029,2859,2709,2560,2411,2283,2155,2027,
+	1920,1813,1707,1600,1515,1429,1344,1280,1195,1131,1067,1003,
+};
+UINT8C tonePWM[] = {//声调PWM分频值表
+	253,239,226,213,201,190,
+	179,169,160,151,142,134,127,120,113,107,101,95,
+	90,85,80,75,71,67,63,60,56,53,50,47,	45,
+};
+UINT8C toneTABLE[] = {29,31,33,35,255,24,26,28, 17,19,21,23,255,12,14,16,};//键位音符映射表
+
+UINT16D buzzTimVol = 10, toneTimValue = 10000;//声调定时器计数值,延时值
+
+void buzzHandle(){//蜂鸣器处理
+	uint8_t i;//循环变量
+	uint8_t count = 0, effective = 0xFF;//按下按键计数,有效按键
+	uint8_t buzzTone = 0xFF, buzzToneOld = 0xFF;//音符
+	int8_t buzzVol = 1;//音量
+	
+	PWM0OutPolarLowAct();//PWM0反极性
+	
+	while((!keyOld[18] || keyNow[18]) && (!keyOld[17] || keyNow[17]) && (!keyOld[16] || keyNow[16])){//摇杆或旋钮的释放沿退出
+		keyRead();//读取按键
+		keyFilter(1);//滤波一阶段
+		keyRead();//再次读取按键
+		keyFilter(2);//滤波二阶段
+		keyTurn();//按键旋转映射
+		
+		buzzVol += EC1val;//编码器1调节音量
+		EC1val = EC2val = 0;
+		if(buzzVol < 1){//最小音量
+			PWM_R = 255;//红灯指示
+			buzzVol = 1;
+			mDelaymS(2);
+			PWM_R = 0;
+		}
+		else if(buzzVol > 10){//最大音量
+			PWM_G = 255;//绿灯指示
+			buzzVol = 10;
+			mDelaymS(2);
+			PWM_G = 0;
+		}
+		
+		count = 0;
+		for(i = 0; i < 16; i++){
+			if(i == 4 || i == 12) continue;//跳过跳八度键和升半音键
+			if(keyNow[i] && !keyOld[i]) effective = i;//按下沿开始发音
+			if(keyNow[i]) count++;//按下按键计数
+		}
+		if(count == 0) effective = 0xFF;//全部发音键释放后空置有效按键
+		if(effective != 0xFF){//若有有效按键
+			if(!keyNow[effective]){//若此键已被释放
+				for(i = 0; i < 16; i++){//重新扫描
+					if(i == 4 || i == 12) continue;//跳过跳八度键和升半音键
+					if(keyNow[i]) effective = i;//按下即发音
+				}
+			}
+			buzzTone = toneTABLE[effective] + keyNow[12];//从查找表并结合黑键计算音符
+			if(keyNow[4] && effective < 8) buzzTone += 12;//上半部升八度
+			else if(keyNow[4]) buzzTone -= 12;//下半部降八度
+		}
+		else buzzTone = 0xFF;//清空音符
+		if(buzzToneOld == buzzTone) continue;//若音符未改变则跳过
+		if(buzzTone < 18){//低频由定时器实现
+			toneTimValue = toneTIM[buzzTone];
+			buzzTimVol = (((uint32_t)toneTimValue * buzzVol) >> 8) / 3;
+			PWM_SEL_CHANNEL(PWM_CH0, Disable);//PWM0输出失能
+			ET0 = 1;//定时器0中断使能
+		}
+		else if(buzzTone <= 48){//高频由PWM实现
+			SetPWMClkDiv(tonePWM[buzzTone - 18]);//PWM时钟分频配置
+			BUZZ_PWM = buzzVol;
+			ET0 = 0;//定时器0中断失能
+			PWM_SEL_CHANNEL(PWM_CH0, Enable);//PWM0输出使能
+		}
+		else{//停止发音
+			ET0 = BUZZ_PWM = 0;//关定时器中断及清零PWM占空比
+			PWM_SEL_CHANNEL(PWM_CH0, Disable);//PWM0输出失能
+		}
+		buzzToneOld = buzzTone;//记录音符
+	}
+	ET0 = BUZZ_PWM = 0;//关定时器中断及清零PWM占空比
+	PWM_SEL_CHANNEL(PWM_CH0, Disable);//PWM0输出失能
+	SetPWMClkDiv(32);//恢复原PWM时钟分频
+}
+
+#if 0
+uint8_t Buzz_handle()//蜂鸣器(4个八度的电子琴)
+{
+	static uint8_t effective = 0;//有效按键
+	static int8_t vol = 10;//音量
+	uint8_t count = 0;//按下按键计数
+	uint8_t ratio_up = 4, ratio_down = 2;//上下两个八度的倍频值
+	uint16_t tone_arr = 0;
+	
+	if(!keyNow[17] && keyOld[17]){
+		TIM_Cmd(TIM1, DISABLE);//关闭TIM1计数器
+		RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1, DISABLE);//关闭TIM1时钟
+		return 0;//摇杆按键释放沿退出
+	}
+	
+	if(vol < 30) vol += EC_monitor(0);//音量调节
+	else if(vol < 70) vol += EC_monitor(0) * 2;
+	else vol += EC_monitor(0) * 3;
+	if(vol < 0){//最小音量
+		vol = 0;
+		Light_handle(2,10);
+	}
+	else if(vol > 100){//最大音量
+		vol = 100;
+		Light_handle(3,10);
+	}
+	
+	if(keyNow[5]){//上下跳八度
+		ratio_up = 8;//上面上跳八度
+		ratio_down = 1;//下面下跳八度
+	}
+	for(uint8_t i = 1; i <= 16; i++){
+		if(i == 5 || i == 13) continue;//跳过跳八度键和升半音键
+		if(key_state[i] && !key_old[i]) effective = i;//按下沿开始发音
+		if(key_state[i]) count++;//按下按键计数
+	}
+	if(count == 0) effective = 0;//全部发音键释放后空置有效按键
+	if(effective == 0) TIM1->CCR1 = 0;//无有效按键则停止发音
+	else{
+		if(key_state[13]){//黑键(全部升半音)
+			switch(effective){
+				case 1:tone_arr = tone[6]/ratio_up;break;//+4#
+				case 2:tone_arr = tone[8]/ratio_up;break;//+5#
+				case 3:tone_arr = tone[10]/ratio_up;break;//+6#
+				case 4:tone_arr = tone[0]/ratio_up/2;break;//+7#(++1)
+				case 6:tone_arr = tone[1]/ratio_up;break;//+1#
+				case 7:tone_arr = tone[3]/ratio_up;break;//+2#
+				case 8:tone_arr = tone[5]/ratio_up;break;//+3#(+4)
+				case 9:tone_arr = tone[6]/ratio_down;break;//4#
+				case 10:tone_arr = tone[8]/ratio_down;break;//5#
+				case 11:tone_arr = tone[10]/ratio_down;break;//6#
+				case 12:tone_arr = tone[0]/ratio_down/2;break;//7#(+1)
+				case 14:tone_arr = tone[1]/ratio_down;break;//1#
+				case 15:tone_arr = tone[3]/ratio_down;break;//2#
+				case 16:tone_arr = tone[5]/ratio_down;break;//3#(4)
+				default:tone_arr = 0;break;
+			}
+		}
+		else{//白键
+			switch(effective){
+				case 1:tone_arr = tone[5]/ratio_up;break;//+4
+				case 2:tone_arr = tone[7]/ratio_up;break;//+5
+				case 3:tone_arr = tone[9]/ratio_up;break;//+6
+				case 4:tone_arr = tone[11]/ratio_up;break;//+7
+				case 6:tone_arr = tone[0]/ratio_up;break;//+1
+				case 7:tone_arr = tone[2]/ratio_up;break;//+2
+				case 8:tone_arr = tone[4]/ratio_up;break;//+3
+				case 9:tone_arr = tone[5]/ratio_down;break;//4
+				case 10:tone_arr = tone[7]/ratio_down;break;//5
+				case 11:tone_arr = tone[9]/ratio_down;break;//6
+				case 12:tone_arr = tone[11]/ratio_down;break;//7
+				case 14:tone_arr = tone[0]/ratio_down;break;//1
+				case 15:tone_arr = tone[2]/ratio_down;break;//2
+				case 16:tone_arr = tone[4]/ratio_down;break;//3
+				default:tone_arr = 0;break;
+			}
+		}
+//		if(tone_arr > 0){
+//			TIM1->ARR = tone_arr - 1;
+//			TIM1->CCR1 = tone_arr * vol / 1000;
+//		}
+//		else TIM1->CCR1 = 0;
+	}
+	
+	return 3;
+}
+#endif
+//uint8_t keyOldTest[] = {1,1,1};
+uint32_t oldTime = 0;
+uint16_t THTL0old,THTL0;
+//PUINT8C DATA_CFG1 = DATA_CFG_BASE;
+
+void LL_test(){
+	static uint16_t i;
+	i++;
+	if(Systime - oldTime >= 1000){//端点2打印输出
+		oldTime += 1000;
+//		memset(DebugBuf,0,64);
+		DebugBuf[0] = TH0;
+		DebugBuf[1] = TL0;
+//		GetTime();
+//		keyRead();
+//		keyFilter(2);
+//		WS_Write_16();
+		DebugBuf[2] = TH0;
+		DebugBuf[3] = TL0;
+//		DebugBuf[4] = oldTime >> 24;
+//		DebugBuf[5] = oldTime >> 16;
+//		DebugBuf[6] = oldTime >> 8;
+//		DebugBuf[7] = oldTime;
+//		DebugBuf[0] = adcValue[0] >> 8;
+//		DebugBuf[1] = adcValue[0];
+//		DebugBuf[2] = adcValue[1] >> 8;
+//		DebugBuf[3] = adcValue[1];
+		THTL0 = CFG_SCN_W;
+		DebugBuf[5] = keyAddr[0][0] >> 8;
+		DebugBuf[6] = keyAddr[0][0];
+		DebugBuf[7] = keyAddr[1][0] >> 8;
+		DebugBuf[8] = keyAddr[1][0];
+		DebugBuf[9] = i >> 8;
+		DebugBuf[10] = i;
+		
+		Enp2IntIn(DebugBuf,64);
+	}
+
+//	mDelaymS(10);
+}
+
+void multiFunc(){//功能集合函数
+
+	keyTurn();//按键旋转映射
+	
+	if(Fill_report() == 1){//报文填写
+		buzzHandle();//蜂鸣器处理
+	}
+	
+	sysRGB();//系统RGB控制
+	keyRGB(0);//键盘RGB控制
+//	if(WakeUpEnFlag & 1) PWM_R = 100;
+//	else PWM_R = 0;
+//	if(WakeUpEnFlag & 2) PWM_G = 100;
+//	else PWM_G = 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
