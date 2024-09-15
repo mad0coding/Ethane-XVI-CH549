@@ -196,93 +196,6 @@ void buzzHandle(){//蜂鸣器处理
 	SetPWMClkDiv(32);//恢复原PWM时钟分频
 }
 
-#if 0
-uint8_t Buzz_handle()//蜂鸣器(4个八度的电子琴)
-{
-	static uint8_t effective = 0;//有效按键
-	static int8_t vol = 10;//音量
-	uint8_t count = 0;//按下按键计数
-	uint8_t ratio_up = 4, ratio_down = 2;//上下两个八度的倍频值
-	uint16_t tone_arr = 0;
-	
-	if(!keyNow[17] && keyOld[17]){
-		TIM_Cmd(TIM1, DISABLE);//关闭TIM1计数器
-		RCC_APB2PeriphClockCmd(RCC_APB2Periph_TIM1, DISABLE);//关闭TIM1时钟
-		return 0;//摇杆按键释放沿退出
-	}
-	
-	if(vol < 30) vol += EC_monitor(0);//音量调节
-	else if(vol < 70) vol += EC_monitor(0) * 2;
-	else vol += EC_monitor(0) * 3;
-	if(vol < 0){//最小音量
-		vol = 0;
-		Light_handle(2,10);
-	}
-	else if(vol > 100){//最大音量
-		vol = 100;
-		Light_handle(3,10);
-	}
-	
-	if(keyNow[5]){//上下跳八度
-		ratio_up = 8;//上面上跳八度
-		ratio_down = 1;//下面下跳八度
-	}
-	for(uint8_t i = 1; i <= 16; i++){
-		if(i == 5 || i == 13) continue;//跳过跳八度键和升半音键
-		if(key_state[i] && !key_old[i]) effective = i;//按下沿开始发音
-		if(key_state[i]) count++;//按下按键计数
-	}
-	if(count == 0) effective = 0;//全部发音键释放后空置有效按键
-	if(effective == 0) TIM1->CCR1 = 0;//无有效按键则停止发音
-	else{
-		if(key_state[13]){//黑键(全部升半音)
-			switch(effective){
-				case 1:tone_arr = tone[6]/ratio_up;break;//+4#
-				case 2:tone_arr = tone[8]/ratio_up;break;//+5#
-				case 3:tone_arr = tone[10]/ratio_up;break;//+6#
-				case 4:tone_arr = tone[0]/ratio_up/2;break;//+7#(++1)
-				case 6:tone_arr = tone[1]/ratio_up;break;//+1#
-				case 7:tone_arr = tone[3]/ratio_up;break;//+2#
-				case 8:tone_arr = tone[5]/ratio_up;break;//+3#(+4)
-				case 9:tone_arr = tone[6]/ratio_down;break;//4#
-				case 10:tone_arr = tone[8]/ratio_down;break;//5#
-				case 11:tone_arr = tone[10]/ratio_down;break;//6#
-				case 12:tone_arr = tone[0]/ratio_down/2;break;//7#(+1)
-				case 14:tone_arr = tone[1]/ratio_down;break;//1#
-				case 15:tone_arr = tone[3]/ratio_down;break;//2#
-				case 16:tone_arr = tone[5]/ratio_down;break;//3#(4)
-				default:tone_arr = 0;break;
-			}
-		}
-		else{//白键
-			switch(effective){
-				case 1:tone_arr = tone[5]/ratio_up;break;//+4
-				case 2:tone_arr = tone[7]/ratio_up;break;//+5
-				case 3:tone_arr = tone[9]/ratio_up;break;//+6
-				case 4:tone_arr = tone[11]/ratio_up;break;//+7
-				case 6:tone_arr = tone[0]/ratio_up;break;//+1
-				case 7:tone_arr = tone[2]/ratio_up;break;//+2
-				case 8:tone_arr = tone[4]/ratio_up;break;//+3
-				case 9:tone_arr = tone[5]/ratio_down;break;//4
-				case 10:tone_arr = tone[7]/ratio_down;break;//5
-				case 11:tone_arr = tone[9]/ratio_down;break;//6
-				case 12:tone_arr = tone[11]/ratio_down;break;//7
-				case 14:tone_arr = tone[0]/ratio_down;break;//1
-				case 15:tone_arr = tone[2]/ratio_down;break;//2
-				case 16:tone_arr = tone[4]/ratio_down;break;//3
-				default:tone_arr = 0;break;
-			}
-		}
-//		if(tone_arr > 0){
-//			TIM1->ARR = tone_arr - 1;
-//			TIM1->CCR1 = tone_arr * vol / 1000;
-//		}
-//		else TIM1->CCR1 = 0;
-	}
-	
-	return 3;
-}
-#endif
 //uint8_t keyOldTest[] = {1,1,1};
 uint32_t oldTime = 0;
 uint16_t THTL0old,THTL0;
@@ -329,6 +242,8 @@ void multiFunc(){//功能集合函数
 	keyTurn();//按键旋转映射
 	
 	if(Fill_report() == 1){//报文填写
+		clearKeyRGB();//清除键盘RGB
+		WS_Write_16();//灯写入
 		buzzHandle();//蜂鸣器处理
 	}
 	

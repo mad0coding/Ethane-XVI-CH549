@@ -21,12 +21,12 @@
 
 //#define LIGHT_ACS(a)		(*((PUINT8C)(a) + 0))
 
-#define LIGHT_UP(n)			(*(LIGHT_THIS + (n) + 0))
-#define LIGHT_DOWN(n)		(*(LIGHT_THIS + (n) + 3*16))
-#define LIGHT_T1(n)			(*(LIGHT_THIS + (n) + 6*16))
-#define LIGHT_T2(n)			(*(LIGHT_THIS + (n) + 7*16))
-#define LIGHT_SHLD(n)		(*(LIGHT_THIS + (n) + 8*16))
-#define LIGHT_IDX(n)		(*(LIGHT_THIS + (n) + 9*16))
+#define LIGHT_UP(n)			(*(LIGHT_THIS + (n) + 0))//按键上配色
+#define LIGHT_DOWN(n)		(*(LIGHT_THIS + (n) + 3*16))//按键下配色
+#define LIGHT_T1(n)			(*(LIGHT_THIS + (n) + 6*16))//按键按下灯延迟
+#define LIGHT_T2(n)			(*(LIGHT_THIS + (n) + 7*16))//按键抬起灯延迟
+#define LIGHT_SHLD(n)		(*(LIGHT_THIS + (n) + 8*16))//按键屏蔽剩余
+#define LIGHT_IDX(n)		(*(LIGHT_THIS + (n) + 9*16))//按键自定义下标
 #define LIGHT_MONO			(*(LIGHT_THIS + 244))//配置独占
 #define LIGHT_DIR			(*(LIGHT_THIS + 245))//动作方向设置
 #define LIGHT_WAVE			(*(LIGHT_THIS + 246))//动作模式设置
@@ -41,7 +41,7 @@
 
 extern PUINT8C DATA_LIGHT;//闪存区灯效信息指针
 
-
+void clearKeyRGB(void);//清除键盘RGB
 void keyRGB(uint8_t clear);//键盘RGB控制
 
 void rgbToHsv(uint8_t vR, uint8_t vG, uint8_t vB, uint16_t* pH, uint16_t* pS, uint16_t* pV);//RGB转HSV

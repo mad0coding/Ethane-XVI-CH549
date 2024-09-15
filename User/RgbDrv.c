@@ -87,13 +87,6 @@ uint8_t fracM[16] = {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,};//主效果比例
 uint8_t fracUD[16] = {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,};//按动效果比例
 
 uint8_t inXi[16] = {0,1,2,3, 4,5,6,7, 8,9,10,11, 12,13,14,15,};
-/*
-uint8_t inXi[16] = {
-,,,,	
-,,,,	
-,,,,	
-,,,,};
-*/
 
 uint8_t FrameRaw[16*3] = {//原始帧缓存
 	0,0,0,	0,0,0,	0,0,0,	0,0,0,
@@ -108,21 +101,10 @@ UINT8I FrameBuf[16*3] = {//帧缓存
 	0,0,0,	0,0,0,	0,0,0,	0,0,0,
 };//GRB
 
-//#define LIGHT_UP(n)			(*(LIGHT_THIS + (n) + 0))
-//#define LIGHT_DOWN(n)		(*(LIGHT_THIS + (n) + 3*16))
-//#define LIGHT_T1(n)			(*(LIGHT_THIS + (n) + 6*16))
-//#define LIGHT_T2(n)			(*(LIGHT_THIS + (n) + 7*16))
-//#define LIGHT_SHLD(n)		(*(LIGHT_THIS + (n) + 8*16))
-//#define LIGHT_IDX(n)		(*(LIGHT_THIS + (n) + 9*16))
-//#define LIGHT_DIR			7//(*(LIGHT_THIS + 245))//动作方向设置
-//#define LIGHT_WAVE			6//(*(LIGHT_THIS + 246))//动作模式设置
-//#define LIGHT_COLORFUL		128//(*(LIGHT_THIS + 247))//变色周期(s)
-//#define LIGHT_D1WAVE		300//(*((PUINT16C)(LIGHT_THIS + 248)))//动作时间(ms)
-//#define LIGHT_D2WAVE		1000//(*((PUINT16C)(LIGHT_THIS + 250)))//间隔时间(ms)
-//#define LIGHT_T1WAVE		21//(*(LIGHT_THIS + 252))//亮延迟
-//#define LIGHT_T2WAVE		30//(*(LIGHT_THIS + 253))//灭延迟
-//#define LIGHT_T1SYS			0//(*(LIGHT_THIS + 254))//屏蔽亮延迟
-//#define LIGHT_T2SYS			0//(*(LIGHT_THIS + 255))//屏蔽灭延迟
+void clearKeyRGB(void){//清除键盘RGB
+	memset(FrameBuf, 0, sizeof(FrameBuf));
+}
+
 void keyRGB(uint8_t clear){//键盘RGB控制
 	static uint16_t dTime = 0;//间隔时间记录
 	static uint8_t taskTick = 0;//0~3bit:0为启动沿,1为动作期,2为结束沿,3为间隔期;bit7:呼吸模式用
@@ -343,15 +325,6 @@ void hsvToRgb(uint16_t vH, uint16_t vS, uint16_t vV, uint8_t* pR, uint8_t* pG, u
     else if(hi == 5){*pR = vV;   *pG = p;    *pB = q;}
 }
 
-//#define CFG_RGB_R			255//(*(CFG_THIS + 476))
-//#define CFG_RGB_G			0//(*(CFG_THIS + 477))
-//#define CFG_RGB_B			0//(*(CFG_THIS + 478))
-//#define CFGb_RGB_COLORFUL		4//(CFGb_RGB_CYCLE >> 4)
-//#define CFGb_RGB_WAVE		9//(CFGb_RGB_CYCLE & 0x0F)
-//#define CFGb_RGB_RK			1//((CFG_RGB_SET >> 7) & 1)
-//#define CFGb_RGB_CLICKER	1//((CFG_RGB_SET >> 6) & 1)
-//#define CFGb_RGB_LOOP		1//((CFG_RGB_SET >> 5) & 1)
-//#define CFGb_RGB_TIME		1//(CFG_RGB_SET & 0x0F)
 uint8_t clickerNum = 0;//自动连点数
 //uint8_t loopNum = 0;//循环按键组循环数
 uint32_t changeTime = -10000;//配置切换时间

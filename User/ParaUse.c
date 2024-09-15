@@ -614,7 +614,7 @@ void EC_handle(uint8_t clear)//旋钮处理
 //		oldTime = Systime;
 //	}
 	
-	for(i = 0; i < 2; i++){
+	for(i = 0; i < 2; i++){//处理每个旋钮
 		if(TIM_count[i] > EC_count[i]) EC_flag = 1;
 		else if(TIM_count[i] < EC_count[i]) EC_flag = 2;
 		else EC_flag = 0;

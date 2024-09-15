@@ -65,7 +65,7 @@ void ParaUpdate(uint8_t pos){//参数更新
 	
 	if(CFG_ACS(addr + (&CFG_ALL_PRI - CFG_THIS)) == 1){//若本配置为优先配置
 		sys_cs = pos - 1;//总选择为本配置
-		DATA_CFG = addr;//指针指向本配置
+		DATA_CFG = (PUINT8C)addr;//指针指向本配置
 		DATA_LIGHT = DATA_LIGHT_BASE - sys_cs * 256;//修改灯效配置指针
 	}
 	
@@ -106,10 +106,6 @@ void GlobalParaLoad(){//全局参数读取
 void GlobalParaUpdate(){//全局参数更新
 	((uint16_t*)(FlashBuf))[0] = ANA_MID_SET[0];
 	((uint16_t*)(FlashBuf))[1] = ANA_MID_SET[1];
-//	FlashBuf[0] = ANA_MID_SET[0] >> 8;
-//	FlashBuf[1] = ANA_MID_SET[0];
-//	FlashBuf[2] = ANA_MID_SET[1] >> 8;
-//	FlashBuf[3] = ANA_MID_SET[1];
 	FlashBuf[4] = keyFltNum;
 	ParaSave(100, 1);//参数保存
 }
