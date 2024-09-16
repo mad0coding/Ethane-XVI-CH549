@@ -342,8 +342,8 @@ if(!ifReceiving){//若未在接收状态
 	}
 	else if(Buf[0] == 'R' && Buf[1] == 'K' && Buf[2] == 'C'){//摇杆校正指令
 		Buf[Offset+0] = 'R'; Buf[Offset+1] = 'K';//填入响应字节
-		ANA_MID_SET[0] = adcValue[0];//将当前摇杆采样值作为摇杆中位值
-		ANA_MID_SET[1] = adcValue[1];
+		ANA_MID_SET[0] = LIMIT(adcValue[0], 1, 4094);//将当前摇杆采样值限幅后作为摇杆中位值
+		ANA_MID_SET[1] = LIMIT(adcValue[1], 1, 4094);
 		Buf[Offset+2] = ANA_MID_SET[0] >> 8;//填入摇杆采样值
 		Buf[Offset+3] = ANA_MID_SET[0] & 0xFF;
 		Buf[Offset+4] = ANA_MID_SET[1] >> 8;

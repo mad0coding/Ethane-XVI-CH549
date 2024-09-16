@@ -31,6 +31,7 @@
 #define kv_shortcut     253
 #define kv_delay		254
 
+#define LIMIT(x, min, max)	(MIN(MAX(x, min), max))
 #define MIN(X, Y)	((X) < (Y) ? (X) : (Y))
 #define MAX(X, Y)	((X) > (Y) ? (X) : (Y))
 #define ABS(X)		((X) > 0 ? (X) : (-(X)))

@@ -32,34 +32,41 @@
 #define CFG_K_X(a)			(*((PUINT16C)((a) + 2)))//光标模式时X值
 #define CFG_K_Y(a)			(*((PUINT16C)((a) + 4)))//光标模式时Y值
 #define CFG_K_T(a)			(*((PUINT16C)((a) + 4)))//连点模式时周期
-#define CFG_RGB_R			(*(CFG_THIS + 476))//RGB灯色值R
-#define CFG_RGB_G			(*(CFG_THIS + 477))//RGB灯色值G
-#define CFG_RGB_B			(*(CFG_THIS + 478))//RGB灯色值B
-#define CFG_KB_DIR			(*(CFG_THIS + 479))//键盘方向
-#define CFG_SCN_W			(*((PUINT16C)(CFG_THIS + 480)))//屏幕宽度
-#define CFG_SCN_H			(*((PUINT16C)(CFG_THIS + 482)))//屏幕高度
-#define CFG_R_MODE			(*(CFG_THIS + 484))//摇杆模式及按键模式
-#define CFG_R_KEY(n)		(*(CFG_THIS + 485 + (n)))//摇杆按键 中上下左右
-#define CFG_R_FUNC			(*(CFG_THIS + 490))//摇杆功能键
-#define CFG_R_DIR			(*(CFG_THIS + 491))//摇杆方向
-#define CFG_R_DEAD			(*(CFG_THIS + 492))//摇杆死区
-#define CFG_R_PARA			(*(CFG_THIS + 493))//摇杆参数
-#define CFG_R_RSV1			(*(CFG_THIS + 494))//摇杆rsv1
-#define CFG_R_RSV2			(*(CFG_THIS + 495))//摇杆rsv2
-#define CFG_E_MODE(i)		(*(CFG_THIS + 496 + (i) * 6))//旋钮模式及按键模式
-#define CFG_E_KEY(i,n)		(*(CFG_THIS + 497 + (i) * 6 + (n)))//旋钮按键 中逆顺
-#define CFG_E_FUNC(i)		(*(CFG_THIS + 500 + (i) * 6))//旋钮功能键
-#define CFG_E_DIR(i)		(*(CFG_THIS + 501 + (i) * 6))//旋钮方向
-#define CFG_RGB_CYCLE		(*(CFG_THIS + 508))//变色周期和呼吸周期
-#define CFG_RGB_SET			(*(CFG_THIS + 509))//RGB灯设置
-#define CFG_RGB_LIGHT		(*(CFG_THIS + 510))//RGB灯亮度
+
+#define CFG_R_DATA_S		(472)//摇杆数据起始
+#define CFG_R_DATA_L		(12)//摇杆数据长度
+#define CFG_R_MODE(i)		(*(CFG_THIS + CFG_R_DATA_S + (i) * CFG_R_DATA_L + 0))//摇杆模式及按键模式
+#define CFG_R_DIR(i)		(*(CFG_THIS + CFG_R_DATA_S + (i) * CFG_R_DATA_L + 1))//摇杆方向
+#define CFG_R_KEY(i,n)		(*(CFG_THIS + CFG_R_DATA_S + (i) * CFG_R_DATA_L + 2 + (n)))//摇杆按键 中上下左右
+#define CFG_R_FUNC(i)		(*(CFG_THIS + CFG_R_DATA_S + (i) * CFG_R_DATA_L + 7))//摇杆功能键
+#define CFG_R_DEAD(i)		(*(CFG_THIS + CFG_R_DATA_S + (i) * CFG_R_DATA_L + 8))//摇杆死区
+#define CFG_R_PARA(i)		(*(CFG_THIS + CFG_R_DATA_S + (i) * CFG_R_DATA_L + 9))//摇杆参数
+#define CFG_R_NEER(i)		(*(CFG_THIS + CFG_R_DATA_S + (i) * CFG_R_DATA_L + 10))//摇杆近端参数
+#define CFG_R_FAR(i)		(*(CFG_THIS + CFG_R_DATA_S + (i) * CFG_R_DATA_L + 11))//摇杆远端参数
+
+#define CFG_E_DATA_S		(484)//旋钮数据起始
+#define CFG_E_DATA_L		(8)//旋钮数据长度
+#define CFG_E_MODE(i)		(*(CFG_THIS + CFG_E_DATA_S + (i) * CFG_E_DATA_L + 0))//旋钮模式及按键模式
+#define CFG_E_DIR(i)		(*(CFG_THIS + CFG_E_DATA_S + (i) * CFG_E_DATA_L + 1))//旋钮方向
+#define CFG_E_KEY(i,n)		(*(CFG_THIS + CFG_E_DATA_S + (i) * CFG_E_DATA_L + 2 + (n)))//旋钮按键 中逆顺
+#define CFG_E_FUNC(i,n)		(*(CFG_THIS + CFG_E_DATA_S + (i) * CFG_E_DATA_L + 5 + (n)))//旋钮功能键 中逆顺
+
+#define CFG_RGB_R			(*(CFG_THIS + 502))//RGB灯色值R
+#define CFG_RGB_G			(*(CFG_THIS + 503))//RGB灯色值G
+#define CFG_RGB_B			(*(CFG_THIS + 504))//RGB灯色值B
+#define CFG_RGB_CYCLE		(*(CFG_THIS + 505))//变色周期和呼吸周期
+#define CFG_RGB_SET			(*(CFG_THIS + 506))//RGB灯设置
+#define CFG_RGB_LIGHT		(*(CFG_THIS + 507))//RGB灯亮度
+#define CFG_SCN_W			(*((PUINT16C)(CFG_THIS + 506)))//屏幕宽度
+#define CFG_SCN_H			(*((PUINT16C)(CFG_THIS + 508)))//屏幕高度
+#define CFG_KB_DIR			(*(CFG_THIS + 510))//键盘方向
 #define CFG_ALL_PRI			(*(CFG_THIS + 511))//总优先级
 
-#define CFGb_R_DIRx			((CFG_R_DIR >> 0) & 1)//摇杆X反向
-#define CFGb_R_DIRy			((CFG_R_DIR >> 1) & 1)//摇杆Y反向
-#define CFGb_R_DIRr			((CFG_R_DIR >> 2) & 1)//摇杆90度转向
-#define CFGb_Rk_MODE		(CFG_R_MODE >> 4)//摇杆按键模式
-#define CFGb_R_MODE			(CFG_R_MODE & 0x0F)//摇杆模式
+#define CFGb_R_DIRx(i)		((CFG_R_DIR(i) >> 0) & 1)//摇杆X反向
+#define CFGb_R_DIRy(i)		((CFG_R_DIR(i) >> 1) & 1)//摇杆Y反向
+#define CFGb_R_DIRr(i)		((CFG_R_DIR(i) >> 2) & 1)//摇杆90度转向
+#define CFGb_Rk_MODE(i)		(CFG_R_MODE(i) >> 4)//摇杆按键模式
+#define CFGb_R_MODE(i)		(CFG_R_MODE(i) & 0x0F)//摇杆模式
 #define CFGb_Ek_MODE(i)		(CFG_E_MODE(i) >> 4)//旋钮按键模式
 #define CFGb_E_MODE(i)		(CFG_E_MODE(i) & 0x0F)//旋钮模式
 #define CFGb_RGB_COLORFUL	(CFG_RGB_CYCLE >> 4)//变色周期

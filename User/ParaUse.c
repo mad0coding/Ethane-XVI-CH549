@@ -267,12 +267,12 @@ uint8_t Fill_report(void)//报文填写
 void cs_change(uint8_t change)//切换
 {
 	change &= 0x07;//取低3位
-	if(change == 0 || change > 3) return;
+	if(change == 0 || change > CFG_NUM) return;
 	sys_cs = change - 1;
 	DATA_CFG = DATA_CFG_BASE - sys_cs * 512;//修改键盘配置指针
 	
 	keyRGB(1);//键盘RGB控制清零
-	if(LIGHT_MONO != 3) DATA_LIGHT = DATA_LIGHT_BASE - sys_cs * 256;//修改灯效配置指针
+	if(LIGHT_MONO != 3) DATA_LIGHT = DATA_LIGHT_BASE - sys_cs * 256;//若不是灯效不切换则修改灯效配置指针
 	
 	changeTime = Systime;
 	
@@ -450,83 +450,174 @@ void mode3_handle(void)//mode3处理(按键组处理)
 	}
 }
 
+//1:按键/快捷键,2:永久切换键
 void RK_EC_key_handle(void)//摇杆旋钮按键处理
 {
 	uint8_t keyM[3], keyV[3], keyF[3];//按键模式,键值,功能键
 	uint8_t i;
 	
-	keyM[0] = CFGb_Ek_MODE(0);	keyV[0] = CFG_E_KEY(0,0);	keyF[0] = CFG_E_FUNC(0);
-	keyM[1] = CFGb_Ek_MODE(1);	keyV[1] = CFG_E_KEY(1,0);	keyF[1] = CFG_E_FUNC(1);
-	keyM[2] = CFGb_Rk_MODE;		keyV[2] = CFG_R_KEY(0);		keyF[2] = CFG_R_FUNC;
+	keyM[0] = CFGb_Ek_MODE(0);	keyV[0] = CFG_E_KEY(0,0);	keyF[0] = CFG_E_FUNC(0,0);
+	keyM[1] = CFGb_Ek_MODE(1);	keyV[1] = CFG_E_KEY(1,0);	keyF[1] = CFG_E_FUNC(1,0);
+	keyM[2] = CFGb_Rk_MODE(0);	keyV[2] = CFG_R_KEY(0,0);	keyF[2] = CFG_R_FUNC(0);
 	
 	for(i = 0; i < 3; i++){//2个旋钮按键1个摇杆按键
 		if(keyNow[i + 16]){//若为按下状态
-			if(keyM[i] == 1){//单按键
-				key_insert(0xFF,keyV[i]);//填入键值
-			}
-			else if(keyM[i] == 2){//快捷键
-				key_insert(0xFF,keyV[i]);//填入键值
+			if(keyM[i] == 1){//按键/快捷键
+				if(keyV[i]) key_insert(0xFF, keyV[i]);//填入键值
 				KeyBrd_data[1] |= keyF[i];//填入功能键
 			}
 		}
 		else if(keyOld[i + 16]){//若为释放沿
-			if(keyM[i] == 3/*6*/){//切换键
+			if(keyM[i] == 2){//永久切换键
 				switch_i = 0xFF;//直接复位临时切换键标志
-				cs_change(keyF[i]);//切换
+				cs_change(keyV[i] - 30 + 1);//切换 该函数内有参数检查 此处USB键值从30(即数字键1)开始有效
 			}
 		}
 	}
 }
-
-//1:速度鼠标,2:位置鼠标,3:四向四按键,4:八向四按键
-//1:单按键,2:快捷键,3:永久切换键
+int16_t xPrint, yPrint;
+//1:四向四按键,2:八向四按键,3:速度鼠标,4:位置鼠标
 void RK_handle(uint8_t clear)//摇杆处理
 {
 	static int16_t RK_pulse = 0;//间隔标志
 	static int16_t x_pic = 0, y_pic = 0;
 	
-	int16_t dx = 0, dy = 0;
+	static int16_t dx = 0, dy = 0;
 	int16_t x, y;
-	uint16_t equal_r;//等效半径
+	int16_t equal_r;//等效半径
 	
 	if(clear){//清除
 		RK_pulse = x_pic = y_pic = 0;
 		return;
 	}
 	
-	/*uint8_t *//*key_rk_cs = sys_cs * 2 + rk_cs[sys_cs];*///参数选择
-	///*int16_t */dx = 0, dy = 0;
-	x = (CFGb_R_DIRx*2 - 1);
-	y = (CFGb_R_DIRy*2 - 1);
+	x = (CFGb_R_DIRx(0)*2 - 1);//决定方向
+	y = (CFGb_R_DIRy(0)*2 - 1);
 	
-	if(CFGb_R_DIRr){//若转90度
-		x *= ((int16_t)adcValue[0] - (int16_t)ANA_MID_0);
-		y *= ((int16_t)adcValue[1] - (int16_t)ANA_MID_1);
+	if(CFGb_R_DIRr(0)){//若转90度
+		if(adcValue[0] < ANA_MID_0) x *= ((int16_t)adcValue[0] - (int16_t)ANA_MID_0) * 4096L / ANA_MID_0;
+		else x *= ((int16_t)adcValue[0] - (int16_t)ANA_MID_0) * 4096L / (4095 - ANA_MID_0);//放大到正负4096
+		
+		if(adcValue[1] < ANA_MID_1) y *= ((int16_t)adcValue[1] - (int16_t)ANA_MID_1) * 4096L / ANA_MID_1;
+		else y *= ((int16_t)adcValue[1] - (int16_t)ANA_MID_1) * 4096L / (4095 - ANA_MID_1);
 	}
 	else{
-		x *= ((int16_t)ANA_MID_1 - (int16_t)adcValue[1]);//向右为正
-		y *= ((int16_t)adcValue[0] - (int16_t)ANA_MID_0);//向上为正
+		if(adcValue[0] < ANA_MID_0) y *= ((int16_t)adcValue[0] - (int16_t)ANA_MID_0) * 4096L / ANA_MID_0;//向上为正
+		else y *= ((int16_t)adcValue[0] - (int16_t)ANA_MID_0) * 4096L / (4095 - ANA_MID_0);//放大到正负4096
+		
+		if(adcValue[1] < ANA_MID_1) x *= -((int16_t)adcValue[1] - (int16_t)ANA_MID_1) * 4096L / ANA_MID_1;//向右为正
+		else x *= -((int16_t)adcValue[1] - (int16_t)ANA_MID_1) * 4096L / (4095 - ANA_MID_1);
 	}
 	
-	equal_r = MAX(ABS(x), ABS(y));//等效半径
+	equal_r = MAX(ABS(x), ABS(y)) - (uint16_t)CFG_R_DEAD(0) * 21;//计算等效半径并减去死区
+	if(equal_r <= 0){
+		dx = dy = 0;
+		x_pic = y_pic = 0;
+		return;//在死区内则退出
+	}
+		
 	
-	if(equal_r <= (uint16_t)CFG_R_DEAD * 21) return;//在死区则退出
-	
-	switch(CFGb_R_MODE){
-		case 1:{//速度鼠标
-			dx = (int16_t)((int32_t)x * CFG_R_PARA / 2000);
-			dy = (int16_t)((int32_t)y * CFG_R_PARA / 2000);
-			dx = dx < 127 ? dx : 127;
-			dy = dy < 127 ? dy : 127;
-			dx = dx > -128 ? dx : -128;
-			dy = dy > -128 ? dy : -128;
-			Mouse_data[2] = (int8_t)dx;
-			Mouse_data[3] = -(int8_t)dy;
+	switch(CFGb_R_MODE(0)){
+		case 1:{//四向四按键
+			if(RK_pulse){//若上次已发送则本次间隔
+				RK_pulse--;//标志递减
+				break;
+			}
+			
+			if(CFG_R_NEER(0) == 0 && CFG_R_FAR(0) == 0) RK_pulse = 0;//长按
+			else{
+//				equal_r = ((uint16_t)CFG_R_NEER(0) << 4) + (((int32_t)(CFG_R_FAR(0) - CFG_R_NEER(0)) * equal_r) >> 8);//计算速度 借用equal_r存储
+//				//0~800 -> 0~100
+//				equal_r >>= 3;
+				equal_r = ((uint16_t)CFG_R_NEER(0) << 1) + (((int8_t)(CFG_R_FAR(0) - CFG_R_NEER(0)) * (equal_r >> 3)) >> 8);//计算速度 借用equal_r存储
+				RK_pulse = 100 - equal_r;
+				if(RK_pulse <= 0) RK_pulse = 1;
+//				if(RK_pulse > equal_r) RK_pulse = equal_r;
+			}
+			
+			if(y > x){
+				if(y > -x) key_insert(0xFF, CFG_R_KEY(0,1));//填入上键值
+				else key_insert(0xFF, CFG_R_KEY(0,3));//填入左键值
+			}
+			else{
+				if(y > -x) key_insert(0xFF, CFG_R_KEY(0,4));//填入右键值
+				else key_insert(0xFF, CFG_R_KEY(0,2));//填入下键值
+			}
 			break;
 		}
-		case 2:{//位置鼠标
-			dx = (int16_t)((int32_t)x * CFG_R_PARA / 1000) - x_pic;
-			dy = (int16_t)((int32_t)y * CFG_R_PARA / 1000) - y_pic;
+		case 2:{//八向四按键
+			if(RK_pulse){//若上次已发送则本次间隔
+				RK_pulse--;//标志递减
+				break;
+			}
+			
+			if(CFG_R_NEER(0) == 0 && CFG_R_FAR(0) == 0) RK_pulse = 0;//长按
+			else{
+				equal_r = ((uint16_t)CFG_R_NEER(0) << 1) + (((int8_t)(CFG_R_FAR(0) - CFG_R_NEER(0)) * (equal_r >> 3)) >> 8);//计算速度 借用equal_r存储
+				RK_pulse = 100 - equal_r;
+				xPrint = equal_r;
+				if(RK_pulse <= 0) RK_pulse = 1;
+			}
+			
+			//atan(5/12)=22.6度 atan(3/7)=23.2度
+			if(y*7 > x*3 && y*7 > -x*3){//上
+				key_insert(0xFF, CFG_R_KEY(0,1));//填入键值
+			}
+			else if(y*7 < x*3 && y*7 < -x*3){//下
+				key_insert(0xFF, CFG_R_KEY(0,2));//填入键值
+			}
+			if(y*3 > x*7 && y*3 < -x*7){//左
+				key_insert(0xFF, CFG_R_KEY(0,3));//填入键值
+			}
+			else if(y*3 < x*7 && y*3 > -x*7){//右
+				key_insert(0xFF, CFG_R_KEY(0,4));//填入键值
+			}
+			break;
+		}
+		case 3:{//速度鼠标
+//			x = x > 0 ? MAX(0, x - (int16_t)CFG_R_DEAD(0) * 21) : MIN(0, x + (int16_t)CFG_R_DEAD(0) * 21);//应用死区
+//			y = y > 0 ? MAX(0, y - (int16_t)CFG_R_DEAD(0) * 21) : MIN(0, y + (int16_t)CFG_R_DEAD(0) * 21);//应用死区
+			
+			xPrint = x;
+			yPrint = y;
+//			x = ((uint16_t)CFG_R_NEER(0) << 1) + (((int8_t)(CFG_R_FAR(0) - CFG_R_NEER(0)) * (equal_r >> 3)) >> 8);//计算速度 借用x存储
+//			//0~100
+			x = SIGN(x) * (((int16_t)CFG_R_NEER(0) << 4) + (((int8_t)(CFG_R_FAR(0) - CFG_R_NEER(0)) * (ABS(x) >> 3)) >> 5));//计算速度 借用x存储
+			y = SIGN(y) * (((int16_t)CFG_R_NEER(0) << 4) + (((int8_t)(CFG_R_FAR(0) - CFG_R_NEER(0)) * (ABS(y) >> 3)) >> 5));//计算速度 借用y存储
+			//0~800
+			if(ABS(x) < ABS(dx)) dx = x;
+			else if(ABS(dx) > 200) dx += (x - dx) / (CFG_R_PARA(0) + 1);
+			else dx += (x - dx) / ((CFG_R_PARA(0) + 1) * 3);
+			if(ABS(y) < ABS(dy)) dy = y;
+			else if(ABS(dy) > 200) dy += (y - dy) / (CFG_R_PARA(0) + 1);
+			else dy += (y - dy) / ((CFG_R_PARA(0) + 1) * 3);
+			
+//			dx += (x - dx) / (CFG_R_PARA(0) + 1);
+//			dy += (y - dy) / (CFG_R_PARA(0) + 1);
+//			dx = x;
+//			dy = y;
+			x_pic += dx;
+			y_pic += dy;
+			
+//			dx = (int16_t)((int32_t)x * CFG_R_PARA(0) / 2000);
+//			dy = (int16_t)((int32_t)y * CFG_R_PARA(0) / 2000);
+//			dx = dx < 127 ? dx : 127;
+//			dy = dy < 127 ? dy : 127;
+//			dx = dx > -128 ? dx : -128;
+//			dy = dy > -128 ? dy : -128;
+//			dx = LIMIT(dx, -128 << 5, 127 << 5);
+//			dy = LIMIT(dy, -128 << 5, 127 << 5);
+			x_pic = LIMIT(x_pic, -127 << 5, 127 << 5);
+			y_pic = LIMIT(y_pic, -127 << 5, 127 << 5);
+			Mouse_data[2] = (int8_t)(x_pic >> 5);
+			Mouse_data[3] = -(int8_t)(y_pic >> 5);
+			x_pic -= (int8_t)Mouse_data[2] << 5;
+			y_pic += (int8_t)Mouse_data[3] << 5;
+			break;
+		}
+		case 4:{//位置鼠标
+			dx = (int16_t)((int32_t)x * CFG_R_PARA(0) / 1000) - x_pic;
+			dy = (int16_t)((int32_t)y * CFG_R_PARA(0) / 1000) - y_pic;
 			dx = dx < 127 ? dx : 127;
 			dy = dy < 127 ? dy : 127;
 			dx = dx > -128 ? dx : -128;
@@ -537,52 +628,11 @@ void RK_handle(uint8_t clear)//摇杆处理
 			Mouse_data[3] = -(int8_t)dy;
 			break;
 		}
-		case 3:{//四向四按键
-			if(RK_pulse){//若上次已发送则本次间隔
-				RK_pulse--;//标志递减
-				break;
-			}
-			RK_pulse = 2000 - (uint32_t)equal_r * (100 - /*cfg_rk[key_rk_cs].effect*/CFG_R_PARA) / 100;
-			RK_pulse = RK_pulse >= 1 ? RK_pulse : 1;
-			RK_pulse *= (CFG_R_PARA + 19) / 20;//本次已发送则下次间隔
-			if(y > x){
-				if(y > -x) key_insert(0xFF,CFG_R_KEY(1));//填入上键值
-				else key_insert(0xFF,CFG_R_KEY(3));//填入左键值
-			}
-			else{
-				if(y > -x) key_insert(0xFF,CFG_R_KEY(4));//填入右键值
-				else key_insert(0xFF,CFG_R_KEY(2));//填入下键值
-			}
-			break;
-		}
-		case 4:{//八向四按键
-			if(RK_pulse){//若上次已发送则本次间隔
-				RK_pulse--;//标志递减
-				break;
-			}
-			RK_pulse = 2000 - (uint32_t)equal_r * (100 - /*cfg_rk[key_rk_cs].effect*/CFG_R_PARA) / 100;
-			RK_pulse = RK_pulse >= 1 ? RK_pulse : 1;
-			RK_pulse *= (CFG_R_PARA + 19) / 20;//本次已发送则下次间隔
-			if(y*12 > x*5 && y*12 > -x*5){//上
-				key_insert(0xFF,CFG_R_KEY(1));//填入键值
-			}
-			else if(y*12 < x*5 && y*12 < -x*5){//下
-				key_insert(0xFF,CFG_R_KEY(2));//填入键值
-			}
-			if(y*5 > x*12 && y*5 < -x*12){//左
-				key_insert(0xFF,CFG_R_KEY(3));//填入键值
-			}
-			else if(y*5 < x*12 && y*5 > -x*12){//右
-				key_insert(0xFF,CFG_R_KEY(4));//填入键值
-			}
-			break;
-		}
 		default:break;
 	}
 }
 
-//1:音量控制,2:两向两按键,3:CTRL+鼠标滚轮
-//1:单按键,2:快捷键,3:永久切换键
+//1:按键/快捷键
 void EC_handle(uint8_t clear)//旋钮处理
 {
 //	static uint32_t oldTime = 0;//记录时间
@@ -619,41 +669,21 @@ void EC_handle(uint8_t clear)//旋钮处理
 		else if(TIM_count[i] < EC_count[i]) EC_flag = 2;
 		else EC_flag = 0;
 		
-		switch(CFGb_E_MODE(i)/*cfg_ec[key_ec_cs].mode*/){
-			case 1:{//两向两按键
+		switch(CFGb_E_MODE(i)){
+			case 1:{//按键/快捷键
 				if(EC_flag){
 					if(EC_pulse[i]){//若上次已发送则本次间隔
 						EC_pulse[i] = 0;//清空标志
-//						KeyBrd_data[20] = 0;
 						EC_count[i] -= EC_flag * 2 - 3;//计数跟进
 					}
 					else{
-						key_insert(21,CFG_E_KEY(i,EC_flag)/*cfg_ec[key_ec_cs].key[EC_flag]*/);//填入键值
+						if(CFG_E_KEY(i, EC_flag)) key_insert(0xFF, CFG_E_KEY(i, EC_flag));//填入键值
+						KeyBrd_data[1] |= CFG_E_FUNC(i, EC_flag);//填入功能键
 						EC_pulse[i] = 1;//本次已发送则下次间隔
 					}
 				}
 				break;
 			}
-			case 2:{//CTRL+鼠标滚轮
-				if(EC_flag){
-					KeyBrd_data[1] |= 0x01;
-					Mouse_data[4] = 3 - EC_flag * 2;
-					EC_count[i] -= EC_flag * 2 - 3;//计数跟进
-					Mouse_if_send = 1;
-				}
-				else Mouse_data[4] = 0;
-				break;
-			}
-//			case 3:{//摇杆参数控制
-//				uint8_t key_rk_cs = sys_cs + rk_cs[sys_cs];//摇杆参数选择
-//				if(EC_flag){
-//					cfg_rk[key_rk_cs].effect += 3 - EC_flag * 2;
-//					if(cfg_rk[key_rk_cs].effect > 150) cfg_rk[key_rk_cs].effect = 0;
-//					else if(cfg_rk[key_rk_cs].effect > 50) cfg_rk[key_rk_cs].effect = 50;
-//					EC_count -= EC_flag * 2 - 3;//计数跟进
-//				}
-//				break;
-//			}
 			default:{
 				EC_count[i] = TIM_count[i]/*/4*/;
 				break;

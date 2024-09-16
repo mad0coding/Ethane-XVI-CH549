@@ -7,7 +7,8 @@
 #include "DEBUG.H"
 
 #include "BasicIO.h"
-#include "ParaConfig.H"
+#include "ParaConfig.h"
+#include "ParaUse.h"
 
 #define HID_EPIN_ADDR						0x81U//HID使用上行端点1
 #define CUSTOM_HID_EPIN_ADDR				0x82U//自定义HID使用上行端点2

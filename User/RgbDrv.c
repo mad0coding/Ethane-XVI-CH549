@@ -150,7 +150,7 @@ void keyRGB(uint8_t clear){//键盘RGB控制
 			if(lightMode >= 31) lightMode = 0;
 			else if(lightMode >= 24) lightMode -= 23;
 		}else if(LIGHT_WAVE == 7){//随机
-			do{ j = rand() % 26; }while(lightMode == j);//借用j存储随机数,直到与现在不同
+			do{ j = (rand() ^ TL0) % 26; }while(lightMode == j);//借用j存储掺入时间的随机数,直到与现在不同
 			lightMode = j;
 		}
 		//if(lightMode >= 24) lightMode = 200;
@@ -333,7 +333,6 @@ extern uint8_t mode3_key;//模式3按键(1-16)
 
 void sysRGB(){//系统RGB控制
 	uint8_t r = CFG_RGB_R, g = CFG_RGB_G, b = CFG_RGB_B;
-//	uint8_t r1 = CFG_RGB_R, g1 = CFG_RGB_G, b1 = CFG_RGB_B;
 	uint16_t h, s, v;
 //	uint16_t h2;
 //	uint8_t i;
@@ -356,7 +355,7 @@ void sysRGB(){//系统RGB控制
 	if(CFGb_RGB_RK){//摇杆映射
 		x = ((int16_t)adcValue[0] - (int16_t)ANA_MID_0);
 		y = ((int16_t)adcValue[1] - (int16_t)ANA_MID_1);
-		if(MAX(ABS(x), ABS(y)) > (uint16_t)(MAX(CFG_R_DEAD,1) * 21)){//若在死区外
+		if(MAX(ABS(x), ABS(y)) > (uint16_t)(MAX(CFG_R_DEAD(0),1) * 21)){//若在死区外
 			
 			return;
 		}
@@ -384,40 +383,6 @@ void sysRGB(){//系统RGB控制
 		PWM_R = r;	PWM_G = g;	PWM_B = b;
 	}
 	else PWM_R = PWM_G = PWM_B = 0;
-	
-//	for(i = 0; i < 16; i++){
-////		if(i == 0) h2 = h + 0;
-////		if(i == 1 || i == 4) h2 = h + 51;
-////		if(i == 2 || i == 5 || i == 8) h2 = h + 103;
-////		if(i == 3 || i == 6 || i == 9 || i == 12) h2 = h + 154;
-////		if(i == 7 || i == 10 || i == 13) h2 = h + 206;
-////		if(i == 11 || i == 14) h2 = h + 257;
-////		if(i == 15) h2 = h + 309;
-////		if(i == 0) h2 = h + 0;
-////		if(i == 1) h2 = h + 36;
-////		if(i == 2 || i == 4) h2 = h + 36*2;
-////		if(i == 3 || i == 5) h2 = h + 36*3;
-////		if(i == 6 || i == 8) h2 = h + 36*4;
-////		if(i == 7 || i == 9) h2 = h + 36*5;
-////		if(i == 10 || i == 12) h2 = h + 36*6;
-////		if(i == 11 || i == 13) h2 = h + 36*7;
-////		if(i == 14) h2 = h + 36*8;
-////		if(i == 15) h2 = h + 36*9;
-////		if(h2 >= 360) h2 -= 360;
-////		if(keyFlt[i]) h2 = h + 180;
-////		if(h2 >= 360) h2 -= 360;
-////		hsvToRgb(h2, s, v, &r, &g, &b);
-//		if(KP_E1){
-//			FrameBuf[3*i+0] = g*g/255;
-//			FrameBuf[3*i+1] = r*r/255;
-//			FrameBuf[3*i+2] = b*b/255;
-//		}
-//		else{
-//			FrameBuf[3*i+0] = g;
-//			FrameBuf[3*i+1] = r;
-//			FrameBuf[3*i+2] = b;
-//		}
-//	}
 }
 
 

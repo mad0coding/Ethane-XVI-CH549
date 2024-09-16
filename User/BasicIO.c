@@ -198,47 +198,24 @@ void buzzHandle(){//蜂鸣器处理
 
 //uint8_t keyOldTest[] = {1,1,1};
 uint32_t oldTime = 0;
-uint16_t THTL0old,THTL0;
-//PUINT8C DATA_CFG1 = DATA_CFG_BASE;
 
+extern int16_t xPrint, yPrint;
 void LL_test(){
 	static uint16_t i;
 	i++;
-	if(Systime - oldTime >= 1000){//端点2打印输出
-		oldTime += 1000;
-//		memset(DebugBuf,0,64);
-		DebugBuf[0] = TH0;
-		DebugBuf[1] = TL0;
-//		GetTime();
-//		keyRead();
-//		keyFilter(2);
-//		WS_Write_16();
-		DebugBuf[2] = TH0;
-		DebugBuf[3] = TL0;
-//		DebugBuf[4] = oldTime >> 24;
-//		DebugBuf[5] = oldTime >> 16;
-//		DebugBuf[6] = oldTime >> 8;
-//		DebugBuf[7] = oldTime;
-//		DebugBuf[0] = adcValue[0] >> 8;
-//		DebugBuf[1] = adcValue[0];
-//		DebugBuf[2] = adcValue[1] >> 8;
-//		DebugBuf[3] = adcValue[1];
-		THTL0 = CFG_SCN_W;
-		DebugBuf[5] = keyAddr[0][0] >> 8;
-		DebugBuf[6] = keyAddr[0][0];
-		DebugBuf[7] = keyAddr[1][0] >> 8;
-		DebugBuf[8] = keyAddr[1][0];
-		DebugBuf[9] = i >> 8;
-		DebugBuf[10] = i;
+	if(Systime - oldTime >= 50){//端点2打印输出
+		oldTime += 50;
+		memset(DebugBuf, ' ', 64);
+		sprintf(DebugBuf, "%d	%d\n", xPrint, yPrint);
 		
-		Enp2IntIn(DebugBuf,64);
+		Enp2IntIn(DebugBuf, 64);
 	}
 
 //	mDelaymS(10);
 }
 
 void multiFunc(){//功能集合函数
-
+	LL_test();//测试代码
 	keyTurn();//按键旋转映射
 	
 	if(Fill_report() == 1){//报文填写

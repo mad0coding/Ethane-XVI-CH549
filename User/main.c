@@ -104,8 +104,6 @@ void main()
 		keyRead();//再次读取按键
 		keyFilter(2);//滤波二阶段
 		
-//		Light_test();
-		
 		if(ifReceiving) continue;//若USB正在接收数据则跳过HID发送
 		if(savePlace){//需要更新参数
 			ParaSave(savePlace, savePlace < 50 ? 8 : 4);//保存参数
@@ -118,9 +116,8 @@ void main()
 			saveGlobal = 0;
 			continue;
 		}
-//		mDelaymS(10);
+		
 		if(All_if_send == 0){//若总发送标志已清空
-//			LL_test();
 			multiFunc();//处理各种功能
 			
 			All_if_send = KeyBrd_if_send | (Mouse_if_send << 1) | (Point_if_send << 2) | (Vol_if_send << 3);//生成总发送标志
