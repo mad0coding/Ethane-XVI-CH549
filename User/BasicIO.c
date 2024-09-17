@@ -36,9 +36,15 @@ void arrayInit(){//数组初始化
 }
 
 void adcRead(uint8_t ch){//摇杆读取
+	uint16_t tmp;
 	if(ADC_CTRL&bADC_IF){		//若ADC采样完成
 		ADC_CTRL = bADC_IF;			//清标志
 		adcValue[!ch] = ADC_DAT;	//记录采样值
+//		adcValue[!ch] += ((uint16_t)ADC_DAT - adcValue[!ch]) / 2;	//记录采样值 有滤波
+//		tmp = ADC_DAT;
+//		tmp -= adcValue[!ch];
+//		tmp /= 2;
+//		adcValue[!ch] += tmp;
 		ADC_ExChannelSelect(ch);	//选择通道ch
 		ADC_StartSample();			//启动一次ADC采样
 	}
@@ -199,14 +205,13 @@ void buzzHandle(){//蜂鸣器处理
 //uint8_t keyOldTest[] = {1,1,1};
 uint32_t oldTime = 0;
 
-extern int16_t xPrint, yPrint;
 void LL_test(){
 	static uint16_t i;
 	i++;
 	if(Systime - oldTime >= 50){//端点2打印输出
 		oldTime += 50;
 		memset(DebugBuf, ' ', 64);
-		sprintf(DebugBuf, "%d	%d\n", xPrint, yPrint);
+//		sprintf(DebugBuf, "%d	%d\n", xPrint, yPrint);
 		
 		Enp2IntIn(DebugBuf, 64);
 	}
@@ -215,7 +220,7 @@ void LL_test(){
 }
 
 void multiFunc(){//功能集合函数
-	LL_test();//测试代码
+//	LL_test();//测试代码
 	keyTurn();//按键旋转映射
 	
 	if(Fill_report() == 1){//报文填写

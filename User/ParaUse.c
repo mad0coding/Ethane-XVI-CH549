@@ -470,18 +470,17 @@ void RK_EC_key_handle(void)//摇杆旋钮按键处理
 		else if(keyOld[i + 16]){//若为释放沿
 			if(keyM[i] == 2){//永久切换键
 				switch_i = 0xFF;//直接复位临时切换键标志
-				cs_change(keyV[i] - 30 + 1);//切换 该函数内有参数检查 此处USB键值从30(即数字键1)开始有效
+				cs_change(keyV[i] - kv_orig_1 + 1);//切换 该函数内有参数检查 此处USB键值从数字键1的键值开始有效
 			}
 		}
 	}
 }
-int16_t xPrint, yPrint;
-//1:四向四按键,2:八向四按键,3:速度鼠标,4:位置鼠标
+
+//1:四向四按键,2:八向四按键,3:速度鼠标,4:光标位置
 void RK_handle(uint8_t clear)//摇杆处理
 {
 	static int16_t RK_pulse = 0;//间隔标志
 	static int16_t x_pic = 0, y_pic = 0;
-	
 	static int16_t dx = 0, dy = 0;
 	int16_t x, y;
 	int16_t equal_r;//等效半径
@@ -510,12 +509,11 @@ void RK_handle(uint8_t clear)//摇杆处理
 	}
 	
 	equal_r = MAX(ABS(x), ABS(y)) - (uint16_t)CFG_R_DEAD(0) * 21;//计算等效半径并减去死区
-	if(equal_r <= 0){
+	if(equal_r <= 0){//在死区内
 		dx = dy = 0;
 		x_pic = y_pic = 0;
-		return;//在死区内则退出
+		return;//退出
 	}
-		
 	
 	switch(CFGb_R_MODE(0)){
 		case 1:{//四向四按键
@@ -525,14 +523,19 @@ void RK_handle(uint8_t clear)//摇杆处理
 			}
 			
 			if(CFG_R_NEER(0) == 0 && CFG_R_FAR(0) == 0) RK_pulse = 0;//长按
-			else{
-//				equal_r = ((uint16_t)CFG_R_NEER(0) << 4) + (((int32_t)(CFG_R_FAR(0) - CFG_R_NEER(0)) * equal_r) >> 8);//计算速度 借用equal_r存储
-//				//0~800 -> 0~100
-//				equal_r >>= 3;
+			else{//非长按则间隔按
 				equal_r = ((uint16_t)CFG_R_NEER(0) << 1) + (((int8_t)(CFG_R_FAR(0) - CFG_R_NEER(0)) * (equal_r >> 3)) >> 8);//计算速度 借用equal_r存储
+
+				if(equal_r <= ABS(dx)) dx = equal_r;//减速时直接赋值不使用惯性
+				else{//加速时使用惯性
+					equal_r = (equal_r - dx) / (CFG_R_PARA(0) + 1);//借用equal_r存储
+					if(equal_r == 0) dx += 1;//不足1则为1
+					else dx += equal_r;
+					equal_r = dx;
+				}
+				
 				RK_pulse = 100 - equal_r;
 				if(RK_pulse <= 0) RK_pulse = 1;
-//				if(RK_pulse > equal_r) RK_pulse = equal_r;
 			}
 			
 			if(y > x){
@@ -554,8 +557,16 @@ void RK_handle(uint8_t clear)//摇杆处理
 			if(CFG_R_NEER(0) == 0 && CFG_R_FAR(0) == 0) RK_pulse = 0;//长按
 			else{
 				equal_r = ((uint16_t)CFG_R_NEER(0) << 1) + (((int8_t)(CFG_R_FAR(0) - CFG_R_NEER(0)) * (equal_r >> 3)) >> 8);//计算速度 借用equal_r存储
+				
+				if(equal_r <= ABS(dx)) dx = equal_r;//减速时直接赋值不使用惯性
+				else{//加速时使用惯性
+					equal_r = (equal_r - dx) / (CFG_R_PARA(0) + 1);//借用equal_r存储
+					if(equal_r == 0) dx += 1;//不足1则为1
+					else dx += equal_r;
+					equal_r = dx;
+				}
+				
 				RK_pulse = 100 - equal_r;
-				xPrint = equal_r;
 				if(RK_pulse <= 0) RK_pulse = 1;
 			}
 			
@@ -577,55 +588,127 @@ void RK_handle(uint8_t clear)//摇杆处理
 		case 3:{//速度鼠标
 //			x = x > 0 ? MAX(0, x - (int16_t)CFG_R_DEAD(0) * 21) : MIN(0, x + (int16_t)CFG_R_DEAD(0) * 21);//应用死区
 //			y = y > 0 ? MAX(0, y - (int16_t)CFG_R_DEAD(0) * 21) : MIN(0, y + (int16_t)CFG_R_DEAD(0) * 21);//应用死区
-			
-			xPrint = x;
-			yPrint = y;
-//			x = ((uint16_t)CFG_R_NEER(0) << 1) + (((int8_t)(CFG_R_FAR(0) - CFG_R_NEER(0)) * (equal_r >> 3)) >> 8);//计算速度 借用x存储
-//			//0~100
-			x = SIGN(x) * (((int16_t)CFG_R_NEER(0) << 4) + (((int8_t)(CFG_R_FAR(0) - CFG_R_NEER(0)) * (ABS(x) >> 3)) >> 5));//计算速度 借用x存储
-			y = SIGN(y) * (((int16_t)CFG_R_NEER(0) << 4) + (((int8_t)(CFG_R_FAR(0) - CFG_R_NEER(0)) * (ABS(y) >> 3)) >> 5));//计算速度 借用y存储
-			//0~800
-			if(ABS(x) < ABS(dx)) dx = x;
-			else if(ABS(dx) > 200) dx += (x - dx) / (CFG_R_PARA(0) + 1);
-			else dx += (x - dx) / ((CFG_R_PARA(0) + 1) * 3);
-			if(ABS(y) < ABS(dy)) dy = y;
-			else if(ABS(dy) > 200) dy += (y - dy) / (CFG_R_PARA(0) + 1);
-			else dy += (y - dy) / ((CFG_R_PARA(0) + 1) * 3);
-			
-//			dx += (x - dx) / (CFG_R_PARA(0) + 1);
-//			dy += (y - dy) / (CFG_R_PARA(0) + 1);
-//			dx = x;
-//			dy = y;
-			x_pic += dx;
+
+			x = ((int8_t)CFG_R_FAR(0) * (x >> 3)) >> 4;//计算速度 借用x存储
+			y = ((int8_t)CFG_R_FAR(0) * (y >> 3)) >> 4;//计算速度 借用y存储
+			//-1600~1600
+			if(ABS(x) <= ABS(dx)) dx = x;//减速时直接赋值不使用惯性
+			else if(ABS(dx) > 800) dx = x;//高速阶段不使用惯性
+			else if(ABS(dx) > CFG_R_NEER(0) * 10){//中速阶段使用低惯性
+				equal_r = (x - dx) / (CFG_R_PARA(0) + 1);//借用equal_r存储
+				if(equal_r == 0) dx += SIGN(x);//不足1则为1
+				else dx += equal_r;
+			}
+			else{//低速阶段使用高惯性
+				equal_r = (x - dx) / (CFG_R_PARA(0) * 10 + 1);//借用equal_r存储
+				if(equal_r == 0) dx += SIGN(x);//不足1则为1
+				else dx += equal_r;
+			}
+			if(ABS(y) <= ABS(dy)) dy = y;
+			else if(ABS(dy) > 800) dy = y;
+			else if(ABS(dy) > CFG_R_NEER(0) * 10){
+				equal_r = (y - dy) / (CFG_R_PARA(0) + 1);
+				if(equal_r == 0) dy += SIGN(y);
+				else dy += equal_r;
+			}
+			else{
+				equal_r = (y - dy) / (CFG_R_PARA(0) * 10 + 1);
+				if(equal_r == 0) dy += SIGN(y);
+				else dy += equal_r;
+			}
+
+			x_pic += dx;//增量式 以改善余数舍弃问题
 			y_pic += dy;
-			
-//			dx = (int16_t)((int32_t)x * CFG_R_PARA(0) / 2000);
-//			dy = (int16_t)((int32_t)y * CFG_R_PARA(0) / 2000);
-//			dx = dx < 127 ? dx : 127;
-//			dy = dy < 127 ? dy : 127;
-//			dx = dx > -128 ? dx : -128;
-//			dy = dy > -128 ? dy : -128;
-//			dx = LIMIT(dx, -128 << 5, 127 << 5);
-//			dy = LIMIT(dy, -128 << 5, 127 << 5);
-			x_pic = LIMIT(x_pic, -127 << 5, 127 << 5);
-			y_pic = LIMIT(y_pic, -127 << 5, 127 << 5);
-			Mouse_data[2] = (int8_t)(x_pic >> 5);
-			Mouse_data[3] = -(int8_t)(y_pic >> 5);
-			x_pic -= (int8_t)Mouse_data[2] << 5;
-			y_pic += (int8_t)Mouse_data[3] << 5;
+
+			x_pic = LIMIT(x_pic, -127 << 6, 127 << 6);//限幅
+			y_pic = LIMIT(y_pic, -127 << 6, 127 << 6);
+			Mouse_data[2] = (int8_t)(x_pic >> 6);//报文填入
+			Mouse_data[3] = -(int8_t)(y_pic >> 6);
+			x_pic -= (int8_t)Mouse_data[2] << 6;//减去已填入的
+			y_pic += (int8_t)Mouse_data[3] << 6;
 			break;
 		}
-		case 4:{//位置鼠标
-			dx = (int16_t)((int32_t)x * CFG_R_PARA(0) / 1000) - x_pic;
-			dy = (int16_t)((int32_t)y * CFG_R_PARA(0) / 1000) - y_pic;
-			dx = dx < 127 ? dx : 127;
-			dy = dy < 127 ? dy : 127;
-			dx = dx > -128 ? dx : -128;
-			dy = dy > -128 ? dy : -128;
-			x_pic += dx;
-			y_pic += dy;
-			Mouse_data[2] = (int8_t)dx;
-			Mouse_data[3] = -(int8_t)dy;
+		case 4:{//光标位置
+			equal_r = (x - x_pic) >> 2;//防抖滤波 借用equal_r存储
+			if(equal_r == 0) x_pic += SIGN(x);
+			else x_pic += equal_r;
+			equal_r = (y - y_pic) >> 2;
+			if(equal_r == 0) y_pic += SIGN(y);
+			else y_pic += equal_r;
+			
+			if(x > 0) dx = CFG_R_KEY(0,4);	//右
+			else dx = CFG_R_KEY(0,3);		//左
+			if(y > 0) dy = CFG_R_KEY(0,1);	//上
+			else dy = CFG_R_KEY(0,2);		//下
+			
+			if(dx >= kv_orig_1 && dx <= kv_orig_0){//1~9以及0
+				dx = (dx - kv_orig_1) * 2 + 2;//2~20 间隔2
+			}
+			else if(dx >= kv_num_1 && dx <= kv_num_0){//NUM1~NUM9
+				dx = (dx - kv_num_1) * 2 + 1;//1~19 间隔2
+			}
+			else dx = 0;
+			
+			if(dy >= kv_orig_1 && dy <= kv_orig_0){//1~9以及0
+				dy = (dy - kv_orig_1) * 2 + 2;//2~20 间隔2
+			}
+			else if(dy >= kv_num_1 && dy <= kv_num_0){//NUM1~NUM9
+				dy = (dy - kv_num_1) * 2 + 1;//1~19 间隔2
+			}
+			else dy = 0;
+			
+			x = LIMIT(x, -4095, 4095);
+			y = LIMIT(y, -4095, 4095);
+			
+			//20*4095*50/125
+			dx = (int32_t)dx * x_pic * CFG_R_FAR(0) / 125;//计算偏移量
+			dy = -(int32_t)dy * y_pic * CFG_R_FAR(0) / 125;
+			
+			x = CFG_R_PARA(0) * 32767L / 50;//计算中心位置
+			y = CFG_R_NEER(0) * 32767L / 50;
+			
+			if(dx > 0 && (int32_t)x + dx > 32767) x = 32767;//防止正溢出
+			else if(dx < 0 && (int32_t)x + dx < 0) x = 0;//防止负溢出
+			else x += dx;//没有溢出
+			
+			if(dy > 0 && (int32_t)y + dy > 32767) y = 32767;
+			else if(dy < 0 && (int32_t)y + dy < 0) y = 0;
+			else y += dy;
+
+			Point_data[3] = x & 0xFF;
+			Point_data[4] = (x >> 8) & 0xFF;
+			Point_data[5] = y & 0xFF;
+			Point_data[6] = (y >> 8) & 0xFF;
+			
+			Point_data[2] = 17;//提供一个和按键不一样的ID
+			
+			RK_pulse = !RK_pulse;//借用RK_pulse存储一个01交替的量
+			Mouse_data[2] = RK_pulse * 2 - 1;//报文填入 用x抖动来维持鼠标光标显示
+			
+//			dx = ((int8_t)CFG_R_FAR(0) * (x >> 3)) >> 4;//计算偏移量
+//			dy = -((int8_t)CFG_R_FAR(0) * (y >> 3)) >> 4;
+//			//0~1600
+//			
+//			dx = dx * 32767L / 3200;//计算偏移位置
+//			dy = dy * 32767L / 3200;
+//			
+//			x = CFG_R_PARA(0) * 32767L / 50;//计算中心位置
+//			y = CFG_R_NEER(0) * 32767L / 50;
+//			
+//			if(dx > 0 && (int32_t)x + dx > 32767) x = 32767;//防止正溢出
+//			else if(dx < 0 && (int32_t)x + dx < 0) x = 0;//防止负溢出
+//			else x += dx;//没有溢出
+//			
+//			if(dy > 0 && (int32_t)y + dy > 32767) y = 32767;
+//			else if(dy < 0 && (int32_t)y + dy < 0) y = 0;
+//			else y += dy;
+
+//			Point_data[3] = x & 0xFF;
+//			Point_data[4] = (x >> 8) & 0xFF;
+//			Point_data[5] = y & 0xFF;
+//			Point_data[6] = (y >> 8) & 0xFF;
+//			
+//			Point_data[2] = 17;//提供一个和按键不一样的ID
 			break;
 		}
 		default:break;
