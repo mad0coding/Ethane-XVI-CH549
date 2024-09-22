@@ -359,8 +359,15 @@ if(!ifReceiving){//若未在接收状态
 		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
 		saveGlobal = 1;//存储全局参数标志位置位
 	}
-	else if(Buf[0] == 'E' && Buf[1] == 'C' && Buf[2] == 'F'){//修改旋钮滤波参数指令
+	else if(Buf[0] == 'E' && Buf[1] == 'C' && Buf[2] == 'D'){//修改旋钮倍频指令
 		Buf[Offset+0] = 'E'; Buf[Offset+1] = 'C';//填入响应字节
+		EC1freq = Buf[3];//更新旋钮倍频参数
+		EC2freq = Buf[4];
+		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
+		saveGlobal = 1;//存储全局参数标志位置位
+	}
+	else if(Buf[0] == 'E' && Buf[1] == 'C' && Buf[2] == 'F'){//修改旋钮滤波参数指令
+		Buf[Offset+0] = 'E'; Buf[Offset+1] = 'F';//填入响应字节
 //		TimFilterValue = Buf[3];//更新旋钮滤波参数
 		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
 		//saveGlobal = 1;//存储全局参数标志位置位

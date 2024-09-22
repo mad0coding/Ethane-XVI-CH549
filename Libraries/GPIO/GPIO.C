@@ -186,21 +186,32 @@ void GPIO_INT_Init( UINT16 IntSrc,UINT8 Mode,UINT8 NewState )
 * Output         : None
 * Return         : None
 *******************************************************************************/
-#define EC2DoubleFreq	1//编码器2倍频开关
+//#define EC2DoubleFreq	1//编码器2倍频开关
 UINT8D EC2old = 0;//0~3分别为A↓B0,A↓B1,A↑B0,A↑B1
-UINT8D EC2val = 0;
+UINT8D EC2val = 0;//计数值
+bit EC2freq = 0;//倍频设置
 void GPIO_EXT_ISR(void) interrupt INT_NO_GPIO
 {
 	register UINT8 ECB = P0_1, ECA = P0_3;//这里AB反过来
-#if EC2DoubleFreq	//若启用倍频
-	if(ECA && ECB || !ECA && !ECB) EC2val--;//顺时针(只针对开发使用的编码器)
-	else EC2val++;//逆时针(只针对开发使用的编码器)
-#else				//若不倍频
-	register UINT8 ECnew = (ECA << 1) | ECB;//更新记录状态
-	if(ECnew == 2 && EC2old == 1) EC2val++;//逆时针(只针对开发使用的编码器)
-	else if(ECnew == 3 && EC2old == 0) EC2val--;//顺时针(只针对开发使用的编码器)
-	EC2old = ECnew;//更新记录状态
-#endif
+	if(EC2freq){	//若启用倍频
+		if(ECA && ECB || !ECA && !ECB) EC2val--;//顺时针(只针对开发使用的编码器)
+		else						   EC2val++;//逆时针(只针对开发使用的编码器)
+	}else{			//若不倍频
+		register UINT8 ECnew = (ECA << 1) | ECB;//更新记录状态
+		if(ECnew == 2 && EC2old == 1)	   EC2val++;//逆时针(只针对开发使用的编码器)
+		else if(ECnew == 3 && EC2old == 0) EC2val--;//顺时针(只针对开发使用的编码器)
+		EC2old = ECnew;//更新记录状态
+	}
+//	register UINT8 ECB = P0_1, ECA = P0_3;//这里AB反过来
+//#if EC2DoubleFreq	//若启用倍频
+//	if(ECA && ECB || !ECA && !ECB) EC2val--;//顺时针(只针对开发使用的编码器)
+//	else EC2val++;//逆时针(只针对开发使用的编码器)
+//#else				//若不倍频
+//	register UINT8 ECnew = (ECA << 1) | ECB;//更新记录状态
+//	if(ECnew == 2 && EC2old == 1) EC2val++;//逆时针(只针对开发使用的编码器)
+//	else if(ECnew == 3 && EC2old == 0) EC2val--;//顺时针(只针对开发使用的编码器)
+//	EC2old = ECnew;//更新记录状态
+//#endif
 }
 
 /*******************************************************************************
@@ -211,22 +222,32 @@ void GPIO_EXT_ISR(void) interrupt INT_NO_GPIO
 * Return         : None
 *******************************************************************************/
 UINT8D EC1old = 0;//0~3分别为A↓B0,A↓B1,A↑B0,A↑B1
-UINT8D EC1val = 0;
+UINT8D EC1val = 0;//计数值
+bit EC1freq = 0;//倍频设置
+#define GPIO_STD03_ISR() \
+	register UINT8 ECB = P2_4, ECA = P2_2;/*这里AB反过来*/\
+	if(EC1freq){	/*若启用倍频*/\
+		if(ECA && ECB || !ECA && !ECB) EC1val++;/*逆时针(只针对开发使用的编码器)*/\
+		else						   EC1val--;/*顺时针(只针对开发使用的编码器)*/\
+	}else{			/*若不倍频*/\
+		register UINT8 ECnew = (ECA << 1) | ECB;/*更新记录状态*/\
+		if(ECnew == 2 && EC1old == 1)	   EC1val--;/*顺时针(只针对开发使用的编码器)*/\
+		else if(ECnew == 3 && EC1old == 0) EC1val++;/*逆时针(只针对开发使用的编码器)*/\
+		EC1old = ECnew;/*更新记录状态*/\
+	}
+//End of define GPIO_STD03_ISR()
+//	register UINT8 ECB = P2_4, ECA = P2_2;/*这里AB反过来*/
+//	register UINT8 ECnew = (ECA << 1) | ECB;/*更新记录状态*/
+//	if(ECnew == 2 && EC1old == 1) EC1val--;/*顺时针(只针对开发使用的编码器)*/
+//	else if(ECnew == 3 && EC1old == 0) EC1val++;/*逆时针(只针对开发使用的编码器)*/
+//	EC1old = ECnew;/*更新记录状态*/
 void GPIO_STD0_ISR(void) interrupt INT_NO_INT0
 {
-	register UINT8 ECB = P2_4, ECA = P2_2;//这里AB反过来
-	register UINT8 ECnew = (ECA << 1) | ECB;//更新记录状态
-	if(ECnew == 2 && EC1old == 1) EC1val--;//顺时针(只针对开发使用的编码器)
-	else if(ECnew == 3 && EC1old == 0) EC1val++;//逆时针(只针对开发使用的编码器)
-	EC1old = ECnew;//更新记录状态
+	GPIO_STD03_ISR();
 }
 void GPIO_STD3_ISR(void) interrupt INT_NO_INT3
 {
-    register UINT8 ECB = P2_4, ECA = P2_2;//这里AB反过来
-	register UINT8 ECnew = (ECA << 1) | ECB;//更新记录状态
-	if(ECnew == 2 && EC1old == 1) EC1val--;//顺时针(只针对开发使用的编码器)
-	else if(ECnew == 3 && EC1old == 0) EC1val++;//逆时针(只针对开发使用的编码器)
-	EC1old = ECnew;//更新记录状态
+    GPIO_STD03_ISR();
 }
 
 /*******************************************************************************

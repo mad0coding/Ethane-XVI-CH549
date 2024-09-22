@@ -98,15 +98,18 @@ void ParaUpdate(uint8_t pos){//参数更新
 }
 
 void GlobalParaLoad(){//全局参数读取
-	ANA_MID_SET[0] = GLOB_ANA_MID1;
+	ANA_MID_SET[0] = GLOB_ANA_MID1;//摇杆中位
 	ANA_MID_SET[1] = GLOB_ANA_MID2;
-	keyFltNum = GLOB_KEY_FLT;
+	keyFltNum = GLOB_KEY_FLT;//按键滤波参数
+	EC1freq = GLOBb_EC_FREQ1;//旋钮倍频参数
+	EC2freq = GLOBb_EC_FREQ2;
 }
 
 void GlobalParaUpdate(){//全局参数更新
-	((uint16_t*)(FlashBuf))[0] = ANA_MID_SET[0];
+	((uint16_t*)(FlashBuf))[0] = ANA_MID_SET[0];//摇杆中位
 	((uint16_t*)(FlashBuf))[1] = ANA_MID_SET[1];
-	FlashBuf[4] = keyFltNum;
+	FlashBuf[4] = keyFltNum;//按键滤波参数
+	FlashBuf[5] = (((uint8_t)EC2freq) << 1) | ((uint8_t)EC1freq);//旋钮倍频参数
 	ParaSave(100, 1);//参数保存
 }
 

@@ -1,6 +1,8 @@
 
 #include "BasicIO.h"
 
+extern uint8_t KeyBrd_data[];//键盘报文
+
 UINT8C turnL90[16] = {	3,	7,	11,	15,
 						2,	6,	10,	14,
 						1,	5,	9,	13,
@@ -27,7 +29,9 @@ uint8_t keyNow[KP_num];//按键映射结果
 uint8_t keyOld[KP_num];//按键映射结果旧值
 
 void arrayInit(){//数组初始化
-//	uint8_t seed;	srand(seed);//填入种子
+	//srand(*(PUINT16X)(2048 - 2));//填入种子
+	memset(KeyBrd_data + 1, 0, 21);//初始化键盘报文数组
+	memset(DebugBuf, 0, 64);
 	memset(keyFlt,0,KP_num);
 	memset(fltOld,0,KP_num);
 	memset(fltCount,0,KP_num);
@@ -35,18 +39,16 @@ void arrayInit(){//数组初始化
 	memset(keyOld,0,KP_num);
 }
 
-void adcRead(uint8_t ch){//摇杆读取
-	uint16_t tmp;
-	if(ADC_CTRL&bADC_IF){		//若ADC采样完成
+void adcRead(void){//摇杆读取
+	static uint8_t ch = 1;	//0或1 代表通道0或2
+	if(ADC_CTRL & bADC_IF){		//若ADC采样完成
 		ADC_CTRL = bADC_IF;			//清标志
-		adcValue[!ch] = ADC_DAT;	//记录采样值
-//		adcValue[!ch] += ((uint16_t)ADC_DAT - adcValue[!ch]) / 2;	//记录采样值 有滤波
-//		tmp = ADC_DAT;
-//		tmp -= adcValue[!ch];
-//		tmp /= 2;
-//		adcValue[!ch] += tmp;
-		ADC_ExChannelSelect(ch);	//选择通道ch
-		ADC_StartSample();			//启动一次ADC采样
+		//adcValue[!ch] = ADC_DAT;	//记录采样值
+		//adcValue[!ch] = (ADC_DAT + adcValue[!ch]) >> 1;	//记录采样值 有滤波
+		adcValue[ch] += ((int16_t)ADC_DAT - (int16_t)adcValue[ch]) >> 2;	//记录采样值 有滤波
+		ch = !ch;					//切换选择
+		ADC_ExChannelSelect(ch*2);	//选择通道ch 0或2
+		ADC_StartSample();			//启动下一次ADC采样
 	}
 }
 
@@ -110,8 +112,10 @@ void GetTime(){//时间获取
 		TR0 = START;//启动定时器
 	}
 	incMs = (uint16_t)(THTL0 - THTL0_old) >> 11 /*2000*/;//计算增加的毫秒数
+//	incMs = (uint16_t)(THTL0 - THTL0_old) / 2000;//计算增加的毫秒数
 	Systime += incMs;//系统时间更新
 	THTL0_old += (uint16_t)incMs * 2000;//计时器旧值跟进
+	//测试结果: /2000*2000:8960  /2000<<11:9174  >>11<<11:9177  >>11*2000:8952
 }
 
 UINT16C toneTIM[] = {//声调定时器计数值表
@@ -208,10 +212,10 @@ uint32_t oldTime = 0;
 void LL_test(){
 	static uint16_t i;
 	i++;
-	if(Systime - oldTime >= 50){//端点2打印输出
-		oldTime += 50;
+	if(Systime - oldTime >= 1000){//端点2打印输出
+		oldTime += 1000;
 		memset(DebugBuf, ' ', 64);
-//		sprintf(DebugBuf, "%d	%d\n", xPrint, yPrint);
+		sprintf(DebugBuf, "%d	%d	%u\n", adcValue[0], adcValue[1], (uint16_t)Systime);
 		
 		Enp2IntIn(DebugBuf, 64);
 	}
@@ -223,7 +227,7 @@ void multiFunc(){//功能集合函数
 //	LL_test();//测试代码
 	keyTurn();//按键旋转映射
 	
-	if(Fill_report() == 1){//报文填写
+	if(Fill_report() == 1){//报文填写 若返回蜂鸣器模式
 		clearKeyRGB();//清除键盘RGB
 		WS_Write_16();//灯写入
 		buzzHandle();//蜂鸣器处理

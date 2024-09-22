@@ -685,30 +685,6 @@ void RK_handle(uint8_t clear)//摇杆处理
 			RK_pulse = !RK_pulse;//借用RK_pulse存储一个01交替的量
 			Mouse_data[2] = RK_pulse * 2 - 1;//报文填入 用x抖动来维持鼠标光标显示
 			
-//			dx = ((int8_t)CFG_R_FAR(0) * (x >> 3)) >> 4;//计算偏移量
-//			dy = -((int8_t)CFG_R_FAR(0) * (y >> 3)) >> 4;
-//			//0~1600
-//			
-//			dx = dx * 32767L / 3200;//计算偏移位置
-//			dy = dy * 32767L / 3200;
-//			
-//			x = CFG_R_PARA(0) * 32767L / 50;//计算中心位置
-//			y = CFG_R_NEER(0) * 32767L / 50;
-//			
-//			if(dx > 0 && (int32_t)x + dx > 32767) x = 32767;//防止正溢出
-//			else if(dx < 0 && (int32_t)x + dx < 0) x = 0;//防止负溢出
-//			else x += dx;//没有溢出
-//			
-//			if(dy > 0 && (int32_t)y + dy > 32767) y = 32767;
-//			else if(dy < 0 && (int32_t)y + dy < 0) y = 0;
-//			else y += dy;
-
-//			Point_data[3] = x & 0xFF;
-//			Point_data[4] = (x >> 8) & 0xFF;
-//			Point_data[5] = y & 0xFF;
-//			Point_data[6] = (y >> 8) & 0xFF;
-//			
-//			Point_data[2] = 17;//提供一个和按键不一样的ID
 			break;
 		}
 		default:break;

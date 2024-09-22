@@ -63,7 +63,7 @@ UINT8C INX_TABLE[] = {//预置灯效下标表
 	6,5,4,3,	 5,4,3,2,	 4,3,2,1,	 3,2,1,0,//↖
 	3,2,1,0,	 3,2,1,0,	 3,2,1,0,	 3,2,1,0,//←
 	3,2,1,0,	 4,3,2,1,	 5,4,3,2,	 6,5,4,3,//↙
-	0,1,2,3,	 4,5,6,7,	 8,9,10,11,	 12,13,14,15,//→↓(流水灯)
+	0,1,2,3,	 4,5,6,7,	 8,9,10,11,	 12,13,14,15,//→↓(行列)
 	0,4,8,12,	 1,5,9,13,	 2,6,10,14,	 3,7,11,15,//↓→
 	3,7,11,15,	 2,6,10,14,	 1,5,9,13,	 0,4,8,12,//↑→
 	12,13,14,15, 8,9,10,11,	 4,5,6,7,	 0,1,2,3,//→↑
@@ -71,6 +71,14 @@ UINT8C INX_TABLE[] = {//预置灯效下标表
 	15,11,7,3,	 14,10,6,2,	 13,9,5,1,	 12,8,4,0,//↑←
 	12,8,4,0,	 13,9,5,1,	 14,10,6,2,	 15,11,7,3,//↓←
 	3,2,1,0,	 7,6,5,4,	 11,10,9,8,	 15,14,13,12,//←↓
+	0,1,2,3,	 7,6,5,4,	 8,9,10,11,	 15,14,13,12,//→↓(蛇行)
+	0,7,8,15,	 1,6,9,14,	 2,5,10,13,	 3,4,11,12,//↓→
+	3,4,11,12,	 2,5,10,13,	 1,6,9,14,	 0,7,8,15,//↑→
+	15,14,13,12, 8,9,10,11,	 7,6,5,4,	 0,1,2,3,//→↑
+	12,13,14,15, 11,10,9,8,	 4,5,6,7,	 3,2,1,0,//←↑
+	12,11,4,3,	 13,10,5,2,	 14,9,6,1,	 15,8,7,0,//↑←
+	15,8,7,0,	 14,9,6,1,	 13,10,5,2,	 12,11,4,3,//↓←
+	3,2,1,0,	 4,5,6,7,	 11,10,9,8,	 12,13,14,15,//←↓
 	0,1,2,3,	 11,12,13,4, 10,15,14,5, 9,8,7,6,//→↓(涡旋)
 	0,11,10,9,	 1,12,15,8,	 2,13,14,7,	 3,4,5,6,//↓→
 	3,4,5,6,	 2,13,14,7,	 1,12,15,8,	 0,11,10,9,//↑→
@@ -135,32 +143,32 @@ void keyRGB(uint8_t clear){//键盘RGB控制
 		taskTick = 1;//进入动作期
 		dTime = Systime;//记录动作期起始时间
 		INXi = 0;
-		//lightMode = (lightMode + 1) % 24;
+		//lightMode = (lightMode + 1) % 32;
 		if(LIGHT_WAVE == 0){//呼吸
 			lightMode = 200;
-		}else if(LIGHT_WAVE <= 3){//波动,流水灯,涡旋
+		}else if(LIGHT_WAVE <= 4){//波动,行列,蛇行,涡旋
 			lightMode = (LIGHT_WAVE - 1) * 8 + LIGHT_DIR;
-		}else if(LIGHT_WAVE == 4){//自定义
+		}else if(LIGHT_WAVE == 5){//自定义
 			lightMode = 100;
 			memcpy(inXi, &LIGHT_IDX(0), 16);
-		}else if(LIGHT_WAVE == 5){//循环1
-			lightMode = (lightMode + 1) % 24;
-		}else if(LIGHT_WAVE == 6){//循环2
+		}else if(LIGHT_WAVE == 6){//循环1
+			lightMode = (lightMode + 1) % 32;
+		}else if(LIGHT_WAVE == 7){//循环2
 			lightMode += 8;
-			if(lightMode >= 31) lightMode = 0;
-			else if(lightMode >= 24) lightMode -= 23;
-		}else if(LIGHT_WAVE == 7){//随机
-			do{ j = (rand() ^ TL0) % 26; }while(lightMode == j);//借用j存储掺入时间的随机数,直到与现在不同
+			if(lightMode >= 39) lightMode = 0;
+			else if(lightMode >= 32) lightMode -= 31;
+		}else if(LIGHT_WAVE == 8){//随机
+			do{ j = (rand() ^ TL0) % /*26*/32; }while(lightMode == j);//借用j存储掺入时间的随机数,直到与现在不同
 			lightMode = j;
 		}
-		//if(lightMode >= 24) lightMode = 200;
+		//if(lightMode >= 32) lightMode = 200;
 	}
 	if((taskTick & 0x0F) == 1 && (uint16_t)((uint16_t)Systime - dTime) > LIGHT_D1WAVE && lightMode != 200){//若为动作期且动作时间已到且非呼吸模式
 		dTime = Systime;//记录新动作起始时间
 		INXi++;
 	}
 	
-	if(lightMode < 24) memcpy(inXi, INX_TABLE + 16*lightMode, 16);//24种预置灯效
+	if(lightMode < 32) memcpy(inXi, INX_TABLE + 16*lightMode, 16);//32种预置灯效
 	
 	memcpy(FrameRaw, &LIGHT_UP(0), 16*3);//将上配色载入原始帧缓存
 	
@@ -281,7 +289,7 @@ void keyRGB(uint8_t clear){//键盘RGB控制
 
 void WS_Write_16(void){//写入16个灯
 	UINT8D i, iBit;
-	EA = 0;
+	EA = 0;//关中断
 	for(i = 0; i < 16*3; i++){//GRB
 		for(iBit = 7; iBit < 8; iBit--){
 			if((FrameBuf[i] >> iBit) & 0x01){//1码
@@ -295,7 +303,7 @@ void WS_Write_16(void){//写入16个灯
 			}
 		}
 	}
-	EA = 1;
+	EA = 1;//开中断
 }
 
 //H:0~colorAngle*6,S:0~100(已用delta代替),V:0~255

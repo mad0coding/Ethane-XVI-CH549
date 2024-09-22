@@ -57,6 +57,7 @@ extern UINT16D toneTimValue;//声调定时器计数值
 extern UINT16D buzzTimVol;//声调定时器延时值
 
 extern UINT8D EC1val, EC2val;
+extern bit EC1freq, EC2freq;
 
 extern uint16_t adcValue[];
 extern uint16_t ANA_MID_SET[];
@@ -69,7 +70,7 @@ extern uint8_t DebugBuf[];
 
 
 void arrayInit();//数组初始化
-void adcRead(uint8_t ch);//摇杆读取
+void adcRead(void);//摇杆读取
 void keyRead();//按键读取
 void keyFilter(uint8_t ts);//按键滤波
 

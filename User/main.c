@@ -21,7 +21,6 @@ uint8_t ifReceiving = 0;//接收数据标志位
 uint8_t savePlace = 0;//存储位置
 uint8_t saveGlobal = 0;//存储中位标志
 
-
 uint8_t SendTime = 0;//发送时间
 uint8_t All_if_send = 0;//总发送标志
 uint8_t KeyBrd_if_send = 0;//键盘报文是否发送
@@ -69,8 +68,8 @@ void main()
 	PWM_SEL_CHANNEL(PWM_CH5, Enable);		//启动通道5输出使能
 	
 	ADC_ExInit(0);					//ADC初始化,选择最慢采样时钟
-	ADC_ChSelect(0);				//选择通道0
-	ADC_ChSelect(2);				//选择通道2
+	ADC_ChSelect(0);				//初始化通道0并选择
+	ADC_ChSelect(2);				//初始化通道2并选择
 	ADC_StartSample();				//启动采样
 	
 	GPIO_INT_Init( (INT_P03_L|INT_P57_H|INT_INT0_L), INT_EDGE, Enable); //使能3个中断
@@ -86,21 +85,19 @@ void main()
     mTimer0RunCTL(1);				//T0定时器启动
 //    ET0 = 1;						//T0定时器中断开启
 	
-	memset(KeyBrd_data + 1, 0, 21);//初始化键盘报文数组
-	memset(DebugBuf,0,64);
-	arrayInit();//数组初始化
-	ParaLoad();//参数读取
+	arrayInit();	//数组初始化
+	ParaLoad();		//参数读取
 	
     while(1){
 		GetTime();//时间获取
 		
 		keyRead();//读取按键
 		keyFilter(1);//滤波一阶段
-		adcRead(0);//摇杆ADC读取通道0
+		adcRead();//摇杆ADC读取一个通道
 		
         WS_Write_16();//灯写入
 		
-		adcRead(2);//摇杆ADC读取通道2
+		adcRead();//摇杆ADC读取另一个通道
 		keyRead();//再次读取按键
 		keyFilter(2);//滤波二阶段
 		
@@ -111,7 +108,7 @@ void main()
 			savePlace = 0;
 			continue;
 		}
-		if(saveGlobal){//需要更新摇杆中位
+		if(saveGlobal){//需要更新全局参数
 			GlobalParaUpdate();//全局参数更新
 			saveGlobal = 0;
 			continue;
