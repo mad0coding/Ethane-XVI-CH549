@@ -5,7 +5,7 @@
 #include "DEBUG.H"
 
 #include "FlashRom.H"
-//#include "CompositeHID.H"
+
 #include "BasicIO.h"
 #include "ParaConfig.h"
 
@@ -61,11 +61,6 @@
 #define ABS(X)		((X) > 0 ? (X) : (-(X)))
 #define SIGN(X)		(((X)<0) ? (-1) : (((X)>0) ? 1 : 0))
 
-//void Save_para(void);//保存参数到FLASH
-//uint8_t Load_para(void);//从FLASH载入参数
-//uint8_t Load_one_para(uint8_t choose);//从FLASH缓存载入一套参数
-//uint8_t Update_para(uint8_t choose);//从USB写入数据更新参数
-//uint8_t Ana_mid_ctrl(uint8_t ifSave);//存取摇杆中位
 
 uint8_t Fill_report(void);//报文填写
 

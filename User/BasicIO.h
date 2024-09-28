@@ -12,8 +12,8 @@
 #include "RgbDrv.h"
 #include "ParaUse.h"
 
-#define KB_len		22//键盘报文长度
-#define KP_num		19//按键个数
+#define KB_LEN		22//键盘报文长度
+#define KP_NUM		19//按键个数
 
 #define KP_1	P1_3
 #define KP_2	P3_0
@@ -63,22 +63,22 @@ extern uint16_t adcValue[];
 extern uint16_t ANA_MID_SET[];
 extern UINT8D keyFltNum;//按键滤波参数
 
-extern uint8_t keyNow[KP_num];//按键映射结果
-extern uint8_t keyOld[KP_num];//按键映射结果旧值
-//extern uint8_t keyFlt[KP_num];
+extern uint8_t keyNow[KP_NUM];//按键映射结果
+extern uint8_t keyOld[KP_NUM];//按键映射结果旧值
+//extern uint8_t keyFlt[KP_NUM];
 extern uint8_t DebugBuf[];
 
 
-void arrayInit();//数组初始化
+void arrayInit(void);//数组初始化
 void adcRead(void);//摇杆读取
-void keyRead();//按键读取
+void keyRead(void);//按键读取
 void keyFilter(uint8_t ts);//按键滤波
 
-void GetTime();//时间获取
+void GetTime(void);//时间获取
 
-void LL_test();
+void LL_test(void);
 
-void multiFunc();//功能集合函数
+void multiFunc(void);//功能集合函数
 
 
 #endif

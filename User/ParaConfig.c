@@ -41,7 +41,7 @@ void ParaSave(uint8_t pos, uint8_t num){//参数保存
 	Flash_Op_Check_Byte2 = 0;
 }
 
-void ParaLoad(){//参数读取
+void ParaLoad(void){//参数读取
 	GlobalParaLoad();//全局参数读取
 	ParaUpdate(3);
 	ParaUpdate(2);
@@ -97,7 +97,7 @@ void ParaUpdate(uint8_t pos){//参数更新
 	}
 }
 
-void GlobalParaLoad(){//全局参数读取
+void GlobalParaLoad(void){//全局参数读取
 	ANA_MID_SET[0] = GLOB_ANA_MID1;//摇杆中位
 	ANA_MID_SET[1] = GLOB_ANA_MID2;
 	keyFltNum = GLOB_KEY_FLT;//按键滤波参数
@@ -105,7 +105,7 @@ void GlobalParaLoad(){//全局参数读取
 	EC2freq = GLOBb_EC_FREQ2;
 }
 
-void GlobalParaUpdate(){//全局参数更新
+void GlobalParaUpdate(void){//全局参数更新
 	((uint16_t*)(FlashBuf))[0] = ANA_MID_SET[0];//摇杆中位
 	((uint16_t*)(FlashBuf))[1] = ANA_MID_SET[1];
 	FlashBuf[4] = keyFltNum;//按键滤波参数

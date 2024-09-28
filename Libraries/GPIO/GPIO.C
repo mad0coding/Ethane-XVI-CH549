@@ -180,77 +180,6 @@ void GPIO_INT_Init( UINT16 IntSrc,UINT8 Mode,UINT8 NewState )
 }
 
 /*******************************************************************************
-* Function Name  : GPIO_ISR
-* Description    : RXD1、P15、P14、P03、P57、P46、RXD0 引脚外部中断服务函数
-* Input          : None
-* Output         : None
-* Return         : None
-*******************************************************************************/
-//#define EC2DoubleFreq	1//编码器2倍频开关
-UINT8D EC2old = 0;//0~3分别为A↓B0,A↓B1,A↑B0,A↑B1
-UINT8D EC2val = 0;//计数值
-bit EC2freq = 0;//倍频设置
-void GPIO_EXT_ISR(void) interrupt INT_NO_GPIO
-{
-	register UINT8 ECB = P0_1, ECA = P0_3;//这里AB反过来
-	if(EC2freq){	//若启用倍频
-		if(ECA && ECB || !ECA && !ECB) EC2val--;//顺时针(只针对开发使用的编码器)
-		else						   EC2val++;//逆时针(只针对开发使用的编码器)
-	}else{			//若不倍频
-		register UINT8 ECnew = (ECA << 1) | ECB;//更新记录状态
-		if(ECnew == 2 && EC2old == 1)	   EC2val++;//逆时针(只针对开发使用的编码器)
-		else if(ECnew == 3 && EC2old == 0) EC2val--;//顺时针(只针对开发使用的编码器)
-		EC2old = ECnew;//更新记录状态
-	}
-//	register UINT8 ECB = P0_1, ECA = P0_3;//这里AB反过来
-//#if EC2DoubleFreq	//若启用倍频
-//	if(ECA && ECB || !ECA && !ECB) EC2val--;//顺时针(只针对开发使用的编码器)
-//	else EC2val++;//逆时针(只针对开发使用的编码器)
-//#else				//若不倍频
-//	register UINT8 ECnew = (ECA << 1) | ECB;//更新记录状态
-//	if(ECnew == 2 && EC2old == 1) EC2val++;//逆时针(只针对开发使用的编码器)
-//	else if(ECnew == 3 && EC2old == 0) EC2val--;//顺时针(只针对开发使用的编码器)
-//	EC2old = ECnew;//更新记录状态
-//#endif
-}
-
-/*******************************************************************************
-* Function Name  : GPIO_STD0_ISR
-* Description    : INT0(P32) 引脚外部中断服务函数
-* Input          : None
-* Output         : None
-* Return         : None
-*******************************************************************************/
-UINT8D EC1old = 0;//0~3分别为A↓B0,A↓B1,A↑B0,A↑B1
-UINT8D EC1val = 0;//计数值
-bit EC1freq = 0;//倍频设置
-#define GPIO_STD03_ISR() \
-	register UINT8 ECB = P2_4, ECA = P2_2;/*这里AB反过来*/\
-	if(EC1freq){	/*若启用倍频*/\
-		if(ECA && ECB || !ECA && !ECB) EC1val++;/*逆时针(只针对开发使用的编码器)*/\
-		else						   EC1val--;/*顺时针(只针对开发使用的编码器)*/\
-	}else{			/*若不倍频*/\
-		register UINT8 ECnew = (ECA << 1) | ECB;/*更新记录状态*/\
-		if(ECnew == 2 && EC1old == 1)	   EC1val--;/*顺时针(只针对开发使用的编码器)*/\
-		else if(ECnew == 3 && EC1old == 0) EC1val++;/*逆时针(只针对开发使用的编码器)*/\
-		EC1old = ECnew;/*更新记录状态*/\
-	}
-//End of define GPIO_STD03_ISR()
-//	register UINT8 ECB = P2_4, ECA = P2_2;/*这里AB反过来*/
-//	register UINT8 ECnew = (ECA << 1) | ECB;/*更新记录状态*/
-//	if(ECnew == 2 && EC1old == 1) EC1val--;/*顺时针(只针对开发使用的编码器)*/
-//	else if(ECnew == 3 && EC1old == 0) EC1val++;/*逆时针(只针对开发使用的编码器)*/
-//	EC1old = ECnew;/*更新记录状态*/
-void GPIO_STD0_ISR(void) interrupt INT_NO_INT0
-{
-	GPIO_STD03_ISR();
-}
-void GPIO_STD3_ISR(void) interrupt INT_NO_INT3
-{
-    GPIO_STD03_ISR();
-}
-
-/*******************************************************************************
 * Function Name  : GPIO_STD1_ISR
 * Description    : INT1(P33) 引脚外部中断服务函数
 * Input          : None
@@ -261,4 +190,59 @@ void GPIO_STD1_ISR(void) interrupt INT_NO_INT1
 {
 //    mDelaymS(10);
 //    printf("P33 Falling\n");
+}
+
+/*******************************************************************************
+* Function Name  : GPIO_STD0_ISR & GPIO_STD3_ISR
+* Description    : P22(INT0_)↓ P37(INT3)↑ 边沿中断ISR 连接编码器1
+* Input          : 函数无输入 检测引脚P22 P24
+* Output         : None
+* Return         : None
+*******************************************************************************/
+UINT8D EC1old = 0;//0~3分别为A↓B0,A↓B1,A↑B0,A↑B1
+UINT8D EC1val = 0;//计数值
+bit EC1freq = 0;//倍频设置
+#define GPIO_STD03_ISR() \
+	register UINT8 ECA = P2_4, ECB = P2_2;/*这里AB反过来*/\
+	if(EC1freq){	/*若启用倍频*/\
+		if(ECA && ECB || !ECA && !ECB) EC1val++;/*逆时针(只针对开发使用的编码器)*/\
+		else						   EC1val--;/*顺时针(只针对开发使用的编码器)*/\
+	}else{			/*若不倍频*/\
+		register UINT8 ECnew = (ECA << 1) | ECB;/*更新记录状态*/\
+		if(EC1old == 0 && ECnew == 3)	   EC1val++;/*逆时针(只针对开发使用的编码器)*/\
+		else if(EC1old == 1 && ECnew == 2) EC1val--;/*顺时针(只针对开发使用的编码器)*/\
+		EC1old = ECnew;/*更新记录状态*/\
+	}
+//End of #define GPIO_STD03_ISR()
+void GPIO_STD0_ISR(void) interrupt INT_NO_INT0
+{
+	GPIO_STD03_ISR();
+}
+void GPIO_STD3_ISR(void) interrupt INT_NO_INT3
+{
+    GPIO_STD03_ISR();
+}
+
+/*******************************************************************************
+* Function Name  : GPIO_EXT_ISR
+* Description    : P03↓ P57↑ 边沿中断ISR 连接编码器2
+* Input          : 函数无输入 检测引脚P01 P03
+* Output         : None
+* Return         : None
+*******************************************************************************/
+UINT8D EC2old = 0;//0~3分别为A↓B0,A↓B1,A↑B0,A↑B1
+UINT8D EC2val = 0;//计数值
+bit EC2freq = 0;//倍频设置
+void GPIO_EXT_ISR(void) interrupt INT_NO_GPIO
+{
+	register UINT8 ECA = P0_1, ECB = P0_3;//这里AB反过来
+	if(EC2freq){	//若启用倍频
+		if(ECA && ECB || !ECA && !ECB) EC2val--;//顺时针(只针对开发使用的编码器)
+		else						   EC2val++;//逆时针(只针对开发使用的编码器)
+	}else{			//若不倍频
+		register UINT8 ECnew = (ECA << 1) | ECB;//更新记录状态
+		if(EC2old == 0 && ECnew == 3)	   EC2val--;//顺时针(只针对开发使用的编码器)
+		else if(EC2old == 1 && ECnew == 2) EC2val++;//逆时针(只针对开发使用的编码器)
+		EC2old = ECnew;//更新记录状态
+	}
 }

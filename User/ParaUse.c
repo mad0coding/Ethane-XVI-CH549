@@ -6,7 +6,7 @@ extern uint8_t KeyBrd_data[];//键盘报文
 extern uint8_t Mouse_data[];//鼠标报文
 extern uint8_t Point_data[];//指针报文
 extern uint8_t Vol_data[];//音量报文
-uint8_t KeyBrd_data_old[KB_len];//上次键盘报文
+uint8_t KeyBrd_data_old[KB_LEN];//上次键盘报文
 uint8_t Mouse_data_old = 0;//上次鼠标报文
 uint8_t Vol_data_old = 0;//上次音量报文
 extern uint8_t KeyBrd_if_send;//键盘报文是否发送
@@ -44,8 +44,8 @@ uint8_t Fill_report(void)//报文填写
 	//***********************************各报文及发送标志初始化***********************************//
 	KeyBrd_if_send = Mouse_if_send = Point_if_send = Vol_if_send = 0;//发送标志置零
 	
-	memcpy(KeyBrd_data_old + 1, KeyBrd_data + 1, KB_len - 1);//记录上一次报文
-	memset(KeyBrd_data + 1, 0, KB_len - 1);//清除所有键
+	memcpy(KeyBrd_data_old + 1, KeyBrd_data + 1, KB_LEN - 1);//记录上一次报文
+	memset(KeyBrd_data + 1, 0, KB_LEN - 1);//清除所有键
 
 	Mouse_data_old = Mouse_data[1];//记录上一次报文
 	memset(Mouse_data + 1, 0, 4);//清除鼠标报文
@@ -231,7 +231,7 @@ uint8_t Fill_report(void)//报文填写
 	//**********************************************************************************//
 	
 	//***********************************判断各报文是否要发送***********************************//
-	for(i = 1; i < KB_len; i++){
+	for(i = 1; i < KB_LEN; i++){
 		if(KeyBrd_data_old[i] != KeyBrd_data[i]){//键盘报文与上一次不同则发送
 			KeyBrd_if_send = 1;	break;
 		}
@@ -269,10 +269,10 @@ void cs_change(uint8_t change)//切换
 	change &= 0x07;//取低3位
 	if(change == 0 || change > CFG_NUM) return;
 	sys_cs = change - 1;
-	DATA_CFG = DATA_CFG_BASE - sys_cs * 512;//修改键盘配置指针
+	DATA_CFG = DATA_CFG_BASE - sys_cs * 512;//修改键盘配置指针 逆序
 	
 	keyRGB(1);//键盘RGB控制清零
-	if(LIGHT_MONO != 3) DATA_LIGHT = DATA_LIGHT_BASE - sys_cs * 256;//若不是灯效不切换则修改灯效配置指针
+	if(LIGHT_MONO != 3) DATA_LIGHT = DATA_LIGHT_BASE + sys_cs * 256;//若不是灯效不切换则修改灯效配置指针 正序
 	
 	changeTime = Systime;
 	
@@ -302,7 +302,7 @@ void key_insert(uint8_t r_i, uint8_t key_v)//单键填入
 	else if(key_v == kv_win) KeyBrd_data[1] |= 0x08;//win
 	else{//普通键盘按键
 		if(r_i == 0xFF){//若使用自动填入
-			for(r_i = 3; r_i < KB_len; r_i++){//搜索空位
+			for(r_i = 3; r_i < KB_LEN; r_i++){//搜索空位
 				if(!KeyBrd_data[r_i]) break;//若此处为空
 			}
 		}
@@ -337,7 +337,7 @@ void mode3_handle(void)//mode3处理(按键组处理)
 	/*uint16_t */end_i = 0;//结束位置
 	if(mode3_key) end_i = keyAddr[sys_cs][mode3_key - 1] + 3 + CFG_K_LEN(keyAddr[sys_cs][mode3_key - 1]);
 	
-	for(;report_i < KB_len;){//当报文未填满
+	for(;report_i < KB_LEN;){//当报文未填满
 		if(mode3_i >= end_i){//当读完数据
 			mode3_key = 0;
 			break;

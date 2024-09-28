@@ -13,11 +13,13 @@
 //最后3k(0xF400~0xFFFF)为BootLoader和ConfigInfo 用户不可使用
 #define DATA_CFG_BASE		0xF200//配置数据起始
 #define DATA_GLOB_BASE		0xE800//全局数据起始
-#define DATA_LIGHT_BASE		0xE700//灯效数据起始
+#define DATA_LIGHT_BASE		0xE400//灯效数据起始
+#define DATA_COUNT_BASE		0xDC00//计数数据起始
 //配置数据占CodeFlash的后1k和DataFlash的1k,每套512B,空间4套,目前使用后3套,从后往前排
 //全局数据占CodeFlash的倒数第2k的开头部分,目前使用64B
-//灯效数据占CodeFlash的倒数第3k,每套256B,空间4套,目前使用后3套,从后往前排
-//目前全部存储数据使用4k空间,剩余代码空间为57k
+//灯效数据占CodeFlash的倒数第3k,每套256B,空间4套,目前使用前3套,从前往后排
+//计数数据占CodeFlash的倒数第4~5k,每套128B,空间16套,目前使用后0套,从前往后排
+//目前全部存储数据使用6k空间,剩余代码空间为55k
 
 #define CFG_NUM		3//配置个数
 
@@ -97,10 +99,10 @@ extern PUINT8C DATA_CFG;//闪存区配置信息指针
 
 
 void ParaSave(uint8_t pos, uint8_t num);//参数保存
-void ParaLoad();//参数读取
+void ParaLoad(void);//参数读取
 void ParaUpdate(uint8_t pos);//参数更新
-void GlobalParaLoad();//全局参数读取
-void GlobalParaUpdate();//全局参数更新
+void GlobalParaLoad(void);//全局参数读取
+void GlobalParaUpdate(void);//全局参数更新
 
 
 #endif

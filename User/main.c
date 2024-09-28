@@ -28,7 +28,7 @@ uint8_t Mouse_if_send = 0;//鼠标报文是否发送
 uint8_t Point_if_send = 0;//指针报文是否发送
 uint8_t Vol_if_send = 0;//媒体报文是否发送
 
-uint8_t KeyBrd_data[KB_len] = {1,0,0,0};//编号1,功能键,保留0,其他按键
+uint8_t KeyBrd_data[KB_LEN] = {1,0,0,0};//编号1,功能键,保留0,其他按键
 //功能键:bit7-bit0分别为为右win alt shift ctrl,左win alt shift ctrl
 
 uint8_t Mouse_data[5] = {2,0,0,0,0};//编号2,功能键,x,y,滚轮

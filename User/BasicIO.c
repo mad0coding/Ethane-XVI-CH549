@@ -20,23 +20,23 @@ uint16_t adcValue[2] = {2048,2048};
 uint16_t ANA_MID_SET[2] = {2048,2048};
 UINT8D keyFltNum = 2;//°´¼üÂË²¨²ÎÊı
 
-uint8_t keyRaw[KP_num];//°´¼üÔ­Ê¼²ÉÑù
-uint8_t keyFlt[KP_num];//°´¼üÂË²¨½á¹û
-uint8_t fltOld[KP_num];//°´¼üÂË²¨ÓÃµÄ¾ÉÖµ
-uint8_t fltCount[KP_num];//°´¼üÂË²¨¼ÆÊı
+uint8_t keyRaw[KP_NUM];//°´¼üÔ­Ê¼²ÉÑù
+uint8_t keyFlt[KP_NUM];//°´¼üÂË²¨½á¹û
+uint8_t fltOld[KP_NUM];//°´¼üÂË²¨ÓÃµÄ¾ÉÖµ
+uint8_t fltCount[KP_NUM];//°´¼üÂË²¨¼ÆÊı
 
-uint8_t keyNow[KP_num];//°´¼üÓ³Éä½á¹û
-uint8_t keyOld[KP_num];//°´¼üÓ³Éä½á¹û¾ÉÖµ
+uint8_t keyNow[KP_NUM];//°´¼üÓ³Éä½á¹û
+uint8_t keyOld[KP_NUM];//°´¼üÓ³Éä½á¹û¾ÉÖµ
 
-void arrayInit(){//Êı×é³õÊ¼»¯
+void arrayInit(void){//Êı×é³õÊ¼»¯
 	//srand(*(PUINT16X)(2048 - 2));//ÌîÈëÖÖ×Ó
 	memset(KeyBrd_data + 1, 0, 21);//³õÊ¼»¯¼üÅÌ±¨ÎÄÊı×é
 	memset(DebugBuf, 0, 64);
-	memset(keyFlt,0,KP_num);
-	memset(fltOld,0,KP_num);
-	memset(fltCount,0,KP_num);
-	memset(keyNow,0,KP_num);
-	memset(keyOld,0,KP_num);
+	memset(keyFlt,0,KP_NUM);
+	memset(fltOld,0,KP_NUM);
+	memset(fltCount,0,KP_NUM);
+	memset(keyNow,0,KP_NUM);
+	memset(keyOld,0,KP_NUM);
 }
 
 void adcRead(void){//Ò¡¸Ë¶ÁÈ¡
@@ -52,7 +52,7 @@ void adcRead(void){//Ò¡¸Ë¶ÁÈ¡
 	}
 }
 
-void keyRead(){//°´¼ü¶ÁÈ¡
+void keyRead(void){//°´¼ü¶ÁÈ¡
 	keyRaw[0] = !KP_1;		keyRaw[1] = !KP_2;		keyRaw[2] = !KP_3;		keyRaw[3] = !KP_4;
 	keyRaw[4] = !KP_5;		keyRaw[5] = !KP_6;		keyRaw[6] = !KP_7;		keyRaw[7] = !KP_8;
 	keyRaw[8] = !KP_9;		keyRaw[9] = !KP_10;		keyRaw[10] = !KP_11;	keyRaw[11] = !KP_12;
@@ -63,7 +63,7 @@ void keyRead(){//°´¼ü¶ÁÈ¡
 
 void keyFilter(uint8_t ts){//°´¼üÂË²¨
 	uint8_t i;
-	for(i = 0; i < KP_num; i++){
+	for(i = 0; i < KP_NUM; i++){
 		if(ts == 2){//ÈôÎªÂË²¨¶ş½×¶Î
 			if(fltCount[i]) fltCount[i]--;//ÈôÂË²¨¼ÆÊıÎ´¹éÁãÔòµİ¼õ
 			if(fltOld[i] == keyRaw[i] && keyFlt[i] != keyRaw[i]
@@ -78,30 +78,24 @@ void keyFilter(uint8_t ts){//°´¼üÂË²¨
 
 void keyTurn(void){//°´¼üĞı×ªÓ³Éä
 	uint8_t i;
-	memcpy(keyOld, keyNow, KP_num);//´æ´¢¾ÉÖµ
+	memcpy(keyOld, keyNow, KP_NUM);//´æ´¢¾ÉÖµ
 	
 	if(CFG_KB_DIR == 0){//Õı³£·½Ïò
 		memcpy(keyNow, keyFlt, 16);
 	}
 	else if(CFG_KB_DIR == 1){//ÓÒĞı90¶È
-		for(i = 0; i < 16; i++){
-			keyNow[i] = keyFlt[turnR90[i]];
-		}
+		for(i = 0; i < 16; i++) keyNow[i] = keyFlt[turnR90[i]];
 	}
 	else if(CFG_KB_DIR == 2){//Ğı×ª180¶È
-		for(i = 0; i < 16; i++){
-			keyNow[i] = keyFlt[16 - i];
-		}
+		for(i = 0; i < 16; i++) keyNow[i] = keyFlt[16 - i];
 	}
 	else if(CFG_KB_DIR == 3){//×óĞı90¶È
-		for(i = 0; i < 16; i++){
-			keyNow[i] = keyFlt[turnL90[i]];
-		}
+		for(i = 0; i < 16; i++) keyNow[i] = keyFlt[turnL90[i]];
 	}
-	memcpy(keyNow + 16, keyFlt + 16, 3);
+	memcpy(keyNow + 16, keyFlt + 16, 3);//Ò¡¸ËĞıÅ¥°´¼üÖ±½Ó¿½±´
 }
 
-void GetTime(){//Ê±¼ä»ñÈ¡
+void GetTime(void){//Ê±¼ä»ñÈ¡
 	static UINT16D THTL0_old = 0;//¼ÆÊ±Æ÷¾ÉÖµ
 	UINT16D THTL0;//¼ÆÊ±Æ÷16Î»¼ÆÊıÖµ
 	UINT8D incMs;//Ôö¼ÓµÄºÁÃëÊı
@@ -133,7 +127,7 @@ UINT8C toneTABLE[] = {29,31,33,35,255,24,26,28, 17,19,21,23,255,12,14,16,};//¼üÎ
 
 UINT16D buzzTimVol = 10, toneTimValue = 10000;//Éùµ÷¶¨Ê±Æ÷¼ÆÊıÖµ,ÑÓÊ±Öµ
 
-void buzzHandle(){//·äÃùÆ÷´¦Àí
+void buzzHandle(void){//·äÃùÆ÷´¦Àí
 	uint8_t i;//Ñ­»·±äÁ¿
 	uint8_t count = 0, effective = 0xFF;//°´ÏÂ°´¼ü¼ÆÊı,ÓĞĞ§°´¼ü
 	uint8_t buzzTone = 0xFF, buzzToneOld = 0xFF;//Òô·û
@@ -209,7 +203,7 @@ void buzzHandle(){//·äÃùÆ÷´¦Àí
 //uint8_t keyOldTest[] = {1,1,1};
 uint32_t oldTime = 0;
 
-void LL_test(){
+void LL_test(void){
 	static uint16_t i;
 	i++;
 	if(Systime - oldTime >= 1000){//¶Ëµã2´òÓ¡Êä³ö
@@ -223,7 +217,7 @@ void LL_test(){
 //	mDelaymS(10);
 }
 
-void multiFunc(){//¹¦ÄÜ¼¯ºÏº¯Êı
+void multiFunc(void){//¹¦ÄÜ¼¯ºÏº¯Êı
 //	LL_test();//²âÊÔ´úÂë
 	keyTurn();//°´¼üĞı×ªÓ³Éä
 	
