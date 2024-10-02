@@ -14,14 +14,62 @@ uint8_t sys_cs = 0;//总配置选择
 PUINT8C DATA_CFG = DATA_CFG_BASE;//闪存区配置信息指针
 PUINT8C GLOB_CFG = DATA_GLOB_BASE;//闪存区全局信息指针
 
+void asyncHandle(uint8_t flag){//异步处理
+	uint8_t ret;
+	if(flag >= 10 && flag < 10 + CFG_NUM){		//键盘配置存储
+		ret = paraWrite((DATA_CFG_BASE - (flag - 10) * 512), FlashBuf, 8);
+		paraUpdate(flag - 10);//键盘配置参数更新
+	}
+	else if(flag >= 20 && flag < 20 + CFG_NUM){	//灯效配置存储
+		ret = paraWrite((DATA_LIGHT_BASE - (flag - 20) * 256), FlashBuf, 4);
+		keyRGB(1);//键盘RGB控制清零
+	}
+	else if(flag == 30){						//全局参数存储
+		globalParaUpdate();//全局参数更新
+		ret = paraWrite(DATA_GLOB_BASE, FlashBuf, 1);
+	}
+	else if(flag == 100){						//软复位
+		clearKeyRGB();//清除键盘RGB
+		wsWrite16();//灯写入
+		mDelaymS(100);//延时以让USB发送完成
+		IE = 0;//全局中断关闭
+		CH549SoftReset();//软复位
+	}
+	else if(flag == 101){						//Boot预跳转
+		clearKeyRGB();//清除键盘RGB
+		wsWrite16();//灯写入
+		mDelaymS(100);//延时以让USB发送完成
+		IE = 0;//全局中断关闭
+		USB_INT_FG = 0xFF;	//清中断标志
+		USB_CTRL = 0x06;	//复位USB控制寄存器并利用其复位其他寄存器
+		Flash_Op_Check_Byte1 = DEF_FLASH_OP_CHECK1;//保护检查标志置位
+		Flash_Op_Check_Byte2 = DEF_FLASH_OP_CHECK2;
+		FlashErasePage(0);//擦除FLASH开头 以在下次上电时能进Boot
+		while(1) WDOG_COUNT = 0;//死循环 清零看门狗计数
+	}
+	else if(flag == 102){
+		
+	}
+}
 
-void ParaSave(uint8_t pos, uint8_t num){//参数保存
-	uint8_t i;
+void paraSave1(uint8_t pos, uint8_t num){//参数保存
 	uint16_t addr;
+	
 	if(pos >= 1 && pos <= CFG_NUM) addr = DATA_CFG_BASE - (pos - 1) * 512;//键盘配置存储位置计算
 	else if(pos >= 51 && pos <= 50 + CFG_NUM) addr = DATA_LIGHT_BASE - (pos - 51) * 256;//灯效配置存储位置计算
 	else if(pos == 100) addr = DATA_GLOB_BASE;//全局参数地址
+	else if(pos == 200) addr = 0;//0地址
 	else return;
+	
+	
+	if(paraWrite(addr, FlashBuf, num) == 0){//参数写入
+		flashCountInc(0, 0);//正确计数增加
+	}
+	else flashCountInc(0, 1);//错误计数增加
+}
+
+uint8_t paraWrite(uint16_t addr, uint8_t *buf, uint8_t num){//参数写入
+	uint16_t i;
 	
 	Flash_Op_Check_Byte1 = DEF_FLASH_OP_CHECK1;//保护检查标志置位
 	Flash_Op_Check_Byte2 = DEF_FLASH_OP_CHECK2;
@@ -31,48 +79,51 @@ void ParaSave(uint8_t pos, uint8_t num){//参数保存
 			mDelaymS(1);
 			FlashErasePage(addr + i * 64);//再次擦除
 		}
-		if(FlashProgPage(addr + i * 64, FlashBuf + i * 64, 64)){//若编程失败
+		if(FlashProgPage(addr + i * 64, buf + i * 64, 64)){//若编程失败
 			mDelaymS(1);
-			FlashProgPage(addr + i * 64, FlashBuf + i * 64, 64);//再次编程
+			FlashProgPage(addr + i * 64, buf + i * 64, 64);//再次编程
 		}
 	}
 	
 	Flash_Op_Check_Byte1 = 0;//保护检查标志复位
 	Flash_Op_Check_Byte2 = 0;
+	
+	if(num == 4) buf[255]++;//错误注入 测试代码
+	
+	for(i = 0; i < num * 64; i++){//数据正确性检验
+		if(*(PUINT8C)(addr + i) != buf[i]) return 1;//数据错误
+	}
+	return 0;
 }
 
-void ParaLoad(void){//参数读取
-	GlobalParaLoad();//全局参数读取
-	ParaUpdate(3);
-	ParaUpdate(2);
-	ParaUpdate(1);
-	memset(keyWork,0,sizeof(keyWork));
-	memset(keyFlag,0,sizeof(keyFlag));
+void paraLoad(void){//参数读取
+	globalParaLoad();//全局参数读取
+	paraUpdate(2);
+	paraUpdate(1);
+	paraUpdate(0);
+	memset(keyWork, 0, sizeof(keyWork));
+	memset(keyFlag, 0, sizeof(keyFlag));
 }
 
-void ParaUpdate(uint8_t pos){//参数更新
+void paraUpdate(uint8_t pos){//参数更新
 	uint16_t addr;
 	uint8_t i;
 	
-	if(pos >= 1 && pos <= CFG_NUM) addr = DATA_CFG_BASE - (pos - 1) * 512;//计算本套配置的起始地址
-	else if(pos >= 51 && pos <= 50 + CFG_NUM){
-		keyRGB(1);//键盘RGB控制清零
-		return;
-	}
+	if(pos < CFG_NUM) addr = DATA_CFG_BASE - pos * 512;//计算本套配置的起始地址
 	else return;
 	
-	key_turn[pos - 1] = CFG_ACS(addr + (&CFG_KB_DIR - CFG_THIS));//读取键盘方向
+	key_turn[pos] = CFG_ACS(addr + (&CFG_KB_DIR - CFG_THIS));//读取键盘方向
 	
 	if(CFG_ACS(addr + (&CFG_ALL_PRI - CFG_THIS)) == 1){//若本配置为优先配置
-		sys_cs = pos - 1;//总选择为本配置
+		sys_cs = pos;//总选择为本配置
 		DATA_CFG = (PUINT8C)addr;//指针指向本配置
 		DATA_LIGHT = DATA_LIGHT_BASE - sys_cs * 256;//修改灯效配置指针
 	}
 	
 	for(i = 0; i < 16; i++){
-		keyAddr[pos - 1][i] = addr;//存储地址
+		keyAddr[pos][i] = addr;//存储地址
 		if(CFG_K_ID(addr) != i + 1){//若ID不对
-			keyAddr[pos - 1][0] = 0;//置零以标记为无效
+			keyAddr[pos][0] = 0;//置零以标记为无效
 			break;
 		}
 		if(CFG_K_MODE(addr) == 0 || CFG_K_MODE(addr) == 8){
@@ -91,13 +142,13 @@ void ParaUpdate(uint8_t pos){//参数更新
 			addr += 3 + CFG_K_LEN(addr);
 		}
 		else{//模式不对
-			keyAddr[pos - 1][0] = 0;//置零以标记为无效
+			keyAddr[pos][0] = 0;//置零以标记为无效
 			break;
 		}
 	}
 }
 
-void GlobalParaLoad(void){//全局参数读取
+void globalParaLoad(void){//全局参数读取
 	ANA_MID_SET[0] = GLOB_ANA_MID1;//摇杆中位
 	ANA_MID_SET[1] = GLOB_ANA_MID2;
 	keyFltNum = GLOB_KEY_FLT;//按键滤波参数
@@ -105,14 +156,34 @@ void GlobalParaLoad(void){//全局参数读取
 	EC2freq = GLOBb_EC_FREQ2;
 }
 
-void GlobalParaUpdate(void){//全局参数更新
+void globalParaUpdate(void){//全局参数更新
 	((uint16_t*)(FlashBuf))[0] = ANA_MID_SET[0];//摇杆中位
 	((uint16_t*)(FlashBuf))[1] = ANA_MID_SET[1];
 	FlashBuf[4] = keyFltNum;//按键滤波参数
 	FlashBuf[5] = (((uint8_t)EC2freq) << 1) | ((uint8_t)EC1freq);//旋钮倍频参数
-	ParaSave(100, 1);//参数保存
+//	paraSave(100, 1);//参数保存
 }
 
+void flashCountInc(uint8_t pos, uint8_t fail){//闪存擦除计数增加
+	uint16_t addr = DATA_COUNT_BASE + 128 * pos;
+	if(fail){//错误计数增加
+		
+		return;
+	}
+	if(*(PUINT16C)(addr + 128 - 2) != 0x5A10){//标志码不合法
+		
+	}
+}
+
+uint32_t flashCountGet(uint8_t pos, uint8_t fail){//闪存擦除计数获取
+	uint32_t flashCount;
+	uint16_t addr = DATA_COUNT_BASE + 128 * pos;
+	if(fail) return *(PUINT16C)(addr + 128 - 4);//返回错误计数
+	flashCount = *(PUINT32C)(addr + 128 - 8) * 120UL;//正确计数的进位部分
+	//for(addr)
+	
+	return flashCount;
+}
 
 
 

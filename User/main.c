@@ -17,9 +17,7 @@
 #pragma  NOAREGS
 
 
-uint8_t ifReceiving = 0;//接收数据标志位
-uint8_t savePlace = 0;//存储位置
-uint8_t saveGlobal = 0;//存储中位标志
+uint8_t asyncFlag = 0;//异步操作标志
 
 uint8_t SendTime = 0;//发送时间
 uint8_t All_if_send = 0;//总发送标志
@@ -47,16 +45,17 @@ void main()
     CfgFsys( );						//CH549时钟选择配置
     mDelaymS(5);					//修改主频等待内部晶振稳定,必加
 //    mInitSTDIO( );					//串口0初始化
+	if(!(PCON & bRST_FLAG0)) mDelaymS(50);	//若为软复位或看门狗复位 则额外追加延时
 	
     USBDeviceInit();				//USB设备模式初始化
     EA = 1;							//总中断允许
 
 	WS_DOUT = 0;					//WS2812数据线置低
-	GPIO_Init(PORT2,PIN7,MODE1);	//WS2812数据线初始化为推挽
+	GPIO_Init(PORT2, PIN7, MODE1);	//WS2812数据线初始化为推挽
 	
-	GPIO_Init(PORT2,PIN0,MODE1);	//初始化为推挽
-	GPIO_Init(PORT2,PIN1,MODE1);	//初始化为推挽
-	GPIO_Init(PORT2,PIN3,MODE1);	//初始化为推挽
+	GPIO_Init(PORT2, PIN0, MODE1);	//初始化为推挽
+	GPIO_Init(PORT2, PIN1, MODE1);	//初始化为推挽
+	GPIO_Init(PORT2, PIN3, MODE1);	//初始化为推挽
 	
 	SetPWMClkDiv(32);			//PWM时钟分频配置,FREQ_SYS/32 = 768kHz
     SetPWMCycle256Clk();		//PWM周期,FREQ_SYS/32/256 = 3kHz
@@ -72,45 +71,45 @@ void main()
 	ADC_ChSelect(2);				//初始化通道2并选择
 	ADC_StartSample();				//启动采样
 	
-	GPIO_INT_Init( (INT_P03_L|INT_P57_H|INT_INT0_L), INT_EDGE, Enable); //使能3个中断
+	GPIO_INT_Init((INT_P03_L|INT_P57_H|INT_INT0_L), INT_EDGE, Enable); //使能3个中断
 	PIN_FUNC |= bINT0_PIN_X;		//INT0使用P22
-	GPIO_Init(PORT3,PIN7,MODE0);	//初始化为高阻
+	GPIO_Init(PORT3, PIN7, MODE0);	//初始化为高阻
 	
 	INTX |= bIX3 | bIT3;	//INT3选择高电平和边沿触发(即上升沿触发)
 	IE_INT3 = 1;			//允许INT3中断
 	
 	mTimer0Clk12DivFsys();			//T0定时器时钟设置 FREQ_SYS/12
-    mTimer_x_ModInit(0,1);			//T0定时器模式设置 模式1 16位定时器
-    mTimer_x_SetData(0,0);			//T0定时器赋值 一直16位循环 不使用中断
+    mTimer_x_ModInit(0, 1);			//T0定时器模式设置 模式1 16位定时器
+    mTimer_x_SetData(0, 0);			//T0定时器赋值 一直16位循环 不使用中断
     mTimer0RunCTL(1);				//T0定时器启动
 //    ET0 = 1;						//T0定时器中断开启
+
+	CH549WDTModeSelect(1);		//启动看门狗
 	
 	arrayInit();	//数组初始化
-	ParaLoad();		//参数读取
+	paraLoad();		//参数读取
 	
     while(1){
-		GetTime();//时间获取
+		WDOG_COUNT = 0;//清零看门狗计数
+		
+		/********************基本IO********************/
+		getTime();//时间获取
 		
 		keyRead();//读取按键
 		keyFilter(1);//滤波一阶段
 		adcRead();//摇杆ADC读取一个通道
 		
-        WS_Write_16();//灯写入
+        wsWrite16();//灯写入
 		
 		adcRead();//摇杆ADC读取另一个通道
 		keyRead();//再次读取按键
 		keyFilter(2);//滤波二阶段
+		/**********************************************/
 		
-		if(ifReceiving) continue;//若USB正在接收数据则跳过HID发送
-		if(savePlace){//需要更新参数
-			ParaSave(savePlace, savePlace < 50 ? 8 : 4);//保存参数
-			ParaUpdate(savePlace);//参数更新
-			savePlace = 0;
-			continue;
-		}
-		if(saveGlobal){//需要更新全局参数
-			GlobalParaUpdate();//全局参数更新
-			saveGlobal = 0;
+		if(asyncFlag & 0x80) continue;//若USB正在接收数据则跳过HID发送
+		else if(asyncFlag){//有需要的异步操作
+			asyncHandle(asyncFlag);//异步处理
+			asyncFlag = 0;//清除标志
 			continue;
 		}
 		

@@ -329,27 +329,41 @@ void DeviceInterrupt( void ) interrupt INT_NO_USB using 1				//USB中断服务�
 #define Offset	MAX_PACKET_SIZE
 #define count	Buf[Offset+63]//此字节在通信中不会修改,故借用
 #define packs	Buf[Offset+62]//此字节在通信中不会修改,故借用
-#define place	Buf[Offset+61]//此字节在通信中不会修改,故借用
-if(!ifReceiving){//若未在接收状态
+//#define place	Buf[Offset+61]//此字节在通信中不会修改,故借用
+if(asyncFlag & 0x80){//若已经在接收状态 则接收数据包
+	memcpy(FlashBuf + ((UINT16X)count << 6), Buf, 64);//数据包拷贝
+	Buf[Offset+0] = 'R'; Buf[Offset+1] = 'D';//填入响应字节
+	Buf[Offset+2] = count++;//填入序号
+	UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
+	if(count >= packs){//全部数据包接收完毕
+		count = 0;//防止越界
+		asyncFlag &= ~0x80;//正在接收标志位清除
+	}
+}
+else{//若未在接收状态 则监听各种命令
 	if((Buf[0] == 'D' && Buf[1] == 'K' && Buf[2] == 'B' || Buf[0] == 'D' && Buf[1] == 'L' && Buf[2] == 'T') 
-		&& Buf[3] >= '1' && Buf[3] <= '0' + CFG_NUM){//连接指令
-		if(Buf[1] == 'K') packs = 8;	//键盘配置
-		else packs = 4;					//灯效配置
-		place = Buf[3] - '0';//确定写入位置
+		&& Buf[3] >= '1' && Buf[3] <= '0' + CFG_NUM){//连接命令
+		if(Buf[1] == 'K'){	//键盘配置
+			packs = 8;
+			asyncFlag = Buf[3] - '1' + 10;//确定键盘存储位置
+		}else{				//灯效配置
+			packs = 4;
+			asyncFlag = Buf[3] - '1' + 20;//确定灯效存储位置
+		}
 		Buf[Offset+0] = 'R'; Buf[Offset+1] = Buf[1]; Buf[Offset+2] = Buf[2];//填入响应字节
 		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
 		count = 0;//计数置零
-		ifReceiving = 1;//接收数据标志位置位
+		asyncFlag |= 0x80;//正在接收标志位置位
 	}
-	else if(Buf[0] == 'C' && Buf[1] == 'K' && Buf[2] == 'F'){//修改按键滤波参数指令
+	else if(Buf[0] == 'C' && Buf[1] == 'K' && Buf[2] == 'F'){//修改按键滤波参数命令
 		Buf[Offset+0] = Buf[1]; Buf[Offset+1] = Buf[2];//填入响应字节
 		Buf[Offset+2] = keyFltNum;//把旧参数上报
 		keyFltNum = Buf[3];//修改参数
 		Buf[Offset+3] = keyFltNum;//把新参数环回
 		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
-		saveGlobal = 1;//存储全局参数标志位置位
+		asyncFlag = 30;//异步标志置位
 	}
-	else if(Buf[0] == 'C' && Buf[1] == 'R' && Buf[2] == 'K'){//摇杆校正指令
+	else if(Buf[0] == 'C' && Buf[1] == 'R' && Buf[2] == 'K'){//摇杆校正命令
 		Buf[Offset+0] = Buf[1]; Buf[Offset+1] = Buf[2];//填入响应字节
 		Buf[Offset+2] = ANA_MID_SET[0] >> 8;//填入旧中位值
 		Buf[Offset+3] = ANA_MID_SET[0] & 0xFF;
@@ -362,9 +376,9 @@ if(!ifReceiving){//若未在接收状态
 		Buf[Offset+8] = ANA_MID_SET[1] >> 8;
 		Buf[Offset+9] = ANA_MID_SET[1] & 0xFF;
 		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
-		saveGlobal = 1;//存储全局参数标志位置位
+		asyncFlag = 30;//异步标志置位
 	}
-	else if(Buf[0] == 'C' && Buf[1] == 'E' && Buf[2] == 'C'){//修改旋钮倍频指令
+	else if(Buf[0] == 'C' && Buf[1] == 'E' && Buf[2] == 'C'){//修改旋钮倍频命令
 		Buf[Offset+0] = Buf[1]; Buf[Offset+1] = Buf[2];//填入响应字节
 		Buf[Offset+2] = EC1freq;//填入旧倍频参数
 		Buf[Offset+3] = EC2freq;
@@ -373,31 +387,31 @@ if(!ifReceiving){//若未在接收状态
 		Buf[Offset+4] = EC1freq;//把新参数的采纳值环回
 		Buf[Offset+5] = EC2freq;
 		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
-		saveGlobal = 1;//存储全局参数标志位置位
+		asyncFlag = 30;//异步标志置位
 	}
-	else if(Buf[0] == 'C' && Buf[1] == 'E' && Buf[2] == 'F'){//修改旋钮滤波参数指令
+	else if(Buf[0] == 'C' && Buf[1] == 'E' && Buf[2] == 'F'){//修改旋钮滤波参数命令
 		Buf[Offset+0] = Buf[1]; Buf[Offset+1] = Buf[2];//填入响应字节
 //		TimFilterValue = Buf[3];//更新旋钮滤波参数
 		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
-		//saveGlobal = 1;//存储全局参数标志位置位
+		//asyncFlag = 20;//异步标志置位
 	}
-	else if(Buf[0] == 'F' && Buf[1] == 'E' && Buf[2] == 'C'){//闪存擦除计数读取指令
+	else if(Buf[0] == 'B' && Buf[1] == 'R' && Buf[2] == 'S' && Buf[3] == 'T'){//软复位命令
+		Buf[Offset+0] = 'R'; Buf[Offset+1] = Buf[1]; Buf[Offset+2] = Buf[2]; Buf[Offset+3] = Buf[3];//填入响应字节
+		memset(&Buf[Offset+4], ' ', 64 - 4);//后面全置为空格
+		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
+		asyncFlag = 100;//异步标志置位
+	}
+	else if(Buf[0] == 'B' && Buf[1] == 'B' && Buf[2] == 'O' && Buf[3] == 'T'){//Boot预跳转命令
+		Buf[Offset+0] = 'R'; Buf[Offset+1] = Buf[1]; Buf[Offset+2] = Buf[2]; Buf[Offset+3] = Buf[3];//填入响应字节
+		memset(&Buf[Offset+4], ' ', 64 - 4);//后面全置为空格
+		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
+		asyncFlag = 101;//异步标志置位
+	}
+	else if(Buf[0] == 'B' && Buf[1] == 'F' && Buf[2] == 'E' && Buf[3] == 'C'){//闪存擦除计数读取命令
 		Buf[Offset+0] = 'R'; Buf[Offset+1] = Buf[1]; Buf[Offset+2] = Buf[2]; Buf[Offset+3] = Buf[3];//填入响应字节
 		
 		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
-		//saveGlobal = 1;//存储全局参数标志位置位
-	}
-}
-else{//数据包
-	memcpy(FlashBuf + ((UINT16X)count << 6), Buf, 64);//数据包拷贝
-	Buf[Offset+0] = 'R'; Buf[Offset+1] = 'D';//填入响应字节
-	Buf[Offset+2] = count++;//填入序号
-	UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
-	if(count >= packs){
-		count = 0;//防止越界
-		if(packs == 8) savePlace = place;	//确定键盘存储位置
-		else savePlace = place + 50;		//确定灯效存储位置
-		ifReceiving = 0;//接收数据标志位复位
+		asyncFlag = 102;//异步标志置位
 	}
 }
 /**************************************************以上CustomHID通信部分独立缩进**************************************************/

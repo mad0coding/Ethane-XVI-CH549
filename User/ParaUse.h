@@ -62,14 +62,14 @@
 #define SIGN(X)		(((X)<0) ? (-1) : (((X)>0) ? 1 : 0))
 
 
-uint8_t Fill_report(void);//报文填写
+uint8_t fillReport(void);//报文填写
 
-void cs_change(uint8_t change);//切换
-void key_insert(uint8_t r_i, uint8_t key_v);//单键填入
-void mode3_handle(void);//mode3处理
-void RK_EC_key_handle(void);//摇杆旋钮按键处理
-void RK_handle(uint8_t clear);//摇杆处理
-void EC_handle(uint8_t clear);//旋钮处理
+void csChange(uint8_t change);//切换
+void keyInsert(uint8_t r_i, uint8_t key_v);//单键填入
+void mode3Handle(void);//mode3处理
+void rkEcKeyHandle(void);//摇杆旋钮按键处理
+void rkHandle(uint8_t clear);//摇杆处理
+void ecHandle(uint8_t clear);//旋钮处理
 
 
 //void Default_para(void);//载入默认参数

@@ -74,7 +74,7 @@ void adcRead(void);//摇杆读取
 void keyRead(void);//按键读取
 void keyFilter(uint8_t ts);//按键滤波
 
-void GetTime(void);//时间获取
+void getTime(void);//时间获取
 
 void LL_test(void);
 

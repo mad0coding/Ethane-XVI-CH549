@@ -35,9 +35,8 @@
 
 #pragma  NOAREGS
 
-extern uint8_t ifReceiving;//接收数据标志位
-extern uint8_t savePlace;//存储位置
-extern uint8_t saveGlobal;//存储中位标志
+
+extern uint8_t asyncFlag;//异步操作标志
 
 extern UINT8 pdata WakeUpEnFlag;		//远程唤醒使能标志
 

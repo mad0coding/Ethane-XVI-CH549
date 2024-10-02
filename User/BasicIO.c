@@ -95,7 +95,7 @@ void keyTurn(void){//按键旋转映射
 	memcpy(keyNow + 16, keyFlt + 16, 3);//摇杆旋钮按键直接拷贝
 }
 
-void GetTime(void){//时间获取
+void getTime(void){//时间获取
 	static UINT16D THTL0_old = 0;//计时器旧值
 	UINT16D THTL0;//计时器16位计数值
 	UINT8D incMs;//增加的毫秒数
@@ -202,6 +202,7 @@ void buzzHandle(void){//蜂鸣器处理
 
 //uint8_t keyOldTest[] = {1,1,1};
 uint32_t oldTime = 0;
+uint16_t sCount = 0, fCount = 0;
 
 void LL_test(void){
 	static uint16_t i;
@@ -209,7 +210,7 @@ void LL_test(void){
 	if(Systime - oldTime >= 1000){//端点2打印输出
 		oldTime += 1000;
 		memset(DebugBuf, ' ', 64);
-		sprintf(DebugBuf, "%d	%d	%u\n", adcValue[0], adcValue[1], (uint16_t)Systime);
+		sprintf(DebugBuf, "%d	%d	%u\n", sCount, fCount, (uint16_t)Systime);
 		
 		Enp2IntIn(DebugBuf, 64);
 	}
@@ -221,9 +222,9 @@ void multiFunc(void){//功能集合函数
 //	LL_test();//测试代码
 	keyTurn();//按键旋转映射
 	
-	if(Fill_report() == 1){//报文填写 若返回蜂鸣器模式
+	if(fillReport() == 1){//报文填写 若返回蜂鸣器模式
 		clearKeyRGB();//清除键盘RGB
-		WS_Write_16();//灯写入
+		wsWrite16();//灯写入
 		buzzHandle();//蜂鸣器处理
 	}
 	

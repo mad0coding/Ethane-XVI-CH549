@@ -30,7 +30,7 @@ uint8_t switch_i = 0xFF, switch_count = 0;//切换键选择和计数
 uint8_t switch_key = 0, switch_func = 0;//切换键缓存
 
 
-uint8_t Fill_report(void)//报文填写
+uint8_t fillReport(void)//报文填写
 {
 	static uint32_t oldTime = 0;//记录时间
 	uint8_t mode1_num = 0, mode2_num = 0, mode7_num = 0;
@@ -63,7 +63,7 @@ uint8_t Fill_report(void)//报文填写
 	if(mode3_key){//若处于mode3未完成状态
 		if(keyOld[mode3_key - 1] && !keyNow[mode3_key - 1] && mode3_loop_flag < 2) mode3_loop_flag++;//释放沿计数
 		mode3_pulse = !mode3_pulse;//间隔标志先翻转
-		if(mode3_pulse) mode3_handle();//若翻转后要间隔也即翻转前不用间隔则执行处理
+		if(mode3_pulse) mode3Handle();//若翻转后要间隔也即翻转前不用间隔则执行处理
 	}
 	else{//空闲状态
 		for(i = 0; i < 16; i++){//统计按下的各模式数量
@@ -79,8 +79,8 @@ uint8_t Fill_report(void)//报文填写
 					switch_count++;//计数滤波
 					if(switch_count > 10){
 						switch_count = 0;//计数清零
-						key_insert(i + 3,switch_key);//填入键值
-						cs_change(switch_func);//切换回来
+						keyInsert(i + 3,switch_key);//填入键值
+						csChange(switch_func);//切换回来
 						switch_i = 0xFF;//复位
 					}
 				}
@@ -88,10 +88,10 @@ uint8_t Fill_report(void)//报文填写
 			}
 			if(keyNow[i]){//若按下
 				if(CFG_K_MODE(keyAddr[sys_cs][i]) == 1){//模式1:单键
-					key_insert(i + 3,CFG_K_KEY(keyAddr[sys_cs][i]));//填入键值
+					keyInsert(i + 3,CFG_K_KEY(keyAddr[sys_cs][i]));//填入键值
 				}
 				else if(CFG_K_MODE(keyAddr[sys_cs][i]) == 2){//模式2:快捷键
-					key_insert(i + 3,CFG_K_KEY(keyAddr[sys_cs][i]));//填入键值
+					keyInsert(i + 3,CFG_K_KEY(keyAddr[sys_cs][i]));//填入键值
 					KeyBrd_data[1] |= CFG_K_FUNC(keyAddr[sys_cs][i]);//填入功能键
 				}
 				else if(CFG_K_MODE(keyAddr[sys_cs][i]) == 3){//模式3:按键组
@@ -101,7 +101,7 @@ uint8_t Fill_report(void)//报文填写
 						mode3_loop_count = 0;//模式3循环计数清零
 						mode3_loop_flag = 0;//模式3循环操作标志清零
 						mode3_pulse = 1;//插入间隔
-						mode3_handle();
+						mode3Handle();
 					}
 				}
 				else if(CFG_K_MODE(keyAddr[sys_cs][i]) == 4 || CFG_K_MODE(keyAddr[sys_cs][i]) == 5){//模式4:光标移位,模式5:光标点击
@@ -124,7 +124,7 @@ uint8_t Fill_report(void)//报文填写
 						switch_key = /*fill_key[i].key*/CFG_K_KEY(keyAddr[sys_cs][i]);//缓存键值
 						switch_func = sys_cs + 1;//缓存旧键盘选择
 						/*uint8_t */turn_old = key_turn[sys_cs];//旧键盘方向
-						cs_change(CFG_K_FUNC(keyAddr[sys_cs][i]));//切换
+						csChange(CFG_K_FUNC(keyAddr[sys_cs][i]));//切换
 						/*uint8_t */turn_dif = (key_turn[sys_cs] + 4 - turn_old) % 4;//相对旧键盘方向
 						if(turn_dif == 0) switch_i = i;
 						else if(turn_dif == 1) switch_i = turnL90[i]/* - 1*/;
@@ -151,7 +151,7 @@ uint8_t Fill_report(void)//报文填写
 				else if(CFG_K_MODE(keyAddr[sys_cs][i]) == 6){//模式6:切换键
 					if(!(CFG_K_FUNC(keyAddr[sys_cs][i]) & 0x08)){//若为非临时切换
 						switch_i = 0xFF;//直接复位临时切换键标志
-						cs_change(CFG_K_FUNC(keyAddr[sys_cs][i]));//切换
+						csChange(CFG_K_FUNC(keyAddr[sys_cs][i]));//切换
 					}
 				}
 				else if(CFG_K_MODE(keyAddr[sys_cs][i]) == 7){//模式7:按键连点
@@ -203,14 +203,14 @@ uint8_t Fill_report(void)//报文填写
 				}
 				else if(keyFlag[i] & 0x02){//若连点启用
 					if(CFG_K_T(keyAddr[sys_cs][i]) == 0){//若周期为0则长按
-						key_insert(i + 3,CFG_K_KEY(keyAddr[sys_cs][i]));//填入键值
+						keyInsert(i + 3,CFG_K_KEY(keyAddr[sys_cs][i]));//填入键值
 					}
 					else if(keyFlag[i] & 0x04){//若上次已点击
 						keyFlag[i] &= ~0x04;//复位点击标志
 					}
 					else{//若上次未点击
 						if((uint16_t)((uint16_t)Systime - keyWork[i]) >= CFG_K_T(keyAddr[sys_cs][i])){//若定时已到
-							key_insert(i + 3,CFG_K_KEY(keyAddr[sys_cs][i]));//填入键值
+							keyInsert(i + 3,CFG_K_KEY(keyAddr[sys_cs][i]));//填入键值
 							keyWork[i] = Systime;//记录发送时间低16位
 							keyFlag[i] |= 0x04;//置位点击标志
 						}
@@ -225,9 +225,9 @@ uint8_t Fill_report(void)//报文填写
 	//********************************************************************************************//
 	
 	//***********************************摇杆旋钮处理***********************************//
-	RK_handle(0);//摇杆处理
-	EC_handle(0);//旋钮处理
-	if(!mode3_key) RK_EC_key_handle();//摇杆旋钮按键处理
+	rkHandle(0);//摇杆处理
+	ecHandle(0);//旋钮处理
+	if(!mode3_key) rkEcKeyHandle();//摇杆旋钮按键处理
 	//**********************************************************************************//
 	
 	//***********************************判断各报文是否要发送***********************************//
@@ -264,7 +264,7 @@ uint8_t Fill_report(void)//报文填写
 	return 0;
 }
 
-void cs_change(uint8_t change)//切换
+void csChange(uint8_t change)//切换
 {
 	change &= 0x07;//取低3位
 	if(change == 0 || change > CFG_NUM) return;
@@ -276,14 +276,14 @@ void cs_change(uint8_t change)//切换
 	
 	changeTime = Systime;
 	
-	RK_handle(1);
-	EC_handle(1);
+	rkHandle(1);
+	ecHandle(1);
 	
 	memset(keyWork,0,sizeof(keyWork));
 	memset(keyFlag,0,sizeof(keyFlag));
 }
 
-void key_insert(uint8_t r_i, uint8_t key_v)//单键填入
+void keyInsert(uint8_t r_i, uint8_t key_v)//单键填入
 {
 	if(key_v == kv_wheel_down) Mouse_data[4] += -1;//滚轮向下
 	else if(key_v == kv_wheel_up) Mouse_data[4] += 1;//滚轮向上
@@ -311,7 +311,7 @@ void key_insert(uint8_t r_i, uint8_t key_v)//单键填入
 	}
 }
 
-void mode3_handle(void)//mode3处理(按键组处理)
+void mode3Handle(void)//mode3处理(按键组处理)
 {
 	static uint32_t setTime = 0, oldTime = 0;//设定时间及记录时间
 	static uint16_t loopStart = 0xFFFF;//循环起始地址
@@ -383,7 +383,7 @@ void mode3_handle(void)//mode3处理(按键组处理)
 		}
 		else if(CFG_ACS(mode3_i) == kv_shortcut){//若有快捷键
 			if(report_i > 3 || Mouse_data[1] != 0) break;//若本次报文已有内容则退出等下一次
-			key_insert(report_i,CFG_ACS(++mode3_i));//填入键值
+			keyInsert(report_i,CFG_ACS(++mode3_i));//填入键值
 			KeyBrd_data[1] = CFG_ACS(++mode3_i);//填入功能键
 			if(++mode3_i == end_i) mode3_key = 0;//当读完数据
 			break;//独占本次报文
@@ -416,10 +416,10 @@ void mode3_handle(void)//mode3处理(按键组处理)
 			if(!check_i) break;//若已有相同键值则退出等下一次
 			if(Mouse_data[1] != 0) break;//若鼠标报文已有内容则退出等下一次
 			if(KeyBrd_data[1]){//若报文已含shift
-				key_insert(report_i++,CFG_ACS(++mode3_i));//填入键值
+				keyInsert(report_i++,CFG_ACS(++mode3_i));//填入键值
 			}
 			else if(report_i == 3){//当是起始
-				key_insert(report_i++,CFG_ACS(++mode3_i));//填入键值
+				keyInsert(report_i++,CFG_ACS(++mode3_i));//填入键值
 				KeyBrd_data[1] |= 0x02;//填入shift
 			}
 			else break;//因前面排斥shift而无法填入
@@ -435,10 +435,10 @@ void mode3_handle(void)//mode3处理(按键组处理)
 			if(!check_i) break;//若已有相同键值则退出等下一次
 			if(Mouse_data[1] != 0) break;//若鼠标报文已有内容则退出等下一次
 			if(!KeyBrd_data[1]){//若报文未含shift
-				key_insert(report_i++,CFG_ACS(mode3_i));//填入键值
+				keyInsert(report_i++,CFG_ACS(mode3_i));//填入键值
 			}
 			else if(report_i == 3){//当是起始
-				key_insert(report_i++,CFG_ACS(mode3_i));//填入键值
+				keyInsert(report_i++,CFG_ACS(mode3_i));//填入键值
 			}
 			else break;//因前面已有shift而无法填入
 		}
@@ -451,7 +451,7 @@ void mode3_handle(void)//mode3处理(按键组处理)
 }
 
 //1:按键/快捷键,2:永久切换键
-void RK_EC_key_handle(void)//摇杆旋钮按键处理
+void rkEcKeyHandle(void)//摇杆旋钮按键处理
 {
 	uint8_t keyM[3], keyV[3], keyF[3];//按键模式,键值,功能键
 	uint8_t i;
@@ -463,21 +463,21 @@ void RK_EC_key_handle(void)//摇杆旋钮按键处理
 	for(i = 0; i < 3; i++){//2个旋钮按键1个摇杆按键
 		if(keyNow[i + 16]){//若为按下状态
 			if(keyM[i] == 1){//按键/快捷键
-				if(keyV[i]) key_insert(0xFF, keyV[i]);//填入键值
+				if(keyV[i]) keyInsert(0xFF, keyV[i]);//填入键值
 				KeyBrd_data[1] |= keyF[i];//填入功能键
 			}
 		}
 		else if(keyOld[i + 16]){//若为释放沿
 			if(keyM[i] == 2){//永久切换键
 				switch_i = 0xFF;//直接复位临时切换键标志
-				cs_change(keyV[i] - kv_orig_1 + 1);//切换 该函数内有参数检查 此处USB键值从数字键1的键值开始有效
+				csChange(keyV[i] - kv_orig_1 + 1);//切换 该函数内有参数检查 此处USB键值从数字键1的键值开始有效
 			}
 		}
 	}
 }
 
 //1:四向四按键,2:八向四按键,3:速度鼠标,4:光标位置
-void RK_handle(uint8_t clear)//摇杆处理
+void rkHandle(uint8_t clear)//摇杆处理
 {
 	static int16_t RK_pulse = 0;//间隔标志
 	static int16_t x_pic = 0, y_pic = 0;
@@ -539,12 +539,12 @@ void RK_handle(uint8_t clear)//摇杆处理
 			}
 			
 			if(y > x){
-				if(y > -x) key_insert(0xFF, CFG_R_KEY(0,1));//填入上键值
-				else key_insert(0xFF, CFG_R_KEY(0,3));//填入左键值
+				if(y > -x) keyInsert(0xFF, CFG_R_KEY(0,1));//填入上键值
+				else keyInsert(0xFF, CFG_R_KEY(0,3));//填入左键值
 			}
 			else{
-				if(y > -x) key_insert(0xFF, CFG_R_KEY(0,4));//填入右键值
-				else key_insert(0xFF, CFG_R_KEY(0,2));//填入下键值
+				if(y > -x) keyInsert(0xFF, CFG_R_KEY(0,4));//填入右键值
+				else keyInsert(0xFF, CFG_R_KEY(0,2));//填入下键值
 			}
 			break;
 		}
@@ -572,16 +572,16 @@ void RK_handle(uint8_t clear)//摇杆处理
 			
 			//atan(5/12)=22.6度 atan(3/7)=23.2度
 			if(y*7 > x*3 && y*7 > -x*3){//上
-				key_insert(0xFF, CFG_R_KEY(0,1));//填入键值
+				keyInsert(0xFF, CFG_R_KEY(0,1));//填入键值
 			}
 			else if(y*7 < x*3 && y*7 < -x*3){//下
-				key_insert(0xFF, CFG_R_KEY(0,2));//填入键值
+				keyInsert(0xFF, CFG_R_KEY(0,2));//填入键值
 			}
 			if(y*3 > x*7 && y*3 < -x*7){//左
-				key_insert(0xFF, CFG_R_KEY(0,3));//填入键值
+				keyInsert(0xFF, CFG_R_KEY(0,3));//填入键值
 			}
 			else if(y*3 < x*7 && y*3 > -x*7){//右
-				key_insert(0xFF, CFG_R_KEY(0,4));//填入键值
+				keyInsert(0xFF, CFG_R_KEY(0,4));//填入键值
 			}
 			break;
 		}
@@ -692,7 +692,7 @@ void RK_handle(uint8_t clear)//摇杆处理
 }
 
 //1:按键/快捷键
-void EC_handle(uint8_t clear)//旋钮处理
+void ecHandle(uint8_t clear)//旋钮处理
 {
 //	static uint32_t oldTime = 0;//记录时间
 //	static int TIM_old = 0;//编码器旧计数
@@ -736,7 +736,7 @@ void EC_handle(uint8_t clear)//旋钮处理
 						EC_count[i] -= EC_flag * 2 - 3;//计数跟进
 					}
 					else{
-						if(CFG_E_KEY(i, EC_flag)) key_insert(0xFF, CFG_E_KEY(i, EC_flag));//填入键值
+						if(CFG_E_KEY(i, EC_flag)) keyInsert(0xFF, CFG_E_KEY(i, EC_flag));//填入键值
 						KeyBrd_data[1] |= CFG_E_FUNC(i, EC_flag);//填入功能键
 						EC_pulse[i] = 1;//本次已发送则下次间隔
 					}

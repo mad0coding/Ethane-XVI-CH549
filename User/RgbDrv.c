@@ -174,10 +174,10 @@ void keyRGB(uint8_t clear){//键盘RGB控制
 	
 	for(i = 0; i < 16; i++){//16键处理开始
 		if(LIGHT_COLORFUL){//若启用色彩变化
-			rgbToHsv(FrameRaw[3*i+0], FrameRaw[3*i+1], FrameRaw[3*i+2], &h, &s, &v);
+			rgbToHSV(FrameRaw[3*i+0], FrameRaw[3*i+1], FrameRaw[3*i+2], &h, &s, &v);
 			h += (Systime / LIGHT_COLORFUL) % (colorAngle * 6);//加入色环变化
 			if(h >= colorAngle * 6) h -= colorAngle * 6;//防止越界
-			hsvToRgb(h, s, v, &FrameRaw[3*i+0], &FrameRaw[3*i+1], &FrameRaw[3*i+2]);
+			hsvToRGB(h, s, v, &FrameRaw[3*i+0], &FrameRaw[3*i+1], &FrameRaw[3*i+2]);
 		}
 		
 		//主效果
@@ -287,7 +287,7 @@ void keyRGB(uint8_t clear){//键盘RGB控制
 	}
 }
 
-void WS_Write_16(void){//写入16个灯
+void wsWrite16(void){//写入16个灯
 	UINT8D i, iBit;
 	EA = 0;//关中断
 	for(i = 0; i < 16*3; i++){//GRB
@@ -307,7 +307,7 @@ void WS_Write_16(void){//写入16个灯
 }
 
 //H:0~colorAngle*6,S:0~100(已用delta代替),V:0~255
-void rgbToHsv(uint8_t vR, uint8_t vG, uint8_t vB, uint16_t* pH, uint16_t* pS, uint16_t* pV){//RGB转HSV
+void rgbToHSV(uint8_t vR, uint8_t vG, uint8_t vB, uint16_t* pH, uint16_t* pS, uint16_t* pV){//RGB转HSV
     uint8_t max = MAX(MAX(vR,vG),vB), min = MIN(MIN(vR,vG),vB);
     uint8_t delta = max - min;
     if(delta == 0) *pH = 0;
@@ -319,7 +319,7 @@ void rgbToHsv(uint8_t vR, uint8_t vG, uint8_t vB, uint16_t* pH, uint16_t* pS, ui
     else *pS = delta;//100 * delta / max;//注意此处S直接用delta代替,故函数外直接修改V不合法
     *pV = max;
 }
-void hsvToRgb(uint16_t vH, uint16_t vS, uint16_t vV, uint8_t* pR, uint8_t* pG, uint8_t* pB){//HSV转RGB
+void hsvToRGB(uint16_t vH, uint16_t vS, uint16_t vV, uint8_t* pR, uint8_t* pG, uint8_t* pB){//HSV转RGB
 	uint8_t hi = (uint16_t)(vH / colorAngle) % 6;
     uint16_t f = vH - hi * colorAngle;
     uint8_t p = vV - vS;
@@ -370,10 +370,10 @@ void sysRGB(){//系统RGB控制
 	}
 	
 	if(CFGb_RGB_COLORFUL && CFGb_RGB_WAVE){//若启用色彩变化和呼吸变化
-		rgbToHsv(CFG_RGB_R, CFG_RGB_G, CFG_RGB_B, &h, &s, &v);
+		rgbToHSV(CFG_RGB_R, CFG_RGB_G, CFG_RGB_B, &h, &s, &v);
 		h += (Systime / rgbCycle[CFGb_RGB_COLORFUL]) % (colorAngle * 6);
 		if(h >= colorAngle * 6) h -= colorAngle * 6;
-		hsvToRgb(h, s, v, &r, &g, &b);
+		hsvToRGB(h, s, v, &r, &g, &b);
 	}
 	if(CFGb_RGB_WAVE && CFGb_RGB_WAVE != 9){//若启用呼吸变化
 		v = (Systime / rgbCycle[CFGb_RGB_WAVE]) % (colorAngle * 6);

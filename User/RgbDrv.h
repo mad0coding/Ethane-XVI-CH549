@@ -44,10 +44,10 @@ extern PUINT8C DATA_LIGHT;//闪存区灯效信息指针
 void clearKeyRGB(void);//清除键盘RGB
 void keyRGB(uint8_t clear);//键盘RGB控制
 
-void rgbToHsv(uint8_t vR, uint8_t vG, uint8_t vB, uint16_t* pH, uint16_t* pS, uint16_t* pV);//RGB转HSV
-void hsvToRgb(uint16_t vH, uint16_t vS, uint16_t vV, uint8_t* pR, uint8_t* pG, uint8_t* pB);//HSV转RGB
+void rgbToHSV(uint8_t vR, uint8_t vG, uint8_t vB, uint16_t* pH, uint16_t* pS, uint16_t* pV);//RGB转HSV
+void hsvToRGB(uint16_t vH, uint16_t vS, uint16_t vV, uint8_t* pR, uint8_t* pG, uint8_t* pB);//HSV转RGB
 
-void WS_Write_16(void);//写入16个灯
+void wsWrite16(void);//写入16个灯
 
 void sysRGB();//系统RGB控制
 

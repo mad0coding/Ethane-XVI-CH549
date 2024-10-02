@@ -97,12 +97,15 @@ extern uint8_t key_turn[CFG_NUM];//键盘方向
 extern uint8_t sys_cs;//总配置选择
 extern PUINT8C DATA_CFG;//闪存区配置信息指针
 
-
-void ParaSave(uint8_t pos, uint8_t num);//参数保存
-void ParaLoad(void);//参数读取
-void ParaUpdate(uint8_t pos);//参数更新
-void GlobalParaLoad(void);//全局参数读取
-void GlobalParaUpdate(void);//全局参数更新
+void asyncHandle(uint8_t flag);//异步处理
+void paraSave(uint8_t pos, uint8_t num);	//参数保存
+uint8_t paraWrite(uint16_t addr, uint8_t *buf, uint8_t num);	//参数写入
+void paraLoad(void);					//参数读取
+void paraUpdate(uint8_t pos);			//参数更新
+void globalParaLoad(void);		//全局参数读取
+void globalParaUpdate(void);	//全局参数更新
+void flashCountInc(uint8_t pos, uint8_t fail);		//闪存擦除计数增加
+uint32_t flashCountGet(uint8_t pos, uint8_t fail);	//闪存擦除计数获取
 
 
 #endif

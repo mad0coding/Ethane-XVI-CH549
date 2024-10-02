@@ -81,6 +81,9 @@ typedef const unsigned short code        UINT16C;
 #ifndef PUINT16C
 typedef const unsigned short code      *PUINT16C;
 #endif
+#ifndef PUINT32C
+typedef const unsigned long code      *PUINT32C;
+#endif
 //**************************************************************************//
 
 
