@@ -42,9 +42,14 @@ void asyncHandle(uint8_t flag){//异步处理
 		IE = 0;//全局中断关闭
 		USB_INT_FG = 0xFF;	//清中断标志
 		USB_CTRL = 0x06;	//复位USB控制寄存器并利用其复位其他寄存器
+		
 		Flash_Op_Check_Byte1 = DEF_FLASH_OP_CHECK1;//保护检查标志置位
 		Flash_Op_Check_Byte2 = DEF_FLASH_OP_CHECK2;
-		FlashErasePage(0);//擦除FLASH开头 以在下次上电时能进Boot
+		
+		memset(FlashBuf, 0, 64);//第一扇区置空 以在下次上电时能进Boot
+		FlashBuf[62] = 0x80; FlashBuf[63] = 0xFE;//使用SJMP汇编指令向前跳2字节 实现while(1)死循环
+		ret = paraWrite(0, FlashBuf, 1);//擦除并写入第一扇区
+
 		while(1) WDOG_COUNT = 0;//死循环 清零看门狗计数
 	}
 	else if(flag == 102){

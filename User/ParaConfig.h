@@ -15,13 +15,13 @@
 #define DATA_GLOB_BASE		0xE800//全局数据起始
 #define DATA_LIGHT_BASE		0xE400//灯效数据起始
 #define DATA_COUNT_BASE		0xDC00//计数数据起始
-//配置数据占CodeFlash的后1k和DataFlash的1k,每套512B,空间4套,目前使用后3套,从后往前排
+//配置数据占CodeFlash的后1k和DataFlash的1k,每套512B,空间4套,目前使用后4套,从后往前排
 //全局数据占CodeFlash的倒数第2k的开头部分,目前使用64B
-//灯效数据占CodeFlash的倒数第3k,每套256B,空间4套,目前使用前3套,从前往后排
+//灯效数据占CodeFlash的倒数第3k,每套256B,空间4套,目前使用前4套,从前往后排
 //计数数据占CodeFlash的倒数第4~5k,每套128B,空间16套,目前使用后0套,从前往后排
 //目前全部存储数据使用6k空间,剩余代码空间为55k
 
-#define CFG_NUM		3//配置个数
+#define CFG_NUM		4	//配置个数
 
 #define CFG_THIS		(DATA_CFG)//键盘配置起始
 #define CFG_ACS(a)			(*((PUINT8C)(a) + 0))//按键直接访问
@@ -53,12 +53,12 @@
 #define CFG_E_KEY(i,n)		(*(CFG_E_DATA_S + (i) * CFG_E_DATA_L + 2 + (n)))//旋钮按键 中逆顺
 #define CFG_E_FUNC(i,n)		(*(CFG_E_DATA_S + (i) * CFG_E_DATA_L + 5 + (n)))//旋钮功能键 中逆顺
 
-#define CFG_RGB_R			(*(CFG_THIS + 502))//RGB灯色值R
-#define CFG_RGB_G			(*(CFG_THIS + 503))//RGB灯色值G
-#define CFG_RGB_B			(*(CFG_THIS + 504))//RGB灯色值B
-#define CFG_RGB_CYCLE		(*(CFG_THIS + 505))//变色周期和呼吸周期
-#define CFG_RGB_SET			(*(CFG_THIS + 506))//RGB灯设置
-#define CFG_RGB_LIGHT		(*(CFG_THIS + 507))//RGB灯亮度
+#define CFG_RGB_R			(*(CFG_THIS + 500))//RGB灯色值R
+#define CFG_RGB_G			(*(CFG_THIS + 501))//RGB灯色值G
+#define CFG_RGB_B			(*(CFG_THIS + 502))//RGB灯色值B
+#define CFG_RGB_CYCLE		(*(CFG_THIS + 503))//变色周期和呼吸周期
+#define CFG_RGB_SET			(*(CFG_THIS + 504))//RGB灯设置
+#define CFG_RGB_LIGHT		(*(CFG_THIS + 505))//RGB灯亮度
 #define CFG_SCN_W			(*((PUINT16C)(CFG_THIS + 506)))//屏幕宽度
 #define CFG_SCN_H			(*((PUINT16C)(CFG_THIS + 508)))//屏幕高度
 #define CFG_KB_DIR			(*(CFG_THIS + 510))//键盘方向

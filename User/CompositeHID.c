@@ -306,7 +306,7 @@ void Enp2IntIn(UINT8 *buf, UINT8 len){
 *******************************************************************************/
 void DeviceInterrupt( void ) interrupt INT_NO_USB using 1				//USB中断服务程序,使用寄存器组1
 {
-	UINT8 errflag/*, i*/;//错误标志以及公用的i
+	UINT8 errflag;//错误标志
     UINT16 len;
 	
     if(UIF_TRANSFER){			//USB传输完成标志
@@ -316,7 +316,6 @@ void DeviceInterrupt( void ) interrupt INT_NO_USB using 1				//USB中断服务�
             UEP2_T_LEN = 0;                                                     //预使用发送长度一定要清空
             UEP2_CTRL ^= bUEP_T_TOG;                                            //手动翻转同步标志位
             Endp2Busy = 0;
-//			 UEP2_T_LEN = 2;
             UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_NAK;           //默认应答NAK
             break;
         case UIS_TOKEN_OUT | 2:							//端点2下传
@@ -329,7 +328,6 @@ void DeviceInterrupt( void ) interrupt INT_NO_USB using 1				//USB中断服务�
 #define Offset	MAX_PACKET_SIZE
 #define count	Buf[Offset+63]//此字节在通信中不会修改,故借用
 #define packs	Buf[Offset+62]//此字节在通信中不会修改,故借用
-//#define place	Buf[Offset+61]//此字节在通信中不会修改,故借用
 if(asyncFlag & 0x80){//若已经在接收状态 则接收数据包
 	memcpy(FlashBuf + ((UINT16X)count << 6), Buf, 64);//数据包拷贝
 	Buf[Offset+0] = 'R'; Buf[Offset+1] = 'D';//填入响应字节
@@ -389,9 +387,9 @@ else{//若未在接收状态 则监听各种命令
 		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
 		asyncFlag = 30;//异步标志置位
 	}
-	else if(Buf[0] == 'C' && Buf[1] == 'E' && Buf[2] == 'F'){//修改旋钮滤波参数命令
+	else if(Buf[0] == 'C' && Buf[1] == 'E' && Buf[2] == 'F'){//修改旋钮滤波参数命令(暂未实现)
 		Buf[Offset+0] = Buf[1]; Buf[Offset+1] = Buf[2];//填入响应字节
-//		TimFilterValue = Buf[3];//更新旋钮滤波参数
+		//TimFilterValue = Buf[3];//更新旋钮滤波参数
 		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
 		//asyncFlag = 20;//异步标志置位
 	}
