@@ -4,7 +4,7 @@
 
 PUINT8C DATA_LIGHT = DATA_LIGHT_BASE;//闪存区灯效信息指针
 
-UINT8C ledCurve[] = {//LED非线性校正表
+UINT8C LED_CURVE[] = {//LED非线性校正表
 	  0,  0,  0,  0,   0,  0,  0,  0,   0,  0,  0,  0,   0,  0,  0,  0,   0,  0,  0,  0,
 	  0,  0,  0,  0,   0,  0,  0,  0,   0,  0,  0,  0,   1,  1,  1,  1,   1,  1,  1,  1,
 	  1,  1,  1,  1,   1,  2,  2,  2,   2,  2,  2,  2,   2,  2,  2,  3,   3,  3,  3,  3,
@@ -32,7 +32,7 @@ UINT8C ledCurve[] = {//LED非线性校正表
 	235,235,236,237, 238,239,240,241, 242,243,244,245, 246,247,248,249, 250,251,252,253,
 	255,
 };
-UINT8C onCurve[] = {//升亮度观感校正表
+UINT8C ON_CURVE[] = {//升亮度观感校正表
 	  0,  0,  1,  2,  2,  3,  4,  4,  5,  6,  6,  7,  8,  9,  9, 10, 11, 11, 12, 13, 14, 14, 15, 16, 16, 17, 18, 19, 19, 20, 21, 22,
 	 22, 23, 24, 25, 26, 26, 27, 28, 29, 29, 30, 31, 32, 33, 33, 34, 35, 36, 37, 37, 38, 39, 40, 41, 41, 42, 43, 44, 45, 46, 46, 47,
 	 48, 49, 50, 51, 51, 52, 53, 54, 55, 56, 57, 58, 58, 59, 60, 61, 62, 63, 64, 65, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 75,
@@ -88,8 +88,8 @@ UINT8C INX_TABLE[] = {//预置灯效下标表
 	9,10,11,0,	 8,15,12,1,	 7,14,13,2,	 6,5,4,3,//↓←
 	3,2,1,0,	 4,13,12,11, 5,14,15,10, 6,7,8,9,//←↓
 };
-UINT8C rgbCycle[10] = {0,1,2,3, 5,7,10,15, 20,30};//RGB周期表(单位s)
-UINT16C rgbDelay[8] = {0,1,10,50, 100,500,1000,2000};//RGB延时表(单位ms)
+UINT8C RGB_CYCLE[10] = {0,1,2,3, 5,7,10,15, 20,30};//RGB周期表(单位s)
+UINT16C RGB_DELAY[8] = {0,1,10,50, 100,500,1000,2000};//RGB延时表(单位ms)
 
 uint8_t fracM[16] = {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,};//主效果比例
 uint8_t fracUD[16] = {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,};//按动效果比例
@@ -109,11 +109,11 @@ UINT8I FrameBuf[16*3] = {//帧缓存
 	0,0,0,	0,0,0,	0,0,0,	0,0,0,
 };//GRB
 
-void clearKeyRGB(void){//清除键盘RGB
+void ClearKeyRGB(void){//清除键盘RGB
 	memset(FrameBuf, 0, sizeof(FrameBuf));
 }
 
-void keyRGB(uint8_t clear){//键盘RGB控制
+void KeyRGB(uint8_t clear){//键盘RGB控制
 	static uint16_t dTime = 0;//间隔时间记录
 	static uint8_t taskTick = 0;//0~3bit:0为启动沿,1为动作期,2为结束沿,3为间隔期;bit7:呼吸模式用
 	static uint8_t eTime = 0, INXi = 0, fracSHLD = 0;//时间记录,自定义下标,屏蔽效果比例
@@ -174,17 +174,17 @@ void keyRGB(uint8_t clear){//键盘RGB控制
 	
 	for(i = 0; i < 16; i++){//16键处理开始
 		if(LIGHT_COLORFUL){//若启用色彩变化
-			rgbToHSV(FrameRaw[3*i+0], FrameRaw[3*i+1], FrameRaw[3*i+2], &h, &s, &v);
-			h += (Systime / LIGHT_COLORFUL) % (colorAngle * 6);//加入色环变化
-			if(h >= colorAngle * 6) h -= colorAngle * 6;//防止越界
-			hsvToRGB(h, s, v, &FrameRaw[3*i+0], &FrameRaw[3*i+1], &FrameRaw[3*i+2]);
+			Rgb2Hsv(FrameRaw[3*i+0], FrameRaw[3*i+1], FrameRaw[3*i+2], &h, &s, &v);
+			h += (Systime / LIGHT_COLORFUL) % (COLOR_ANGLE * 6);//加入色环变化
+			if(h >= COLOR_ANGLE * 6) h -= COLOR_ANGLE * 6;//防止越界
+			Hsv2Rgb(h, s, v, &FrameRaw[3*i+0], &FrameRaw[3*i+1], &FrameRaw[3*i+2]);
 		}
 		
 		//主效果
 		if(lightMode == 200 && LIGHT_D1WAVE){//若为动作期且为呼吸模式
-			v = ((uint16_t)((uint16_t)Systime - dTime) / (MAX(LIGHT_D1WAVE,1000) / 1000)) % (colorAngle * 6);//用动作时间控制呼吸周期
-			if(v >= colorAngle * 3){//下降段
-				v = colorAngle * 6 - 1 - v;//0~500
+			v = ((uint16_t)((uint16_t)Systime - dTime) / (MAX(LIGHT_D1WAVE,1000) / 1000)) % (COLOR_ANGLE * 6);//用动作时间控制呼吸周期
+			if(v >= COLOR_ANGLE * 3){//下降段
+				v = COLOR_ANGLE * 6 - 1 - v;//0~500
 				tool16 = LIGHT_T2WAVE;//用灭延迟字节来选择下降段曲线
 				taskTick |= 0x80;//置位最高位
 			}else{//上升段
@@ -199,10 +199,10 @@ void keyRGB(uint8_t clear){//键盘RGB控制
 			if(tool16 == 0){//纯线性
 				for(j = 0; j < 3; j++) FrameRaw[3*i+j] = (uint32_t)FrameRaw[3*i+j] * v / 500;
 			}else if(tool16 == 1){//二次函数校正
-				v = onCurve[(uint32_t)v * 255 / 500];//获取校正的亮度值(借用v存储)
+				v = ON_CURVE[(uint32_t)v * 255 / 500];//获取校正的亮度值(借用v存储)
 				for(j = 0; j < 3; j++) FrameRaw[3*i+j] = (uint16_t)FrameRaw[3*i+j] * v / 255;
 			}else{//纯平方校正
-				v = ledCurve[v];//获取校正的亮度值(借用v存储)
+				v = LED_CURVE[v];//获取校正的亮度值(借用v存储)
 				for(j = 0; j < 3; j++) FrameRaw[3*i+j] = (uint16_t)FrameRaw[3*i+j] * v / 255;
 			}
 			ifINX = 1;//自定义标记置位以防止触发非呼吸模式的结束沿进入代码
@@ -219,7 +219,7 @@ void keyRGB(uint8_t clear){//键盘RGB控制
 				if(255 - fracM[i] > tool16) fracM[i] += tool16;//亮延迟
 				else fracM[i] = 255;
 				for(j = 0; j < 3; j++){//加入升主效果
-					FrameRaw[3*i+j] = (uint16_t)FrameRaw[3*i+j] * onCurve[fracM[i]] / 255;
+					FrameRaw[3*i+j] = (uint16_t)FrameRaw[3*i+j] * ON_CURVE[fracM[i]] / 255;
 				}
 			}else{//下降段
 //				tool16 = (fracSHLD - leftSHLD) / (LIGHT_T2SYS + 1);//屏蔽灭延迟
@@ -276,18 +276,18 @@ void keyRGB(uint8_t clear){//键盘RGB控制
 		for(i = 0; i < 16; i++){	FrameBuf[i*3+1] = FrameRaw[i*3+0];
 			FrameBuf[i*3+0] = FrameRaw[i*3+1];FrameBuf[i*3+2] = FrameRaw[i*3+2];	}
 	}else if(CFG_KB_DIR == 3){//左旋90度(此处与按键读取相反)
-		for(i = 0; i < 16; i++){	FrameBuf[i*3+1] = FrameRaw[turnR90[i]*3+0];
-			FrameBuf[i*3+0] = FrameRaw[turnR90[i]*3+1];FrameBuf[i*3+2] = FrameRaw[turnR90[i]*3+2];	}
+		for(i = 0; i < 16; i++){	FrameBuf[i*3+1] = FrameRaw[TURN_R90[i]*3+0];
+			FrameBuf[i*3+0] = FrameRaw[TURN_R90[i]*3+1];FrameBuf[i*3+2] = FrameRaw[TURN_R90[i]*3+2];	}
 	}else if(CFG_KB_DIR == 2){//旋转180度
 		for(i = 0; i < 16; i++){	FrameBuf[i*3+1] = FrameRaw[(16 - i)*3+0];
 			FrameBuf[i*3+0] = FrameRaw[(16 - i)*3+1];FrameBuf[i*3+2] = FrameRaw[(16 - i)*3+2];	}
 	}else if(CFG_KB_DIR == 1){//右旋90度(此处与按键读取相反)
-		for(i = 0; i < 16; i++){	FrameBuf[i*3+1] = FrameRaw[turnL90[i]*3+0];
-			FrameBuf[i*3+0] = FrameRaw[turnL90[i]*3+1];FrameBuf[i*3+2] = FrameRaw[turnL90[i]*3+2];	}
+		for(i = 0; i < 16; i++){	FrameBuf[i*3+1] = FrameRaw[TURN_L90[i]*3+0];
+			FrameBuf[i*3+0] = FrameRaw[TURN_L90[i]*3+1];FrameBuf[i*3+2] = FrameRaw[TURN_L90[i]*3+2];	}
 	}
 }
 
-void wsWrite16(void){//写入16个灯
+void WsWrite16(void){//写入16个灯
 	UINT8D i, iBit;
 	EA = 0;//关中断
 	for(i = 0; i < 16*3; i++){//GRB
@@ -306,25 +306,25 @@ void wsWrite16(void){//写入16个灯
 	EA = 1;//开中断
 }
 
-//H:0~colorAngle*6,S:0~100(已用delta代替),V:0~255
-void rgbToHSV(uint8_t vR, uint8_t vG, uint8_t vB, uint16_t* pH, uint16_t* pS, uint16_t* pV){//RGB转HSV
+//H:0~COLOR_ANGLE*6,S:0~100(已用delta代替),V:0~255
+void Rgb2Hsv(uint8_t vR, uint8_t vG, uint8_t vB, uint16_t* pH, uint16_t* pS, uint16_t* pV){//RGB转HSV
     uint8_t max = MAX(MAX(vR,vG),vB), min = MIN(MIN(vR,vG),vB);
     uint8_t delta = max - min;
     if(delta == 0) *pH = 0;
-    else if(max == vR) *pH = (uint16_t)colorAngle*(vG-vB)/delta;
-    else if(max == vG) *pH = (uint16_t)colorAngle*(vB-vR)/delta + colorAngle*2;
-    else if(max == vB) *pH = (uint16_t)colorAngle*(vR-vG)/delta + colorAngle*4;
-    if(*pH > colorAngle * 6) *pH += colorAngle * 6;
+    else if(max == vR) *pH = (uint16_t)COLOR_ANGLE*(vG-vB)/delta;
+    else if(max == vG) *pH = (uint16_t)COLOR_ANGLE*(vB-vR)/delta + COLOR_ANGLE*2;
+    else if(max == vB) *pH = (uint16_t)COLOR_ANGLE*(vR-vG)/delta + COLOR_ANGLE*4;
+    if(*pH > COLOR_ANGLE * 6) *pH += COLOR_ANGLE * 6;
     if(max == 0) *pS = 0;
     else *pS = delta;//100 * delta / max;//注意此处S直接用delta代替,故函数外直接修改V不合法
     *pV = max;
 }
-void hsvToRGB(uint16_t vH, uint16_t vS, uint16_t vV, uint8_t* pR, uint8_t* pG, uint8_t* pB){//HSV转RGB
-	uint8_t hi = (uint16_t)(vH / colorAngle) % 6;
-    uint16_t f = vH - hi * colorAngle;
+void Hsv2Rgb(uint16_t vH, uint16_t vS, uint16_t vV, uint8_t* pR, uint8_t* pG, uint8_t* pB){//HSV转RGB
+	uint8_t hi = (uint16_t)(vH / COLOR_ANGLE) % 6;
+    uint16_t f = vH - hi * COLOR_ANGLE;
     uint8_t p = vV - vS;
-    uint8_t q = vV - (uint16_t)vS * f / colorAngle;
-    uint8_t t = vV - (uint16_t)vS * (colorAngle - f) / colorAngle;
+    uint8_t q = vV - (uint16_t)vS * f / COLOR_ANGLE;
+    uint8_t t = vV - (uint16_t)vS * (COLOR_ANGLE - f) / COLOR_ANGLE;
     if(hi == 0)     {*pR = vV;   *pG = t;    *pB = p;}
     else if(hi == 1){*pR = q;    *pG = vV;   *pB = p;}
     else if(hi == 2){*pR = p;    *pG = vV;   *pB = t;}
@@ -339,7 +339,7 @@ uint32_t changeTime = -10000;//配置切换时间
 
 extern uint8_t mode3_key;//模式3按键(1-16)
 
-void sysRGB(){//系统RGB控制
+void SysRGB(){//系统RGB控制
 	uint8_t r = CFG_RGB_R, g = CFG_RGB_G, b = CFG_RGB_B;
 	uint16_t h, s, v;
 //	uint16_t h2;
@@ -355,7 +355,7 @@ void sysRGB(){//系统RGB控制
 		PWM_R = PWM_B = 0;	PWM_G = CFG_RGB_LIGHT;
 		return;
 	}
-	if(CFGb_RGB_TIME && (Systime - changeTime) < rgbDelay[CFGb_RGB_TIME]){//指示配置切换
+	if(CFGb_RGB_TIME && (Systime - changeTime) < RGB_DELAY[CFGb_RGB_TIME]){//指示配置切换
 		PWM_R = CFG_RGB_R;	PWM_G = CFG_RGB_G;	PWM_B = CFG_RGB_B;
 		return;
 	}
@@ -370,19 +370,19 @@ void sysRGB(){//系统RGB控制
 	}
 	
 	if(CFGb_RGB_COLORFUL && CFGb_RGB_WAVE){//若启用色彩变化和呼吸变化
-		rgbToHSV(CFG_RGB_R, CFG_RGB_G, CFG_RGB_B, &h, &s, &v);
-		h += (Systime / rgbCycle[CFGb_RGB_COLORFUL]) % (colorAngle * 6);
-		if(h >= colorAngle * 6) h -= colorAngle * 6;
-		hsvToRGB(h, s, v, &r, &g, &b);
+		Rgb2Hsv(CFG_RGB_R, CFG_RGB_G, CFG_RGB_B, &h, &s, &v);
+		h += (Systime / RGB_CYCLE[CFGb_RGB_COLORFUL]) % (COLOR_ANGLE * 6);
+		if(h >= COLOR_ANGLE * 6) h -= COLOR_ANGLE * 6;
+		Hsv2Rgb(h, s, v, &r, &g, &b);
 	}
 	if(CFGb_RGB_WAVE && CFGb_RGB_WAVE != 9){//若启用呼吸变化
-		v = (Systime / rgbCycle[CFGb_RGB_WAVE]) % (colorAngle * 6);
-		if(v >= colorAngle * 3) v = colorAngle * 6 - 1 - v;//0~500
+		v = (Systime / RGB_CYCLE[CFGb_RGB_WAVE]) % (COLOR_ANGLE * 6);
+		if(v >= COLOR_ANGLE * 3) v = COLOR_ANGLE * 6 - 1 - v;//0~500
 		
 //		r1 = (uint32_t)r * v / 500; g1 = (uint32_t)g * v / 500; b1 = (uint32_t)b * v / 500;
 //		for(i = 0; i < 16; i++){FrameBuf[3*i+0] = g1; FrameBuf[3*i+1] = r1; FrameBuf[3*i+2] = b1;}
 		
-		v = ledCurve[v];//获取校正的亮度值(借用v存储)
+		v = LED_CURVE[v];//获取校正的亮度值(借用v存储)
 		r = r * v / 255;
 		g = g * v / 255;
 		b = b * v / 255;

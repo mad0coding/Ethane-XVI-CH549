@@ -55,21 +55,21 @@
 #define kv_shortcut		253
 #define kv_delay		254
 
-#define LIMIT(x, min, max)	(MIN(MAX(x, min), max))
-#define MIN(X, Y)	((X) < (Y) ? (X) : (Y))
-#define MAX(X, Y)	((X) > (Y) ? (X) : (Y))
-#define ABS(X)		((X) > 0 ? (X) : (-(X)))
-#define SIGN(X)		(((X)<0) ? (-1) : (((X)>0) ? 1 : 0))
+#define LIMIT(_X, _min, _max)	(MIN(MAX(_X, _min), _max))
+#define MIN(_X, _Y)		((_X) < (_Y) ? (_X) : (_Y))
+#define MAX(_X, _Y)		((_X) > (_Y) ? (_X) : (_Y))
+#define ABS(_X)			((_X) > 0 ? (_X) : (-(_X)))
+#define SIGN(_X)		(((_X)<0) ? (-1) : (((_X)>0) ? 1 : 0))
 
 
-uint8_t fillReport(void);//报文填写
+uint8_t FillReport(void);//报文填写
 
-void csChange(uint8_t change);//切换
-void keyInsert(uint8_t r_i, uint8_t key_v);//单键填入
-void mode3Handle(void);//mode3处理
-void rkEcKeyHandle(void);//摇杆旋钮按键处理
-void rkHandle(uint8_t clear);//摇杆处理
-void ecHandle(uint8_t clear);//旋钮处理
+void CsChange(uint8_t change);//切换
+void KeyInsert(uint8_t r_i, uint8_t key_v);//单键填入
+void Mode3Handle(void);//mode3处理
+void RkEcKeyHandle(void);//摇杆旋钮按键处理
+void RkHandle(uint8_t clear);//摇杆处理
+void EcHandle(uint8_t clear);//旋钮处理
 
 
 //void Default_para(void);//载入默认参数

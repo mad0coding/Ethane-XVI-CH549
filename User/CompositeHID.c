@@ -363,16 +363,16 @@ else{//若未在接收状态 则监听各种命令
 	}
 	else if(Buf[0] == 'C' && Buf[1] == 'R' && Buf[2] == 'K'){//摇杆校正命令
 		Buf[Offset+0] = Buf[1]; Buf[Offset+1] = Buf[2];//填入响应字节
-		Buf[Offset+2] = ANA_MID_SET[0] >> 8;//填入旧中位值
-		Buf[Offset+3] = ANA_MID_SET[0] & 0xFF;
-		Buf[Offset+4] = ANA_MID_SET[1] >> 8;
-		Buf[Offset+5] = ANA_MID_SET[1] & 0xFF;
-		ANA_MID_SET[0] = LIMIT(adcValue[0], 1, 4094);//将当前摇杆采样值限幅后作为摇杆中位值
-		ANA_MID_SET[1] = LIMIT(adcValue[1], 1, 4094);
-		Buf[Offset+6] = ANA_MID_SET[0] >> 8;//填入新中位值
-		Buf[Offset+7] = ANA_MID_SET[0] & 0xFF;
-		Buf[Offset+8] = ANA_MID_SET[1] >> 8;
-		Buf[Offset+9] = ANA_MID_SET[1] & 0xFF;
+		Buf[Offset+2] = Adc_Mid_Set[0] >> 8;//填入旧中位值
+		Buf[Offset+3] = Adc_Mid_Set[0] & 0xFF;
+		Buf[Offset+4] = Adc_Mid_Set[1] >> 8;
+		Buf[Offset+5] = Adc_Mid_Set[1] & 0xFF;
+		Adc_Mid_Set[0] = LIMIT(adcValue[0], 1, 4094);//将当前摇杆采样值限幅后作为摇杆中位值
+		Adc_Mid_Set[1] = LIMIT(adcValue[1], 1, 4094);
+		Buf[Offset+6] = Adc_Mid_Set[0] >> 8;//填入新中位值
+		Buf[Offset+7] = Adc_Mid_Set[0] & 0xFF;
+		Buf[Offset+8] = Adc_Mid_Set[1] >> 8;
+		Buf[Offset+9] = Adc_Mid_Set[1] & 0xFF;
 		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
 		asyncFlag = 30;//异步标志置位
 	}

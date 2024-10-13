@@ -3,21 +3,21 @@
 
 extern uint8_t KeyBrd_data[];//键盘报文
 
-UINT8C turnL90[16] = {	3,	7,	11,	15,
+UINT8C TURN_L90[16] = {	3,	7,	11,	15,
 						2,	6,	10,	14,
 						1,	5,	9,	13,
 						0,	4,	8,	12};//左旋按键映射矩阵
-UINT8C turnR90[16] = {	12,	8,	4,	0,
+UINT8C TURN_R90[16] = {	12,	8,	4,	0,
 						13,	9,	5,	1,
 						14,	10,	6,	2,
 						15,	11,	7,	3};//右旋按键映射矩阵
 
 uint32_t Systime = 0;//系统时间
 
-uint8_t DebugBuf[64];
+uint8_t debugBuf[64];
 
 uint16_t adcValue[2] = {2048,2048};
-uint16_t ANA_MID_SET[2] = {2048,2048};
+uint16_t Adc_Mid_Set[2] = {2048,2048};
 UINT8D keyFltNum = 2;//按键滤波参数
 
 uint8_t keyRaw[KP_NUM];//按键原始采样
@@ -28,10 +28,10 @@ uint8_t fltCount[KP_NUM];//按键滤波计数
 uint8_t keyNow[KP_NUM];//按键映射结果
 uint8_t keyOld[KP_NUM];//按键映射结果旧值
 
-void arrayInit(void){//数组初始化
+void ArrayInit(void){//数组初始化
 	//srand(*(PUINT16X)(2048 - 2));//填入种子
 	memset(KeyBrd_data + 1, 0, 21);//初始化键盘报文数组
-	memset(DebugBuf, 0, 64);
+	memset(debugBuf, 0, 64);
 	memset(keyFlt,0,KP_NUM);
 	memset(fltOld,0,KP_NUM);
 	memset(fltCount,0,KP_NUM);
@@ -39,7 +39,7 @@ void arrayInit(void){//数组初始化
 	memset(keyOld,0,KP_NUM);
 }
 
-void adcRead(void){//摇杆读取
+void AdcRead(void){//摇杆读取
 	static uint8_t ch = 1;	//0或1 代表通道0或2
 	if(ADC_CTRL & bADC_IF){		//若ADC采样完成
 		ADC_CTRL = bADC_IF;			//清标志
@@ -52,7 +52,7 @@ void adcRead(void){//摇杆读取
 	}
 }
 
-void keyRead(void){//按键读取
+void KeyRead(void){//按键读取
 	keyRaw[0] = !KP_1;		keyRaw[1] = !KP_2;		keyRaw[2] = !KP_3;		keyRaw[3] = !KP_4;
 	keyRaw[4] = !KP_5;		keyRaw[5] = !KP_6;		keyRaw[6] = !KP_7;		keyRaw[7] = !KP_8;
 	keyRaw[8] = !KP_9;		keyRaw[9] = !KP_10;		keyRaw[10] = !KP_11;	keyRaw[11] = !KP_12;
@@ -61,7 +61,7 @@ void keyRead(void){//按键读取
 	keyRaw[18] = !KP_R;
 }
 
-void keyFilter(uint8_t ts){//按键滤波
+void KeyFilter(uint8_t ts){//按键滤波
 	uint8_t i;
 	for(i = 0; i < KP_NUM; i++){
 		if(ts == 2){//若为滤波二阶段
@@ -76,7 +76,7 @@ void keyFilter(uint8_t ts){//按键滤波
 	}
 }
 
-void keyTurn(void){//按键旋转映射
+void KeyTurn(void){//按键旋转映射
 	uint8_t i;
 	memcpy(keyOld, keyNow, KP_NUM);//存储旧值
 	
@@ -84,18 +84,18 @@ void keyTurn(void){//按键旋转映射
 		memcpy(keyNow, keyFlt, 16);
 	}
 	else if(CFG_KB_DIR == 1){//右旋90度
-		for(i = 0; i < 16; i++) keyNow[i] = keyFlt[turnR90[i]];
+		for(i = 0; i < 16; i++) keyNow[i] = keyFlt[TURN_R90[i]];
 	}
 	else if(CFG_KB_DIR == 2){//旋转180度
 		for(i = 0; i < 16; i++) keyNow[i] = keyFlt[16 - i];
 	}
 	else if(CFG_KB_DIR == 3){//左旋90度
-		for(i = 0; i < 16; i++) keyNow[i] = keyFlt[turnL90[i]];
+		for(i = 0; i < 16; i++) keyNow[i] = keyFlt[TURN_L90[i]];
 	}
 	memcpy(keyNow + 16, keyFlt + 16, 3);//摇杆旋钮按键直接拷贝
 }
 
-void getTime(void){//时间获取
+void GetTime(void){//时间获取
 	static UINT16D THTL0_old = 0;//计时器旧值
 	UINT16D THTL0;//计时器16位计数值
 	UINT8D incMs;//增加的毫秒数
@@ -112,20 +112,20 @@ void getTime(void){//时间获取
 	//测试结果: /2000*2000:8960  /2000<<11:9174  >>11<<11:9177  >>11*2000:8952
 }
 
-UINT16C toneTIM[] = {//声调定时器计数值表
+UINT16C TONE_TIM[] = {//声调定时器计数值表
 	15296,14421,13611,12864,12139,11456,10816,10197,9621,9088,8576,8107,
 	7637,7211,6805,6421,6059,5717,	5397,5099,4821,4544,4288,4053,
 	3819,3605,3413,3221,3029,2859,2709,2560,2411,2283,2155,2027,
 	1920,1813,1707,1600,1515,1429,1344,1280,1195,1131,1067,1003,
 };
-UINT8C tonePWM[] = {//声调PWM分频值表
+UINT8C TONE_PWM[] = {//声调PWM分频值表
 	253,239,226,213,201,190,
 	179,169,160,151,142,134,127,120,113,107,101,95,
 	90,85,80,75,71,67,63,60,56,53,50,47,	45,
 };
-UINT8C toneTABLE[] = {29,31,33,35,255,24,26,28, 17,19,21,23,255,12,14,16,};//键位音符映射表
+UINT8C TONE_KEY[] = {29,31,33,35,255,24,26,28, 17,19,21,23,255,12,14,16,};//键位音符映射表
 
-UINT16D buzzTimVol = 10, toneTimValue = 10000;//声调定时器计数值,延时值
+UINT16D buzzTimVol = 10, TONE_TIMValue = 10000;//声调定时器计数值,延时值
 
 void buzzHandle(void){//蜂鸣器处理
 	uint8_t i;//循环变量
@@ -136,11 +136,11 @@ void buzzHandle(void){//蜂鸣器处理
 	PWM0OutPolarLowAct();//PWM0反极性
 	
 	while((!keyOld[18] || keyNow[18]) && (!keyOld[17] || keyNow[17]) && (!keyOld[16] || keyNow[16])){//摇杆或旋钮的释放沿退出
-		keyRead();//读取按键
-		keyFilter(1);//滤波一阶段
-		keyRead();//再次读取按键
-		keyFilter(2);//滤波二阶段
-		keyTurn();//按键旋转映射
+		KeyRead();//读取按键
+		KeyFilter(1);//滤波一阶段
+		KeyRead();//再次读取按键
+		KeyFilter(2);//滤波二阶段
+		KeyTurn();//按键旋转映射
 		
 		buzzVol += EC1val;//编码器1调节音量
 		EC1val = EC2val = 0;
@@ -171,20 +171,20 @@ void buzzHandle(void){//蜂鸣器处理
 					if(keyNow[i]) effective = i;//按下即发音
 				}
 			}
-			buzzTone = toneTABLE[effective] + keyNow[12];//从查找表并结合黑键计算音符
+			buzzTone = TONE_KEY[effective] + keyNow[12];//从查找表并结合黑键计算音符
 			if(keyNow[4] && effective < 8) buzzTone += 12;//上半部升八度
 			else if(keyNow[4]) buzzTone -= 12;//下半部降八度
 		}
 		else buzzTone = 0xFF;//清空音符
 		if(buzzToneOld == buzzTone) continue;//若音符未改变则跳过
 		if(buzzTone < 18){//低频由定时器实现
-			toneTimValue = toneTIM[buzzTone];
-			buzzTimVol = (((uint32_t)toneTimValue * buzzVol) >> 8) / 3;
+			TONE_TIMValue = TONE_TIM[buzzTone];
+			buzzTimVol = (((uint32_t)TONE_TIMValue * buzzVol) >> 8) / 3;
 			PWM_SEL_CHANNEL(PWM_CH0, Disable);//PWM0输出失能
 			ET0 = 1;//定时器0中断使能
 		}
 		else if(buzzTone <= 48){//高频由PWM实现
-			SetPWMClkDiv(tonePWM[buzzTone - 18]);//PWM时钟分频配置
+			SetPWMClkDiv(TONE_PWM[buzzTone - 18]);//PWM时钟分频配置
 			BUZZ_PWM = buzzVol;
 			ET0 = 0;//定时器0中断失能
 			PWM_SEL_CHANNEL(PWM_CH0, Enable);//PWM0输出使能
@@ -209,27 +209,27 @@ void LL_test(void){
 	i++;
 	if(Systime - oldTime >= 1000){//端点2打印输出
 		oldTime += 1000;
-		memset(DebugBuf, ' ', 64);
-		sprintf(DebugBuf, "%d	%d	%u\n", sCount, fCount, (uint16_t)Systime);
+		memset(debugBuf, ' ', 64);
+		sprintf(debugBuf, "%d	%d	%u\n", sCount, fCount, (uint16_t)Systime);
 		
-		Enp2IntIn(DebugBuf, 64);
+		Enp2IntIn(debugBuf, 64);
 	}
 
 //	mDelaymS(10);
 }
 
-void multiFunc(void){//功能集合函数
+void MultiFunc(void){//功能集合函数
 //	LL_test();//测试代码
-	keyTurn();//按键旋转映射
+	KeyTurn();//按键旋转映射
 	
-	if(fillReport() == 1){//报文填写 若返回蜂鸣器模式
-		clearKeyRGB();//清除键盘RGB
-		wsWrite16();//灯写入
+	if(FillReport() == 1){//报文填写 若返回蜂鸣器模式
+		ClearKeyRGB();//清除键盘RGB
+		WsWrite16();//灯写入
 		buzzHandle();//蜂鸣器处理
 	}
 	
-	sysRGB();//系统RGB控制
-	keyRGB(0);//键盘RGB控制
+	SysRGB();//系统RGB控制
+	KeyRGB(0);//键盘RGB控制
 //	if(WakeUpEnFlag & 1) PWM_R = 100;
 //	else PWM_R = 0;
 //	if(WakeUpEnFlag & 2) PWM_G = 100;

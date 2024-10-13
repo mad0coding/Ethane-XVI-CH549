@@ -148,7 +148,7 @@ void CAP0Init(UINT8 mode)
 void mTimer0Interrupt( void ) interrupt INT_NO_TMR0 using 1                    //timer0中断服务程序,使用寄存器组1
 {
 	//Systime += 3;		//32.768约等于33ms
-    mTimer_x_SetData(0, toneTimValue);					//模式1 需重新给TH0和TL0赋值
+    mTimer_x_SetData(0, TONE_TIMValue);					//模式1 需重新给TH0和TL0赋值
 	BUZZ_G = 0;//蜂鸣器通电
 	mDelayuS(buzzTimVol);
 	BUZZ_G = 1;//蜂鸣器断电

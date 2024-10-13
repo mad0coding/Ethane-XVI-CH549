@@ -46,39 +46,39 @@
 #define BUZZ_G		P2_5//蜂鸣器驱动栅极
 #define BUZZ_PWM	PWM_DATA0//蜂鸣器驱动占空比
 
-#define ANA_MID_0	ANA_MID_SET[0]
-#define ANA_MID_1	ANA_MID_SET[1]
+#define ANA_MID_0	Adc_Mid_Set[0]
+#define ANA_MID_1	Adc_Mid_Set[1]
 
 extern uint32_t Systime;//系统时间
 
-extern UINT8C turnL90[16];//左旋按键映射矩阵
-extern UINT8C turnR90[16];//右旋按键映射矩阵
-extern UINT16D toneTimValue;//声调定时器计数值
+extern UINT8C TURN_L90[16];//左旋按键映射矩阵
+extern UINT8C TURN_R90[16];//右旋按键映射矩阵
+extern UINT16D TONE_TIMValue;//声调定时器计数值
 extern UINT16D buzzTimVol;//声调定时器延时值
 
 extern UINT8D EC1val, EC2val;
 extern bit EC1freq, EC2freq;
 
 extern uint16_t adcValue[];
-extern uint16_t ANA_MID_SET[];
+extern uint16_t Adc_Mid_Set[];
 extern UINT8D keyFltNum;//按键滤波参数
 
 extern uint8_t keyNow[KP_NUM];//按键映射结果
 extern uint8_t keyOld[KP_NUM];//按键映射结果旧值
 //extern uint8_t keyFlt[KP_NUM];
-extern uint8_t DebugBuf[];
+extern uint8_t debugBuf[];
 
 
-void arrayInit(void);//数组初始化
-void adcRead(void);//摇杆读取
-void keyRead(void);//按键读取
-void keyFilter(uint8_t ts);//按键滤波
+void ArrayInit(void);//数组初始化
+void AdcRead(void);//摇杆读取
+void KeyRead(void);//按键读取
+void KeyFilter(uint8_t ts);//按键滤波
 
-void getTime(void);//时间获取
+void GetTime(void);//时间获取
 
 void LL_test(void);
 
-void multiFunc(void);//功能集合函数
+void MultiFunc(void);//功能集合函数
 
 
 #endif

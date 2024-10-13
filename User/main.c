@@ -19,7 +19,7 @@
 
 uint8_t asyncFlag = 0;//异步操作标志
 
-uint8_t SendTime = 0;//发送时间
+uint8_t reportSendTime = 0;//报文发送时间
 uint8_t All_if_send = 0;//总发送标志
 uint8_t KeyBrd_if_send = 0;//键盘报文是否发送
 uint8_t Mouse_if_send = 0;//鼠标报文是否发送
@@ -86,41 +86,41 @@ void main()
 
 	CH549WDTModeSelect(1);		//启动看门狗
 	
-	arrayInit();	//数组初始化
-	paraLoad();		//参数读取
+	ArrayInit();	//数组初始化
+	ParaLoad();		//参数读取
 	
     while(1){
 		WDOG_COUNT = 0;//清零看门狗计数
 		
 		/********************基本IO********************/
-		getTime();//时间获取
+		GetTime();//时间获取
 		
-		keyRead();//读取按键
-		keyFilter(1);//滤波一阶段
-		adcRead();//摇杆ADC读取一个通道
+		KeyRead();//读取按键
+		KeyFilter(1);//滤波一阶段
+		AdcRead();//摇杆ADC读取一个通道
 		
-        wsWrite16();//灯写入
+        WsWrite16();//灯写入
 		
-		adcRead();//摇杆ADC读取另一个通道
-		keyRead();//再次读取按键
-		keyFilter(2);//滤波二阶段
+		AdcRead();//摇杆ADC读取另一个通道
+		KeyRead();//再次读取按键
+		KeyFilter(2);//滤波二阶段
 		/**********************************************/
 		
 		if(asyncFlag & 0x80) continue;//若USB正在接收数据则跳过HID发送
 		else if(asyncFlag){//有需要的异步操作
-			asyncHandle(asyncFlag);//异步处理
+			AsyncHandle(asyncFlag);//异步处理
 			asyncFlag = 0;//清除标志
 			continue;
 		}
 		
 		if(All_if_send == 0){//若总发送标志已清空
-			multiFunc();//处理各种功能
+			MultiFunc();//处理各种功能
 			
 			All_if_send = KeyBrd_if_send | (Mouse_if_send << 1) | (Point_if_send << 2) | (Vol_if_send << 3);//生成总发送标志
 		}
 		
-		if((uint8_t)((uint8_t)Systime - SendTime) < 8) continue;	//延时未到则跳过发送
-		if(All_if_send != 0) SendTime = Systime;	//若有要发送的则记录发送时间低8位
+		if((uint8_t)((uint8_t)Systime - reportSendTime) < 8) continue;	//延时未到则跳过发送
+		if(All_if_send != 0) reportSendTime = Systime;	//若有要发送的则记录发送时间低8位
 		
 		if(All_if_send && WakeUpEnFlag == 0x03){//若要发送且主机已休眠
 			CH554USBDevWakeup();//唤醒
@@ -151,8 +151,8 @@ void main()
 //GetTime		14/2=7us
 //WS_Write_16	2142/2=1071us
 //keyRead		21/2=10.5us
-//keyFilter(1)	70/2=35us
-//keyFilter(2)	157/2=78.5us
+//KeyFilter(1)	70/2=35us
+//KeyFilter(2)	157/2=78.5us
 
 
 
