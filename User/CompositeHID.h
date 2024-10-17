@@ -11,11 +11,13 @@
 #include "ParaUse.h"
 
 #define HID_EPIN_ADDR						0x81U//HID使用上行端点1
+#define HID_EPOUT_ADDR						0x01U//HID使用下行端点1
 #define CUSTOM_HID_EPIN_ADDR				0x82U//自定义HID使用上行端点2
 #define CUSTOM_HID_EPOUT_ADDR				0x02U//自定义HID使用下行端点2
 
 #define THIS_ENDP0_SIZE         64		//端点0数据包大小
-#define ENDP1_IN_SIZE           22		//HID端点IN数据包大小
+#define ENDP1_IN_SIZE           64//22		//HID端点IN数据包大小
+#define ENDP1_OUT_SIZE          64		//HID端点OUT数据包大小
 #define ENDP2_IN_SIZE           64		//自定义HID端点IN数据包大小
 #define ENDP2_OUT_SIZE          64		//自定义HID端点OUT数据包大小
 
@@ -35,9 +37,9 @@
 
 #pragma  NOAREGS
 
-
 extern uint8_t asyncFlag;//异步操作标志
 
+//extern bit WakeUpEnFlag;		//远程唤醒使能标志
 extern UINT8 pdata WakeUpEnFlag;		//远程唤醒使能标志
 
 

@@ -20,10 +20,10 @@ uint16_t adcValue[2] = {2048,2048};
 uint16_t Adc_Mid_Set[2] = {2048,2048};
 UINT8D keyFltNum = 2;//按键滤波参数
 
-uint8_t keyRaw[KP_NUM];//按键原始采样
-uint8_t keyFlt[KP_NUM];//按键滤波结果
-uint8_t fltOld[KP_NUM];//按键滤波用的旧值
-uint8_t fltCount[KP_NUM];//按键滤波计数
+static uint8_t keyRaw[KP_NUM];//按键原始采样
+static uint8_t keyFlt[KP_NUM];//按键滤波结果
+static uint8_t fltOld[KP_NUM];//按键滤波用的旧值
+static uint8_t fltCount[KP_NUM];//按键滤波计数
 
 uint8_t keyNow[KP_NUM];//按键映射结果
 uint8_t keyOld[KP_NUM];//按键映射结果旧值

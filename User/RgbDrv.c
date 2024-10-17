@@ -91,18 +91,18 @@ UINT8C INX_TABLE[] = {//预置灯效下标表
 UINT8C RGB_CYCLE[10] = {0,1,2,3, 5,7,10,15, 20,30};//RGB周期表(单位s)
 UINT16C RGB_DELAY[8] = {0,1,10,50, 100,500,1000,2000};//RGB延时表(单位ms)
 
-uint8_t fracM[16] = {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,};//主效果比例
-uint8_t fracUD[16] = {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,};//按动效果比例
+static uint8_t fracM[16] = {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,};//主效果比例
+static uint8_t fracUD[16] = {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,};//按动效果比例
 
-uint8_t inXi[16] = {0,1,2,3, 4,5,6,7, 8,9,10,11, 12,13,14,15,};
+static uint8_t inXi[16] = {0,1,2,3, 4,5,6,7, 8,9,10,11, 12,13,14,15,};
 
-uint8_t FrameRaw[16*3] = {//原始帧缓存
+static uint8_t FrameRaw[16*3] = {//原始帧缓存
 	0,0,0,	0,0,0,	0,0,0,	0,0,0,
 	0,0,0,	0,0,0,	0,0,0,	0,0,0,
 	0,0,0,	0,0,0,	0,0,0,	0,0,0,
 	0,0,0,	0,0,0,	0,0,0,	0,0,0,
 };//RGB
-UINT8I FrameBuf[16*3] = {//帧缓存
+static UINT8I FrameBuf[16*3] = {//帧缓存
 	0,0,0,	0,0,0,	0,0,0,	0,0,0,
 	0,0,0,	0,0,0,	0,0,0,	0,0,0,
 	0,0,0,	0,0,0,	0,0,0,	0,0,0,
@@ -338,7 +338,7 @@ uint8_t clickerNum = 0;//自动连点数
 uint32_t changeTime = -10000;//配置切换时间
 
 extern uint8_t mode3_key;//模式3按键(1-16)
-
+extern bit bitNUM, bitCAPS, bitSCROLL;//数字锁定 大写锁定 滚动锁定
 void SysRGB(){//系统RGB控制
 	uint8_t r = CFG_RGB_R, g = CFG_RGB_G, b = CFG_RGB_B;
 	uint16_t h, s, v;
@@ -391,6 +391,11 @@ void SysRGB(){//系统RGB控制
 		PWM_R = r;	PWM_G = g;	PWM_B = b;
 	}
 	else PWM_R = PWM_G = PWM_B = 0;
+	
+	//测试代码：
+	PWM_R = bitNUM*255;
+	PWM_G = bitCAPS*255;
+	PWM_B = bitSCROLL*255;
 }
 
 
