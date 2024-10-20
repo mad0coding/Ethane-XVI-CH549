@@ -88,8 +88,6 @@ UINT8C INX_TABLE[] = {//预置灯效下标表
 	9,10,11,0,	 8,15,12,1,	 7,14,13,2,	 6,5,4,3,//↓←
 	3,2,1,0,	 4,13,12,11, 5,14,15,10, 6,7,8,9,//←↓
 };
-UINT8C RGB_CYCLE[10] = {0,1,2,3, 5,7,10,15, 20,30};//RGB周期表(单位s)
-UINT16C RGB_DELAY[8] = {0,1,10,50, 100,500,1000,2000};//RGB延时表(单位ms)
 
 static uint8_t fracM[16] = {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,};//主效果比例
 static uint8_t fracUD[16] = {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,};//按动效果比例
@@ -333,69 +331,50 @@ void Hsv2Rgb(uint16_t vH, uint16_t vS, uint16_t vV, uint8_t* pR, uint8_t* pG, ui
     else if(hi == 5){*pR = vV;   *pG = p;    *pB = q;}
 }
 
-uint8_t clickerNum = 0;//自动连点数
-//uint8_t loopNum = 0;//循环按键组循环数
-uint32_t changeTime = -10000;//配置切换时间
+UINT16C RGB_DELAY[8] = {0,1,10,50, 100,500,1000,2000};//RGB延时表(单位ms)
 
-extern uint8_t mode3_key;//模式3按键(1-16)
 extern bit bitNUM, bitCAPS, bitSCROLL;//数字锁定 大写锁定 滚动锁定
+extern uint8_t clickerNum;//自动连点数
+extern uint8_t mode3_key;//模式3按键(1-16)
+
+extern uint32_t changeTime;//配置切换时间
+
 void SysRGB(){//系统RGB控制
-	uint8_t r = CFG_RGB_R, g = CFG_RGB_G, b = CFG_RGB_B;
-	uint16_t h, s, v;
-//	uint16_t h2;
-//	uint8_t i;
-	int16_t x, y;
+	uint8_t i;
+	static uint8_t rgbWeight = 0;//系统RGB指示灯权重
+	uint8_t rgbOutput[3];//系统RGB指示灯输出
+	uint8_t rgbInput[6];//系统RGB指示灯输入
+	rgbInput[0] = 0;
+	rgbInput[1] = bitNUM;
+	rgbInput[2] = bitCAPS;
+	rgbInput[3] = bitSCROLL;
+	rgbInput[4] = !!clickerNum;
+	rgbInput[5] = !!mode3_key;
 	
-	if(clickerNum && CFGb_RGB_CLICKER){//指示自动连点
-		if(clickerNum == 1){PWM_R = PWM_G = 0;	PWM_B = CFG_RGB_LIGHT;}
-		else			   {PWM_G = PWM_B = 0;	PWM_R = CFG_RGB_LIGHT;}
-		return;
+	if(CFGb_RGB_T_ON && (Systime - changeTime) < RGB_DELAY[CFGb_RGB_T_ON]){//配置切换后在设定时间之内
+		rgbWeight = 255;
 	}
-	if(mode3_key && CFGb_RGB_LOOP){//指示按键组
-		PWM_R = PWM_B = 0;	PWM_G = CFG_RGB_LIGHT;
-		return;
+	else if(CFGb_RGB_T_OFF){//超过设定时间 且 不是配置为不灭
+		if(CFGb_RGB_T_OFF >= 4) rgbWeight = 0;//配置为立刻灭
+		else if(rgbWeight >= (1 << (CFGb_RGB_T_OFF - 1))) rgbWeight -= (1 << (CFGb_RGB_T_OFF - 1));
+		else rgbWeight = 0;
 	}
-	if(CFGb_RGB_TIME && (Systime - changeTime) < RGB_DELAY[CFGb_RGB_TIME]){//指示配置切换
-		PWM_R = CFG_RGB_R;	PWM_G = CFG_RGB_G;	PWM_B = CFG_RGB_B;
-		return;
-	}
-	
-	if(CFGb_RGB_RK){//摇杆映射
-		x = ((int16_t)adcValue[0] - (int16_t)ANA_MID_0);
-		y = ((int16_t)adcValue[1] - (int16_t)ANA_MID_1);
-		if(MAX(ABS(x), ABS(y)) > (uint16_t)(MAX(CFG_R_DEAD(0),1) * 21)){//若在死区外
-			
-			return;
+
+	for(i = 0; i < 3; i++){//轮流处理R G B
+		rgbOutput[i] = rgbInput[CFGb_RGB_MAP(i)] ^ CFGb_RGB_DIR(i);//映射 计算指示灯状态
+		if(rgbOutput[i] && !CFGb_RGB_T_OFF){//若指示灯亮 且 标签配置为不灭
+			rgbOutput[i] *= CFG_RGB_SIGN(i);//指示灯亮
 		}
+		else{
+			rgbOutput[i] = (CFG_RGB_SIGN(i) * (255 - rgbWeight) * rgbOutput[i]
+							+ CFG_RGB_RGB(i) * rgbWeight) / 255;//加权平均
+		}
+//		rgbOutput[i] = (CFG_RGB_SIGN(i) * (255 - rgbWeight) * (rgbInput[CFGb_RGB_MAP(i)] ^ CFGb_RGB_DIR(i)) 
+//						+ CFG_RGB_RGB(i) * rgbWeight) / 255;//映射 加权平均
 	}
-	
-	if(CFGb_RGB_COLORFUL && CFGb_RGB_WAVE){//若启用色彩变化和呼吸变化
-		Rgb2Hsv(CFG_RGB_R, CFG_RGB_G, CFG_RGB_B, &h, &s, &v);
-		h += (Systime / RGB_CYCLE[CFGb_RGB_COLORFUL]) % (COLOR_ANGLE * 6);
-		if(h >= COLOR_ANGLE * 6) h -= COLOR_ANGLE * 6;
-		Hsv2Rgb(h, s, v, &r, &g, &b);
-	}
-	if(CFGb_RGB_WAVE && CFGb_RGB_WAVE != 9){//若启用呼吸变化
-		v = (Systime / RGB_CYCLE[CFGb_RGB_WAVE]) % (COLOR_ANGLE * 6);
-		if(v >= COLOR_ANGLE * 3) v = COLOR_ANGLE * 6 - 1 - v;//0~500
-		
-//		r1 = (uint32_t)r * v / 500; g1 = (uint32_t)g * v / 500; b1 = (uint32_t)b * v / 500;
-//		for(i = 0; i < 16; i++){FrameBuf[3*i+0] = g1; FrameBuf[3*i+1] = r1; FrameBuf[3*i+2] = b1;}
-		
-		v = LED_CURVE[v];//获取校正的亮度值(借用v存储)
-		r = r * v / 255;
-		g = g * v / 255;
-		b = b * v / 255;
-	}
-	if(CFGb_RGB_WAVE){//若启用呼吸
-		PWM_R = r;	PWM_G = g;	PWM_B = b;
-	}
-	else PWM_R = PWM_G = PWM_B = 0;
-	
-	//测试代码：
-	PWM_R = bitNUM*255;
-	PWM_G = bitCAPS*255;
-	PWM_B = bitSCROLL*255;
+	PWM_R = rgbOutput[0];
+	PWM_G = rgbOutput[1];
+	PWM_B = rgbOutput[2];
 }
 
 

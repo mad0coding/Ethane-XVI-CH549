@@ -15,8 +15,8 @@ extern uint8_t Point_if_send;//指针报文是否发送
 extern uint8_t Mouse_if_send;//鼠标报文是否发送
 //********************************************************************//
 
-extern uint8_t clickerNum;//自动连点数
-extern uint32_t changeTime;//配置切换时间
+uint8_t clickerNum = 0;//自动连点数
+uint32_t changeTime = -10000*0;//配置切换时间
 
 //******************************数据相关******************************//
 uint8_t mode3_key = 0;//模式3按键(1-16)
