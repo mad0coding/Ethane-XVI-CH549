@@ -411,6 +411,12 @@ else{//若未在接收状态 则监听各种命令
 		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
 		asyncFlag = 101;//异步标志置位
 	}
+	else if(Buf[0] == 'B' && Buf[1] == 'F' && Buf[2] == 'W' && Buf[3] == 'V'){//固件版本读取命令
+		Buf[Offset+0] = 'R'; Buf[Offset+1] = Buf[1]; Buf[Offset+2] = Buf[2]; Buf[Offset+3] = Buf[3];//填入响应字节
+		memcpy(&Buf[Offset+4], FIRMWARE_VERSION, 4);//填入固件版本
+		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
+		asyncFlag = 102;//异步标志置位
+	}
 	else if(Buf[0] == 'B' && Buf[1] == 'F' && Buf[2] == 'E' && Buf[3] == 'C'){//闪存擦除计数读取命令
 		Buf[Offset+0] = 'R'; Buf[Offset+1] = Buf[1]; Buf[Offset+2] = Buf[2]; Buf[Offset+3] = Buf[3];//填入响应字节
 		

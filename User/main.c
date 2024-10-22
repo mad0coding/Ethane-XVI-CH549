@@ -16,6 +16,7 @@
 
 #pragma  NOAREGS
 
+UINT8C FIRMWARE_VERSION[4] = {1,0,1,10};//固件版本 V1.0.1.10
 
 uint8_t asyncFlag = 0;//异步操作标志
 

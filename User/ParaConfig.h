@@ -54,9 +54,6 @@
 #define CFG_E_KEY(i,n)		(*(CFG_E_DATA_S + (i) * CFG_E_DATA_L + 2 + (n)))//旋钮按键 中逆顺
 #define CFG_E_FUNC(i,n)		(*(CFG_E_DATA_S + (i) * CFG_E_DATA_L + 5 + (n)))//旋钮功能键 中逆顺
 
-//#define CFG_RGB_R			(*(CFG_THIS + 496))//RGB灯标签色值R
-//#define CFG_RGB_G			(*(CFG_THIS + 497))//RGB灯标签色值G
-//#define CFG_RGB_B			(*(CFG_THIS + 498))//RGB灯标签色值B
 #define CFG_RGB_RGB(i)		(*(CFG_THIS + 496 + (i)))//RGB灯标签色值RGB
 #define CFG_RGB_SIGN(i)		(*(CFG_THIS + 499 + (i)))//RGB灯指示色值RGB
 #define CFG_RGB_CFG(i)		(*(CFG_THIS + 502 + (i)))//RGB灯指示灯配置
@@ -80,14 +77,6 @@
 #define CFGb_RGB_MAP(i)		(CFG_RGB_CFG(i) & 0x0F)//RGB灯指示灯映射
 #define CFGb_RGB_T_ON		(CFG_RGB_TIME >> 4)//RGB灯标签亮时间
 #define CFGb_RGB_T_OFF		(CFG_RGB_TIME & 0x0F)//RGB灯标签渐灭速度
-
-
-//#define CFGb_RGB_WAVE		(CFG_RGB_CYCLE & 0x0F)//呼吸周期
-//#define CFGb_RGB_RK			((CFG_RGB_SET >> 7) & 1)//摇杆映射
-//#define CFGb_RGB_CLICKER	((CFG_RGB_SET >> 6) & 1)//连点指示
-//#define CFGb_RGB_LOOP		((CFG_RGB_SET >> 5) & 1)//循环指示
-//#define CFGb_RGB_TIME		(CFG_RGB_SET & 0x0F)//配置指示时间
-
 
 
 

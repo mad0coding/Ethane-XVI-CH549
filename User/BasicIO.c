@@ -136,6 +136,7 @@ void buzzHandle(void){//蜂鸣器处理
 	PWM0OutPolarLowAct();//PWM0反极性
 	
 	while((!keyOld[18] || keyNow[18]) && (!keyOld[17] || keyNow[17]) && (!keyOld[16] || keyNow[16])){//摇杆或旋钮的释放沿退出
+		WDOG_COUNT = 0;//清零看门狗计数
 		KeyRead();//读取按键
 		KeyFilter(1);//滤波一阶段
 		KeyRead();//再次读取按键

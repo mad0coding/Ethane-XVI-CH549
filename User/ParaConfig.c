@@ -156,6 +156,8 @@ void ParaUpdate(uint8_t pos){//参数更新
 void GlobalParaLoad(void){//全局参数读取
 	Adc_Mid_Set[0] = GLOB_ANA_MID1;//摇杆中位
 	Adc_Mid_Set[1] = GLOB_ANA_MID2;
+	if(!Adc_Mid_Set[0] || Adc_Mid_Set[0] >= 4095) Adc_Mid_Set[0] = 2048;//非法数据检查
+	if(!Adc_Mid_Set[1] || Adc_Mid_Set[1] >= 4095) Adc_Mid_Set[1] = 2048;
 	keyFltNum = GLOB_KEY_FLT;//按键滤波参数
 	EC1freq = GLOBb_EC_FREQ1;//旋钮倍频参数
 	EC2freq = GLOBb_EC_FREQ2;

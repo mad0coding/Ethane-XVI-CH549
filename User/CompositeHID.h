@@ -37,9 +37,9 @@
 
 #pragma  NOAREGS
 
-extern uint8_t asyncFlag;//异步操作标志
 
-//extern bit WakeUpEnFlag;		//远程唤醒使能标志
+extern UINT8C FIRMWARE_VERSION[4];//固件版本
+extern uint8_t asyncFlag;//异步操作标志
 extern UINT8 pdata WakeUpEnFlag;		//远程唤醒使能标志
 
 
