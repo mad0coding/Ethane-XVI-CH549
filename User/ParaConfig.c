@@ -1,7 +1,7 @@
 
 #include "ParaConfig.h"
 
-UINT8X FlashBuf[512] _at_ (1024+512);//配置缓存数组
+UINT8X FlashBuf[512] _at_ XBASE_FLASH_BUF;//配置缓存数组
 
 uint16_t keyAddr[CFG_NUM][16];//3组每组16按键的数据地址
 uint16_t keyWork[16];//16按键的工作用数组

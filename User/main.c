@@ -16,7 +16,7 @@
 
 #pragma  NOAREGS
 
-UINT8C FIRMWARE_VERSION[4] = {1,0,1,10};//固件版本 V1.0.1.10
+UINT8C FIRMWARE_VERSION[4] = {1,0,1,12};//固件版本 V1.0.1.12
 
 uint8_t asyncFlag = 0;//异步操作标志
 
@@ -47,6 +47,8 @@ void main()
     mDelaymS(5);					//修改主频等待内部晶振稳定,必加
 //    mInitSTDIO( );					//串口0初始化
 	if(!(PCON & bRST_FLAG0)) mDelaymS(50);	//若为软复位或看门狗复位 则额外追加延时
+	
+	ArrayInit();	//数组初始化
 	
     USBDeviceInit();				//USB设备模式初始化
     EA = 1;							//总中断允许
@@ -87,7 +89,6 @@ void main()
 
 	CH549WDTModeSelect(1);		//启动看门狗
 	
-	ArrayInit();	//数组初始化
 	ParaLoad();		//参数读取
 	
     while(1){

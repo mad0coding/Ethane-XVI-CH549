@@ -16,7 +16,7 @@
 #define CUSTOM_HID_EPOUT_ADDR				0x02U//自定义HID使用下行端点2
 
 #define THIS_ENDP0_SIZE         64		//端点0数据包大小
-#define ENDP1_IN_SIZE           64//22		//HID端点IN数据包大小
+#define ENDP1_IN_SIZE           22		//HID端点IN数据包大小
 #define ENDP1_OUT_SIZE          64		//HID端点OUT数据包大小
 #define ENDP2_IN_SIZE           64		//自定义HID端点IN数据包大小
 #define ENDP2_OUT_SIZE          64		//自定义HID端点OUT数据包大小
@@ -41,6 +41,8 @@
 extern UINT8C FIRMWARE_VERSION[4];//固件版本
 extern uint8_t asyncFlag;//异步操作标志
 extern UINT8 pdata WakeUpEnFlag;		//远程唤醒使能标志
+extern UINT8X MySrNumInfo[];//序列号
+extern UINT16X MySrNumU16[];//序列号原始数值
 
 
 void Enp1IntIn(UINT8 *buf, UINT8 len);

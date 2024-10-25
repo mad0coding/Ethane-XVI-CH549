@@ -15,6 +15,20 @@
 #define KB_LEN		22//键盘报文长度
 #define KP_NUM		19//按键个数
 
+//XDATA地址分配
+#define XBASE_KEY_NOW		(XBASE_EP0_BUF - KP_NUM*6)
+#define XBASE_KEY_OLD		(XBASE_KEY_NOW + KP_NUM*1)
+#define XBASE_KEY_RAW		(XBASE_KEY_NOW + KP_NUM*2)
+#define XBASE_KEY_FLT		(XBASE_KEY_NOW + KP_NUM*3)
+#define XBASE_FLT_OLD		(XBASE_KEY_NOW + KP_NUM*4)
+#define XBASE_FLT_CNT		(XBASE_KEY_NOW + KP_NUM*5)
+#define XBASE_EP0_BUF		(XBASE_FLASH_BUF - 64*5)
+#define XBASE_EP2_BUF		(XBASE_EP0_BUF + 64*1)
+#define XBASE_EP1_BUF		(XBASE_EP0_BUF + 64*3)
+#define XBASE_SERIAL_NUM	(XBASE_FLASH_BUF - 26 - 2*3)
+#define XBASE_FLASH_BUF		(1024+512)
+
+//IO定义
 #define KP_1	P1_3
 #define KP_2	P3_0
 #define KP_3	P3_3
