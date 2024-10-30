@@ -52,7 +52,7 @@ static UINT8C MyManuInfo[] = {36,0x03,
 	'L',0,'i',0,'g',0,'h',0,'t',0,'&',0,'E',0,'l',0,'e',0,'c',0,'t',0,'r',0,'i',0,'c',0,'i',0,'t',0,'y',0
 };//制造者名称
 UINT8X MySrNumInfo[26] _at_ XBASE_SERIAL_NUM;//序列号字符串 初始化时加载
-UINT16X MySrNumU16[3] _at_ (XBASE_SERIAL_NUM+26);//序列号原始数值 初始化时加载
+//UINT16X MySrNumU16[3] _at_ (XBASE_SERIAL_NUM+26);//序列号原始数值 初始化时加载
 
 /*HID类报文描述符*/
 static UINT8C KeyRepDesc[] = {//HID报文描述符
@@ -336,6 +336,7 @@ void DeviceInterrupt( void ) interrupt INT_NO_USB using 1				//USB中断服务�
 #define Offset	MAX_PACKET_SIZE
 #define count	Buf[Offset+63]//此字节在通信中不会修改,故借用
 #define packs	Buf[Offset+62]//此字节在通信中不会修改,故借用
+#define tmpi	Buf[Offset+61]//此字节在通信中不会修改,故借用
 if(asyncFlag & 0x80){//若已经在接收状态 则接收数据包
 	memcpy(FlashBuf + ((UINT16X)count << 6), Buf, 64);//数据包拷贝
 	Buf[Offset+0] = 'R'; Buf[Offset+1] = 'D';//填入响应字节
@@ -351,10 +352,10 @@ else{//若未在接收状态 则监听各种命令
 		&& Buf[3] >= '1' && Buf[3] <= '0' + CFG_NUM){//连接命令
 		if(Buf[1] == 'K'){	//键盘配置
 			packs = 8;
-			asyncFlag = Buf[3] - '1' + 10;//确定键盘存储位置
+			asyncFlag = Buf[3] - '1' + ASYNC_FLAG_CFG;//确定键盘存储位置
 		}else{				//灯效配置
 			packs = 4;
-			asyncFlag = Buf[3] - '1' + 20;//确定灯效存储位置
+			asyncFlag = Buf[3] - '1' + ASYNC_FLAG_LIGHT;//确定灯效存储位置
 		}
 		Buf[Offset+0] = 'R'; Buf[Offset+1] = Buf[1]; Buf[Offset+2] = Buf[2];//填入响应字节
 		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
@@ -367,7 +368,7 @@ else{//若未在接收状态 则监听各种命令
 		keyFltNum = Buf[3];//修改参数
 		Buf[Offset+3] = keyFltNum;//把新参数环回
 		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
-		asyncFlag = 30;//异步标志置位
+		asyncFlag = ASYNC_FLAG_GLOB;//异步标志置位
 	}
 	else if(Buf[0] == 'C' && Buf[1] == 'R' && Buf[2] == 'K'){//摇杆校正命令
 		Buf[Offset+0] = Buf[1]; Buf[Offset+1] = Buf[2];//填入响应字节
@@ -382,7 +383,7 @@ else{//若未在接收状态 则监听各种命令
 		Buf[Offset+8] = Adc_Mid_Set[1] >> 8;
 		Buf[Offset+9] = Adc_Mid_Set[1] & 0xFF;
 		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
-		asyncFlag = 30;//异步标志置位
+		asyncFlag = ASYNC_FLAG_GLOB;//异步标志置位
 	}
 	else if(Buf[0] == 'C' && Buf[1] == 'E' && Buf[2] == 'C'){//修改旋钮倍频命令
 		Buf[Offset+0] = Buf[1]; Buf[Offset+1] = Buf[2];//填入响应字节
@@ -393,25 +394,25 @@ else{//若未在接收状态 则监听各种命令
 		Buf[Offset+4] = EC1freq;//把新参数的采纳值环回
 		Buf[Offset+5] = EC2freq;
 		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
-		asyncFlag = 30;//异步标志置位
+		asyncFlag = ASYNC_FLAG_GLOB;//异步标志置位
 	}
 	else if(Buf[0] == 'C' && Buf[1] == 'E' && Buf[2] == 'F'){//修改旋钮滤波参数命令(暂未实现)
 		Buf[Offset+0] = Buf[1]; Buf[Offset+1] = Buf[2];//填入响应字节
 		//TimFilterValue = Buf[3];//更新旋钮滤波参数
 		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
-		//asyncFlag = 20;//异步标志置位
+		//asyncFlag = ASYNC_FLAG_GLOB;//异步标志置位
 	}
 	else if(Buf[0] == 'B' && Buf[1] == 'R' && Buf[2] == 'S' && Buf[3] == 'T'){//软复位命令
 		Buf[Offset+0] = 'R'; Buf[Offset+1] = Buf[1]; Buf[Offset+2] = Buf[2]; Buf[Offset+3] = Buf[3];//填入响应字节
 		memset(&Buf[Offset+4], ' ', 64 - 4);//后面全置为空格
 		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
-		asyncFlag = 100;//异步标志置位
+		asyncFlag = ASYNC_FLAG_SRST;//异步标志置位
 	}
 	else if(Buf[0] == 'B' && Buf[1] == 'B' && Buf[2] == 'O' && Buf[3] == 'T'){//Boot预跳转命令
 		Buf[Offset+0] = 'R'; Buf[Offset+1] = Buf[1]; Buf[Offset+2] = Buf[2]; Buf[Offset+3] = Buf[3];//填入响应字节
 		memset(&Buf[Offset+4], ' ', 64 - 4);//后面全置为空格
 		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
-		asyncFlag = 101;//异步标志置位
+		asyncFlag = ASYNC_FLAG_BOOT;//异步标志置位
 	}
 	else if(Buf[0] == 'B' && Buf[1] == 'F' && Buf[2] == 'W' && Buf[3] == 'V'){//固件版本读取命令
 		Buf[Offset+0] = 'R'; Buf[Offset+1] = Buf[1]; Buf[Offset+2] = Buf[2]; Buf[Offset+3] = Buf[3];//填入响应字节
@@ -420,16 +421,23 @@ else{//若未在接收状态 则监听各种命令
 	}
 	else if(Buf[0] == 'B' && Buf[1] == 'U' && Buf[2] == 'I' && Buf[3] == 'D'){//序列号读取命令
 		Buf[Offset+0] = 'R'; Buf[Offset+1] = Buf[1]; Buf[Offset+2] = Buf[2]; Buf[Offset+3] = Buf[3];//填入响应字节
-		*(uint16_t*)&Buf[Offset+4] = MySrNumU16[0];//填入序列号
-		*(uint16_t*)&Buf[Offset+6] = MySrNumU16[1];
-		*(uint16_t*)&Buf[Offset+8] = MySrNumU16[2];
+		for(tmpi = 0; tmpi < 12; tmpi++){//读取12个字符并转为16进制的一位数
+			Buf[Offset+4+tmpi] = MySrNumInfo[2+tmpi*2];//读取字符
+			if(Buf[Offset+4+tmpi] >= '0' && Buf[Offset+4+tmpi] <= '9') Buf[Offset+4+tmpi] -= '0';
+			else if(Buf[Offset+4+tmpi] >= 'a' && Buf[Offset+4+tmpi] <= 'f') Buf[Offset+4+tmpi] -= ('a' - 10);
+			else if(Buf[Offset+4+tmpi] >= 'A' && Buf[Offset+4+tmpi] <= 'F') Buf[Offset+4+tmpi] -= ('A' - 10);
+			else Buf[Offset+4+tmpi] = 0;
+		}
+		for(tmpi = 0; tmpi < 6; tmpi++){//12个16进制的一位数转为6个字节
+			Buf[Offset+4+tmpi] = (Buf[Offset+4+tmpi*2] << 4) | Buf[Offset+5+tmpi*2];
+		}
 		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
 	}
 	else if(Buf[0] == 'B' && Buf[1] == 'F' && Buf[2] == 'E' && Buf[3] == 'C'){//闪存擦除计数读取命令
 		Buf[Offset+0] = 'R'; Buf[Offset+1] = Buf[1]; Buf[Offset+2] = Buf[2]; Buf[Offset+3] = Buf[3];//填入响应字节
 		
 		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
-		asyncFlag = 102;//异步标志置位
+		asyncFlag = ASYNC_FLAG_FCNT;//异步标志置位
 	}
 }
 /**************************************************以上CustomHID通信部分独立缩进**************************************************/

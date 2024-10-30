@@ -16,26 +16,26 @@ PUINT8C GLOB_CFG = DATA_GLOB_BASE;//闪存区全局信息指针
 
 void AsyncHandle(uint8_t flag){//异步处理
 	uint8_t ret;
-	if(flag >= 10 && flag < 10 + CFG_NUM){		//键盘配置存储
-		ret = ParaWrite((DATA_CFG_BASE - (flag - 10) * 512), FlashBuf, 8);
-		ParaUpdate(flag - 10);//键盘配置参数更新
+	if(flag >= ASYNC_FLAG_CFG && flag < ASYNC_FLAG_CFG + CFG_NUM){			//键盘配置存储
+		ret = ParaWrite((DATA_CFG_BASE - (flag - ASYNC_FLAG_CFG) * 512), FlashBuf, 8);
+		ParaUpdate(flag - ASYNC_FLAG_CFG);//键盘配置参数更新
 	}
-	else if(flag >= 20 && flag < 20 + CFG_NUM){	//灯效配置存储
-		ret = ParaWrite((DATA_LIGHT_BASE - (flag - 20) * 256), FlashBuf, 4);
+	else if(flag >= ASYNC_FLAG_LIGHT && flag < ASYNC_FLAG_LIGHT + CFG_NUM){	//灯效配置存储
+		ret = ParaWrite((DATA_LIGHT_BASE - (flag - ASYNC_FLAG_LIGHT) * 256), FlashBuf, 4);
 		KeyRGB(1);//键盘RGB控制清零
 	}
-	else if(flag == 30){						//全局参数存储
+	else if(flag == ASYNC_FLAG_GLOB){		//全局参数存储
 		GlobalParaUpdate();//全局参数更新
 		ret = ParaWrite(DATA_GLOB_BASE, FlashBuf, 1);
 	}
-	else if(flag == 100){						//软复位
+	else if(flag == ASYNC_FLAG_SRST){		//软复位
 		ClearKeyRGB();//清除键盘RGB
 		WsWrite16();//灯写入
 		mDelaymS(100);//延时以让USB发送完成
 		IE = 0;//全局中断关闭
 		CH549SoftReset();//软复位
 	}
-	else if(flag == 101){						//Boot预跳转
+	else if(flag == ASYNC_FLAG_BOOT){		//Boot预跳转
 		ClearKeyRGB();//清除键盘RGB
 		WsWrite16();//灯写入
 		mDelaymS(100);//延时以让USB发送完成
@@ -52,7 +52,7 @@ void AsyncHandle(uint8_t flag){//异步处理
 
 		while(1) WDOG_COUNT = 0;//死循环 清零看门狗计数
 	}
-	else if(flag == 102){
+	else if(flag == ASYNC_FLAG_FCNT){
 		
 	}
 }

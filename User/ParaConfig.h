@@ -8,6 +8,15 @@
 #include "BasicIO.h"
 //#include "CompositeHID.H"
 
+//异步标志定义
+#define ASYNC_FLAG_CFG		10
+#define ASYNC_FLAG_LIGHT	20
+#define ASYNC_FLAG_GLOB		30
+#define ASYNC_FLAG_SRST		100
+#define ASYNC_FLAG_BOOT		101
+#define ASYNC_FLAG_FCNT		102
+
+
 //靠前60k(0x0000~0xEFFF)为CodeFlash 寿命10k次
 //靠后1k(0xF000~0xF3FF)为DataFlash 寿命约能100k次
 //最后3k(0xF400~0xFFFF)为BootLoader和ConfigInfo 用户不可使用

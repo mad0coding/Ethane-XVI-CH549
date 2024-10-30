@@ -15,39 +15,41 @@ UINT8C TURN_R90[16] = {	12,	8,	4,	0,
 uint32_t Systime = 0;//系统时间
 
 uint8_t debugBuf[64];
-
-uint16_t adcValue[2] = {2048,2048};
-uint16_t Adc_Mid_Set[2] = {2048,2048};
+						
 UINT8D keyFltNum = 2;//按键滤波参数
 
-static uint8_t keyRaw[KP_NUM] _at_ XBASE_KEY_RAW;//按键原始采样
-static uint8_t keyFlt[KP_NUM] _at_ XBASE_KEY_FLT;//按键滤波结果
-static uint8_t fltOld[KP_NUM] _at_ XBASE_FLT_OLD;//按键滤波用的旧值
-static uint8_t fltCount[KP_NUM] _at_ XBASE_FLT_CNT;//按键滤波计数
+uint16_t Adc_Mid_Set[2] _at_ XBASE_ADC_BUF;			//ADC中位值
+uint16_t adcValue[2] _at_ (XBASE_ADC_BUF + 2*2);	//ADC采样值
 
-uint8_t keyNow[KP_NUM] _at_ XBASE_KEY_NOW;//按键映射结果
-uint8_t keyOld[KP_NUM] _at_ XBASE_KEY_OLD;//按键映射结果旧值
+uint8_t keyNow[KP_NUM] _at_ XBASE_KEY_BUF;				//按键映射结果
+uint8_t keyOld[KP_NUM] _at_ (XBASE_KEY_BUF + KP_NUM*1);	//按键映射结果旧值
+
+static uint8_t keyRaw[KP_NUM] _at_ (XBASE_KEY_BUF + KP_NUM*2);		//按键原始采样
+static uint8_t keyFlt[KP_NUM] _at_ (XBASE_KEY_BUF + KP_NUM*3);		//按键滤波结果
+static uint8_t fltOld[KP_NUM] _at_ (XBASE_KEY_BUF + KP_NUM*4);		//按键滤波用的旧值
+static uint8_t fltCount[KP_NUM] _at_ (XBASE_KEY_BUF + KP_NUM*5);	//按键滤波计数
 
 void ArrayInit(void){//数组初始化
+	ArrayInitRGB();
 	adcValue[0] = adcValue[1] = Adc_Mid_Set[0] = Adc_Mid_Set[1] = 2048;
 	//srand(*(PUINT16X)(2048 - 2));//填入种子
 	memset(KeyBrd_data + 1, 0, 21);//初始化键盘报文数组
 	memset(debugBuf, 0, 64);
+	memset(keyNow, 0, KP_NUM);
+	memset(keyOld, 0, KP_NUM);
 	memset(keyFlt, 0, KP_NUM);
 	memset(fltOld, 0, KP_NUM);
 	memset(fltCount, 0, KP_NUM);
-	memset(keyNow, 0, KP_NUM);
-	memset(keyOld, 0, KP_NUM);
 	
 	//读芯片唯一ID 并填入USB序列号字符串
-//	*(PUINT32X)(MySrNumInfo + 18) = FlashReadOTPword(0x14);//17H,16H,15H,14H 高两字节为校验 不使用
-//	*(PUINT32X)(MySrNumInfo + 22) = FlashReadOTPword(0x10);//13H,12H,11H,10H
-	MySrNumU16[0] = FlashReadOTPword(0x14);//17H,16H,15H,14H 高两字节为校验 不使用
-	*(uint32_t*)&MySrNumU16[1] = FlashReadOTPword(0x10);//13H,12H,11H,10H
+	*(PUINT32X)(MySrNumInfo + 18) = FlashReadOTPword(0x14);//17H,16H,15H,14H 高两字节为校验 不使用
+	*(PUINT32X)(MySrNumInfo + 22) = FlashReadOTPword(0x10);//13H,12H,11H,10H
+//	MySrNumU16[0] = FlashReadOTPword(0x14);//17H,16H,15H,14H 高两字节为校验 不使用
+//	*(uint32_t*)&MySrNumU16[1] = FlashReadOTPword(0x10);//13H,12H,11H,10H
 	
-//	sprintf(MySrNumInfo + 2, "%04x%04x%04x", *(PUINT16X)(MySrNumInfo + 20), 
-//				*(PUINT16X)(MySrNumInfo + 22), *(PUINT16X)(MySrNumInfo + 24));//把ID打印为12个连续字节
-	sprintf(MySrNumInfo + 2, "%04x%04x%04x", MySrNumU16[0], MySrNumU16[1], MySrNumU16[2]);//把ID打印为12个连续字节
+	sprintf(MySrNumInfo + 2, "%04x%04x%04x", *(PUINT16X)(MySrNumInfo + 20), 
+				*(PUINT16X)(MySrNumInfo + 22), *(PUINT16X)(MySrNumInfo + 24));//把ID打印为12个连续字节
+//	sprintf(MySrNumInfo + 2, "%04x%04x%04x", MySrNumU16[0], MySrNumU16[1], MySrNumU16[2]);//把ID打印为12个连续字节
 	
 	for(MySrNumInfo[0] = 0; MySrNumInfo[0] < 12; MySrNumInfo[0]++){//借用MySrNumInfo[0]计数
 		MySrNumInfo[24 - 2 * MySrNumInfo[0]] = MySrNumInfo[12 + 2 - 1 - MySrNumInfo[0]];//把连续字节间隔放置

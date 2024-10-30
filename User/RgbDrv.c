@@ -89,23 +89,25 @@ UINT8C INX_TABLE[] = {//预置灯效下标表
 	3,2,1,0,	 4,13,12,11, 5,14,15,10, 6,7,8,9,//←↓
 };
 
-static uint8_t fracM[16] = {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,};//主效果比例
-static uint8_t fracUD[16] = {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,};//按动效果比例
+static uint8_t inXi[16] _at_ XBASE_RGB_BUF;
 
-static uint8_t inXi[16] = {0,1,2,3, 4,5,6,7, 8,9,10,11, 12,13,14,15,};
+static uint8_t fracM[16] _at_ (XBASE_RGB_BUF + 16*1);//主效果比例
+static uint8_t fracUD[16] _at_ (XBASE_RGB_BUF + 16*2);//按动效果比例
 
-static uint8_t FrameRaw[16*3] = {//原始帧缓存
-	0,0,0,	0,0,0,	0,0,0,	0,0,0,
-	0,0,0,	0,0,0,	0,0,0,	0,0,0,
-	0,0,0,	0,0,0,	0,0,0,	0,0,0,
-	0,0,0,	0,0,0,	0,0,0,	0,0,0,
-};//RGB
+static uint8_t FrameRaw[16*3] _at_ (XBASE_RGB_BUF + 16*3);//原始帧缓存 顺序RGB
 static UINT8I FrameBuf[16*3] = {//帧缓存
 	0,0,0,	0,0,0,	0,0,0,	0,0,0,
 	0,0,0,	0,0,0,	0,0,0,	0,0,0,
 	0,0,0,	0,0,0,	0,0,0,	0,0,0,
 	0,0,0,	0,0,0,	0,0,0,	0,0,0,
 };//GRB
+
+void ArrayInitRGB(void){//数组初始化
+	memset(fracM, 0, sizeof(fracM));
+	memset(fracUD, 0, sizeof(fracUD));
+	memset(FrameRaw, 0, sizeof(FrameRaw));
+	for(inXi[15] = 0; inXi[15] < 16; inXi[15]++) inXi[inXi[15]] = inXi[15];
+}
 
 void ClearKeyRGB(void){//清除键盘RGB
 	memset(FrameBuf, 0, sizeof(FrameBuf));
