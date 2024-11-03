@@ -89,7 +89,6 @@ void main()
 	
 	ArrayInit();	//数组初始化
 	ParaLoad();		//参数读取
-	
     while(1){
 		WDOG_COUNT = 0;//清零看门狗计数
 		

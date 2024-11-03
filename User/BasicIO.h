@@ -12,6 +12,9 @@
 #include "RgbDrv.h"
 #include "ParaUse.h"
 
+extern UINT8C MySeriInfoT[26];
+extern uint8_t MySeriInfoX[26];
+
 #define KB_LEN		22//键盘报文长度
 #define KP_NUM		19//按键个数
 

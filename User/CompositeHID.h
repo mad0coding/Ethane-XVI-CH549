@@ -40,8 +40,7 @@
 
 extern UINT8C FIRMWARE_VERSION[4];//固件版本
 extern uint8_t asyncFlag;//异步操作标志
-extern UINT8 pdata WakeUpEnFlag;		//远程唤醒使能标志
-
+extern UINT8 WakeUpEnFlag;		//远程唤醒使能标志
 
 void Enp1IntIn(UINT8 *buf, UINT8 len);
 void Enp2IntIn(UINT8 *buf, UINT8 len);

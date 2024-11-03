@@ -28,6 +28,12 @@ static uint8_t fltCount[KP_NUM];//按键滤波计数
 uint8_t keyNow[KP_NUM];//按键映射结果
 uint8_t keyOld[KP_NUM];//按键映射结果旧值
 
+UINT8C MySeriInfoT[26] = {
+0x1A,0x03,'1',0x00,'2',0x00,'3',0x00,'4',0x00,'5',0x00,'6',0x00,'7',0x00,'8',0x00,'9',0x00,'a',0x00,'b',0x00,'c',0x00
+};
+
+//MySeriInfoX 020003F4H
+
 void ArrayInit(void){//数组初始化
 	//srand(*(PUINT16X)(2048 - 2));//填入种子
 	memset(KeyBrd_data + 1, 0, 21);//初始化键盘报文数组
@@ -37,6 +43,9 @@ void ArrayInit(void){//数组初始化
 	memset(fltCount,0,KP_NUM);
 	memset(keyNow,0,KP_NUM);
 	memset(keyOld,0,KP_NUM);
+	
+//	memcpy(MySeriInfoX, MySeriInfoT, 26);
+	memset(MySeriInfoX, 0xAA, 26);
 }
 
 void AdcRead(void){//摇杆读取
@@ -210,8 +219,6 @@ void LL_test(void){
 	i++;
 	if(Systime - oldTime >= 1000){//端点2打印输出
 		oldTime += 1000;
-		memset(debugBuf, ' ', 64);
-		sprintf(debugBuf, "%d	%d	%u\n", sCount, fCount, (uint16_t)Systime);
 		
 		Enp2IntIn(debugBuf, 64);
 	}
@@ -220,7 +227,7 @@ void LL_test(void){
 }
 
 void MultiFunc(void){//功能集合函数
-//	LL_test();//测试代码
+	LL_test();//测试代码
 	KeyTurn();//按键旋转映射
 	
 	if(FillReport() == 1){//报文填写 若返回蜂鸣器模式

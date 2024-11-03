@@ -7,12 +7,12 @@ static UINT8X Ep1Buffer[MIN(64,ENDP1_OUT_SIZE+2)+MIN(64,ENDP1_IN_SIZE+2)] _at_ (
 static UINT8X Ep2Buffer[MIN(64,ENDP2_OUT_SIZE+2)+MIN(64,ENDP2_IN_SIZE+2)] _at_ (512-64*2);	//端点2 OUT&IN
 
 
-UINT8 pdata WakeUpEnFlag = 0;		//远程唤醒使能标志
-static UINT8	pdata	SetupReq;
-static UINT8	pdata	UsbConfig;			//USB配置标志
-static UINT16	pdata	SetupLen;
-static PUINT8	pdata	pDescr;
-static USB_SETUP_REQ pdata SetupReqBuf;		//暂存Setup包
+UINT8 WakeUpEnFlag = 0;		//远程唤醒使能标志
+UINT8 SetupReq;
+UINT8 UsbConfig;			//USB配置标志
+UINT16 SetupLen;
+PUINT8 pDescr;
+static PXUSB_SETUP_REQ  SetupReqBuf;		//暂存Setup包
 
 static bit Ready = 0;			//USB就绪标志
 static bit Endp1Busy = 0;		//传输完成控制标志
@@ -41,7 +41,7 @@ UINT8C DevDesc[] = {//设备描述符
 	0x01,//14. 第十四个字节 0x01 表示该设备的设备版本号的高字节。
 	0x01,//15. 第十五个字节 0x01 表示该设备的制造商字符串描述符索引 (Manufacturer String Index)。
 	0x02,//16. 第十六个字节 0x02 表示该设备的产品字符串描述符索引 (Product String Index)。
-	0x00,//17. 第十七个字节 0x00 表示该设备的序列号字符串描述符索引 (Serial Number String Index)。
+	0x03,//17. 第十七个字节 0x00 表示该设备的序列号字符串描述符索引 (Serial Number String Index)。
 	0x01//18. 第十八个字节 0x01 表示该设备支持的配置数目 (Number of Configurations)。
 };
 
@@ -51,6 +51,10 @@ UINT8C MyProdInfo[] = {22,0x03,'E',0,'t',0,'h',0,'a',0,'n',0,'e',0,'-',0,'X',0,'
 UINT8C MyManuInfo[] = {36,0x03,
 	'L',0,'i',0,'g',0,'h',0,'t',0,'&',0,'E',0,'l',0,'e',0,'c',0,'t',0,'r',0,'i',0,'c',0,'i',0,'t',0,'y',0
 };//制造者名称
+UINT8C MySeriInfo[26] = {
+0x1A,0x03,0x30,0x00,0x30,0x00,0x30,0x00,0x30,0x00,0x62,0x00,0x63,0x00,0x36,0x00,0x66,0x00,0x61,0x00,0x35,0x00,0x39,0x00,0x63,0x00
+};
+uint8_t MySeriInfoX[26];
 
 /*HID类报文描述符*/
 UINT8C KeyRepDesc[] = {//HID报文描述符
@@ -501,6 +505,10 @@ else{//若未在接收状态 则监听各种命令
                             case 2:								//产品信息
                                 pDescr = (PUINT8)( &MyProdInfo[0] );
                                 len = sizeof( MyProdInfo );
+                                break;
+							case 3:
+								pDescr = (PUINT8)( &MySeriInfo[0] );
+                                len = sizeof( MySeriInfo );
                                 break;
                             default:							//不支持的字符串描述符
                                 errflag = 0xFF;
