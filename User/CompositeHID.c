@@ -2,17 +2,17 @@
 #include "CompositeHID.H"
 
 //USB端点缓存,必须是偶地址
-static UINT8X Ep0Buffer[MIN(64,THIS_ENDP0_SIZE+2)] _at_ XBASE_EP0_BUF;						//端点0 OUT&IN
+static UINT8X Ep0Buffer[MIN(64,THIS_ENDP0_SIZE+2)] _at_ XBASE_EP0_BUF;							//端点0 OUT&IN
 static UINT8X Ep1Buffer[MIN(64,ENDP1_OUT_SIZE+2)+MIN(64,ENDP1_IN_SIZE+2)] _at_ XBASE_EP1_BUF;	//端点1 OUT&IN
 static UINT8X Ep2Buffer[MIN(64,ENDP2_OUT_SIZE+2)+MIN(64,ENDP2_IN_SIZE+2)] _at_ XBASE_EP2_BUF;	//端点2 OUT&IN
 
 
-UINT8 pdata WakeUpEnFlag = 0;		//远程唤醒使能标志
-static UINT8	pdata	SetupReq;
-static UINT8	pdata	UsbConfig;			//USB配置标志
-static UINT16	pdata	SetupLen;
-static PUINT8	pdata	pDescr;
-static USB_SETUP_REQ pdata SetupReqBuf;		//暂存Setup包
+UINT8X WakeUpEnFlag = 0;	//远程唤醒使能标志
+static UINT8X SetupReq;
+static UINT8X UsbConfig;	//USB配置标志
+static UINT16X SetupLen;
+static PUINT8 pDescr;		//描述符指针 必须是通用指针
+static PXUSB_SETUP_REQ  SetupReqBuf;	//暂存Setup包
 
 static bit Ready = 0;			//USB就绪标志
 static bit Endp1Busy = 0;		//传输完成控制标志
@@ -52,7 +52,6 @@ static UINT8C MyManuInfo[] = {36,0x03,
 	'L',0,'i',0,'g',0,'h',0,'t',0,'&',0,'E',0,'l',0,'e',0,'c',0,'t',0,'r',0,'i',0,'c',0,'i',0,'t',0,'y',0
 };//制造者名称
 UINT8X MySrNumInfo[26] _at_ XBASE_SERIAL_NUM;//序列号字符串 初始化时加载
-//UINT16X MySrNumU16[3] _at_ (XBASE_SERIAL_NUM+26);//序列号原始数值 初始化时加载
 
 /*HID类报文描述符*/
 static UINT8C KeyRepDesc[] = {//HID报文描述符
@@ -314,8 +313,8 @@ void Enp2IntIn(UINT8 *buf, UINT8 len){
 *******************************************************************************/
 void DeviceInterrupt( void ) interrupt INT_NO_USB using 1				//USB中断服务程序,使用寄存器组1
 {
-	UINT8 pdata errflag;//错误标志
-    UINT16 pdata len;
+	UINT8X errflag;//错误标志
+    UINT16X len;
 	
     if(UIF_TRANSFER){			//USB传输完成标志
         switch (USB_INT_ST & (MASK_UIS_TOKEN | MASK_UIS_ENDP))

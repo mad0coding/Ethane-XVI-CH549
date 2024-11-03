@@ -2,7 +2,7 @@
 * File Name          : main.c
 * Author             : Light&Electricity
 * Version            : V1.0
-* Date               : 2023/12/30
+* Date               : 2024/12/03
 * Description        : Ethane-XVI
 ********************************************************************************/
 #include "CH549.H"
@@ -16,7 +16,7 @@
 
 #pragma  NOAREGS
 
-UINT8C FIRMWARE_VERSION[4] = {1,0,1,13};//固件版本 V1.0.1.13
+UINT8C FIRMWARE_VERSION[4] = {1,0,1,14};//固件版本 V1.0.1.14
 
 uint8_t asyncFlag = 0;//异步操作标志
 
