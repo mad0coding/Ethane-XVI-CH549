@@ -21,14 +21,14 @@
 //靠后1k(0xF000~0xF3FF)为DataFlash 寿命约能100k次
 //最后3k(0xF400~0xFFFF)为BootLoader和ConfigInfo 用户不可使用
 #define DATA_CFG_BASE		0xF200//配置数据起始
-#define DATA_GLOB_BASE		0xE800//全局数据起始
-#define DATA_LIGHT_BASE		0xE400//灯效数据起始
-#define DATA_COUNT_BASE		0xDC00//计数数据起始
-//配置数据占CodeFlash的后1k和DataFlash的1k,每套512B,空间4套,目前使用后4套,从后往前排
-//全局数据占CodeFlash的倒数第2k的开头部分,目前使用64B
-//灯效数据占CodeFlash的倒数第3k,每套256B,空间4套,目前使用前4套,从前往后排
-//计数数据占CodeFlash的倒数第4~5k,每套128B,空间16套,目前使用后0套,从前往后排
-//目前全部存储数据使用6k空间,剩余代码空间为55k
+#define DATA_LIGHT_BASE		0xDC00//灯效数据起始
+#define DATA_GLOB_BASE		0xD800//全局数据起始
+#define DATA_DIAG_BASE		0xD400//诊断数据起始
+//配置数据占CodeFlash的后3k和DataFlash的1k,每套512B,空间8套,目前使用后4套,从后往前排
+//灯效数据占CodeFlash的倒数第4~5k,每套256B,空间8套,目前使用前4套,从前往后排
+//全局数据占CodeFlash的倒数第6k的开头部分,目前使用64B
+//诊断数据占CodeFlash的倒数第7k,每套xxB,空间xx套,目前使用前0套,从前往后排
+//目前全部存储数据使用8k空间,剩余代码空间为53k
 
 #define CFG_NUM		4	//配置个数
 

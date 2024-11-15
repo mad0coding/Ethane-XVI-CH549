@@ -172,7 +172,7 @@ void GlobalParaUpdate(void){//全局参数更新
 }
 
 void FlashCountInc(uint8_t pos, uint8_t fail){//闪存擦除计数增加
-	uint16_t addr = DATA_COUNT_BASE + 128 * pos;
+	uint16_t addr = DATA_DIAG_BASE + 128 * pos;
 	if(fail){//错误计数增加
 		
 		return;
@@ -184,7 +184,7 @@ void FlashCountInc(uint8_t pos, uint8_t fail){//闪存擦除计数增加
 
 uint32_t FlashCountGet(uint8_t pos, uint8_t fail){//闪存擦除计数获取
 	uint32_t flashCount;
-	uint16_t addr = DATA_COUNT_BASE + 128 * pos;
+	uint16_t addr = DATA_DIAG_BASE + 128 * pos;
 	if(fail) return *(PUINT16C)(addr + 128 - 4);//返回错误计数
 	flashCount = *(PUINT32C)(addr + 128 - 8) * 120UL;//正确计数的进位部分
 	//for(addr)
