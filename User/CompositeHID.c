@@ -335,7 +335,7 @@ void DeviceInterrupt( void ) interrupt INT_NO_USB using 1				//USB中断服务�
 #define Offset	MAX_PACKET_SIZE
 #define count	Buf[Offset+63]//此字节在通信中不会修改,故借用
 #define packs	Buf[Offset+62]//此字节在通信中不会修改,故借用
-#define tmpi	Buf[Offset+61]//此字节在通信中不会修改,故借用
+#define index	Buf[Offset+61]//此字节在通信中不会修改,故借用
 if(asyncFlag & 0x80){//若已经在接收状态 则接收数据包
 	memcpy(FlashBuf + ((UINT16X)count << 6), Buf, 64);//数据包拷贝
 	Buf[Offset+0] = 'R'; Buf[Offset+1] = 'D';//填入响应字节
@@ -420,23 +420,23 @@ else{//若未在接收状态 则监听各种命令
 	}
 	else if(Buf[0] == 'B' && Buf[1] == 'U' && Buf[2] == 'I' && Buf[3] == 'D'){//序列号读取命令
 		Buf[Offset+0] = 'R'; Buf[Offset+1] = Buf[1]; Buf[Offset+2] = Buf[2]; Buf[Offset+3] = Buf[3];//填入响应字节
-		for(tmpi = 0; tmpi < 12; tmpi++){//读取12个字符并转为16进制的一位数
-			Buf[Offset+4+tmpi] = MySrNumInfo[2+tmpi*2];//读取字符
-			if(Buf[Offset+4+tmpi] >= '0' && Buf[Offset+4+tmpi] <= '9') Buf[Offset+4+tmpi] -= '0';
-			else if(Buf[Offset+4+tmpi] >= 'a' && Buf[Offset+4+tmpi] <= 'f') Buf[Offset+4+tmpi] -= ('a' - 10);
-			else if(Buf[Offset+4+tmpi] >= 'A' && Buf[Offset+4+tmpi] <= 'F') Buf[Offset+4+tmpi] -= ('A' - 10);
-			else Buf[Offset+4+tmpi] = 0;
+		for(index = 0; index < 12; index++){//读取12个字符并转为16进制的一位数
+			Buf[Offset+4+index] = MySrNumInfo[2+index*2];//读取字符
+			if(Buf[Offset+4+index] >= '0' && Buf[Offset+4+index] <= '9') Buf[Offset+4+index] -= '0';
+			else if(Buf[Offset+4+index] >= 'a' && Buf[Offset+4+index] <= 'f') Buf[Offset+4+index] -= ('a' - 10);
+			else if(Buf[Offset+4+index] >= 'A' && Buf[Offset+4+index] <= 'F') Buf[Offset+4+index] -= ('A' - 10);
+			else Buf[Offset+4+index] = 0;
 		}
-		for(tmpi = 0; tmpi < 6; tmpi++){//12个16进制的一位数转为6个字节
-			Buf[Offset+4+tmpi] = (Buf[Offset+4+tmpi*2] << 4) | Buf[Offset+5+tmpi*2];
+		for(index = 0; index < 6; index++){//12个16进制的一位数转为6个字节
+			Buf[Offset+4+index] = (Buf[Offset+4+index*2] << 4) | Buf[Offset+5+index*2];
 		}
 		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
 	}
-	else if(Buf[0] == 'B' && Buf[1] == 'F' && Buf[2] == 'E' && Buf[3] == 'C'){//闪存擦除计数读取命令
+	else if(Buf[0] == 'B' && Buf[1] == 'D' && Buf[2] == 'G' && Buf[3] == 'C'){//诊断数据读取命令
 		Buf[Offset+0] = 'R'; Buf[Offset+1] = Buf[1]; Buf[Offset+2] = Buf[2]; Buf[Offset+3] = Buf[3];//填入响应字节
-		
+		DiagRead(&Buf[Offset+4], 56);//诊断数据读取
 		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
-		asyncFlag = ASYNC_FLAG_FCNT;//异步标志置位
+		asyncFlag = ASYNC_FLAG_DIAG;//异步标志置位
 	}
 }
 /**************************************************以上CustomHID通信部分独立缩进**************************************************/

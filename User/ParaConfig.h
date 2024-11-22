@@ -6,15 +6,23 @@
 
 #include "FlashRom.H"
 #include "BasicIO.h"
+#include "Diag.h"
 //#include "CompositeHID.H"
 
 //异步标志定义
 #define ASYNC_FLAG_CFG		10
-#define ASYNC_FLAG_LIGHT	20
-#define ASYNC_FLAG_GLOB		30
+#define ASYNC_FLAG_LIGHT	30
+#define ASYNC_FLAG_GLOB		50
 #define ASYNC_FLAG_SRST		100
 #define ASYNC_FLAG_BOOT		101
-#define ASYNC_FLAG_FCNT		102
+#define ASYNC_FLAG_DIAG		102
+
+//存储位置定义
+#define FLASH_POS_CFG		10
+#define FLASH_POS_LIGHT		10
+#define FLASH_POS_GLOB		100
+#define FLASH_POS_DIAG		150
+#define FLASH_POS_ZERO		200
 
 
 //靠前60k(0x0000~0xEFFF)为CodeFlash 寿命10k次
@@ -22,15 +30,15 @@
 //最后3k(0xF400~0xFFFF)为BootLoader和ConfigInfo 用户不可使用
 #define DATA_CFG_BASE		0xF200//配置数据起始
 #define DATA_LIGHT_BASE		0xDC00//灯效数据起始
-#define DATA_GLOB_BASE		0xD800//全局数据起始
-#define DATA_DIAG_BASE		0xD400//诊断数据起始
+#define DATA_GLOB_BASE		0xDA00//全局数据起始
+#define DATA_DIAG_BASE		0xD800//诊断数据起始
 //配置数据占CodeFlash的后3k和DataFlash的1k,每套512B,空间8套,目前使用后4套,从后往前排
 //灯效数据占CodeFlash的倒数第4~5k,每套256B,空间8套,目前使用前4套,从前往后排
-//全局数据占CodeFlash的倒数第6k的开头部分,目前使用64B
-//诊断数据占CodeFlash的倒数第7k,每套xxB,空间xx套,目前使用前0套,从前往后排
-//目前全部存储数据使用8k空间,剩余代码空间为53k
+//全局数据占CodeFlash的倒数第6k的后一半的开头部分,目前使用64B
+//诊断数据占CodeFlash的倒数第6k的前一半的开头部分,目前使用64B
+//目前全部存储数据使用7k空间,剩余代码空间为54k
 
-#define CFG_NUM		4	//配置个数
+#define CFG_NUM		8	//配置个数
 
 //键盘配置
 #define CFG_THIS		(DATA_CFG)//键盘配置起始
@@ -90,7 +98,7 @@
 
 
 //全局配置
-#define GLOB_THIS		(GLOB_CFG)//全局配置起始
+#define GLOB_THIS		((PUINT8C)DATA_GLOB_BASE)//全局配置起始
 #define GLOB_ANA_MID1		(*((PUINT16C)(GLOB_THIS + 0)))//摇杆中位
 #define GLOB_ANA_MID2		(*((PUINT16C)(GLOB_THIS + 2)))//摇杆中位
 #define GLOB_KEY_FLT		(*(GLOB_THIS + 4))//按键滤波值
@@ -115,8 +123,6 @@ void ParaLoad(void);					//参数读取
 void ParaUpdate(uint8_t pos);			//参数更新
 void GlobalParaLoad(void);		//全局参数读取
 void GlobalParaUpdate(void);	//全局参数更新
-void FlashCountInc(uint8_t pos, uint8_t fail);		//闪存擦除计数增加
-uint32_t FlashCountGet(uint8_t pos, uint8_t fail);	//闪存擦除计数获取
 
 
 #endif

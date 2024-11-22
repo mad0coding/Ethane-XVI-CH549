@@ -441,6 +441,11 @@
               <FileType>1</FileType>
               <FilePath>..\User\ParaUse.c</FilePath>
             </File>
+            <File>
+              <FileName>Diag.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\Diag.c</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>
