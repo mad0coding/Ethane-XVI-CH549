@@ -18,11 +18,11 @@
 #define ASYNC_FLAG_DIAG		102
 
 //存储位置定义
-#define FLASH_POS_CFG		10
-#define FLASH_POS_LIGHT		10
-#define FLASH_POS_GLOB		100
-#define FLASH_POS_DIAG		150
-#define FLASH_POS_ZERO		200
+//#define FLASH_POS_CFG		10
+//#define FLASH_POS_LIGHT		10
+//#define FLASH_POS_GLOB		100
+//#define FLASH_POS_DIAG		150
+//#define FLASH_POS_ZERO		200
 
 
 //靠前60k(0x0000~0xEFFF)为CodeFlash 寿命10k次

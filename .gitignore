@@ -1,2 +1,3 @@
 /Project/Listings
-/Project/Output
+/Project/Output/*
+!/Project/Output/Ethane-XVI.hex

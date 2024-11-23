@@ -120,18 +120,16 @@ uint8_t FillReport(void)//报文填写
 					Point_data[2] = i;
 				}
 				else if(CFG_K_MODE(keyAddr[sysCs][i]) == 6){//模式6:切换键
-					if((CFG_K_FUNC(keyAddr[sysCs][i]) & 0x08) && switch_i == 0xFF && !keyOld[i]){//若为临时切换且为独有且按下沿
-						switch_key = /*fill_key[i].key*/CFG_K_KEY(keyAddr[sysCs][i]);//缓存键值
+					if((CFG_K_FUNC(keyAddr[sysCs][i]) & 0x80) && switch_i == 0xFF && !keyOld[i]){//若为临时切换且为独有且按下沿
+						switch_key = CFG_K_KEY(keyAddr[sysCs][i]);//缓存键值
 						switch_func = sysCs + 1;//缓存旧键盘选择
-						/*uint8_t */turn_old = keyDir[sysCs];//旧键盘方向
+						turn_old = keyDir[sysCs];//旧键盘方向
 						CsChange(CFG_K_FUNC(keyAddr[sysCs][i]));//切换
-						/*uint8_t */turn_dif = (keyDir[sysCs] + 4 - turn_old) % 4;//相对旧键盘方向
+						turn_dif = (keyDir[sysCs] + 4 - turn_old) % 4;//相对旧键盘方向
 						if(turn_dif == 0) switch_i = i;
-						else if(turn_dif == 1) switch_i = TURN_L90[i]/* - 1*/;
+						else if(turn_dif == 1) switch_i = TURN_L90[i];
 						else if(turn_dif == 2) switch_i = 16 - i;
-						else if(turn_dif == 3) switch_i = TURN_R90[i]/* - 1*/;
-//						switch_key = /*fill_key[i].key*/CFG_K_KEY(keyAddr[sysCs][i]);//缓存键值
-//						switch_func = CFG_K_FUNC(keyAddr[sysCs][i]);//缓存切换方式
+						else if(turn_dif == 3) switch_i = TURN_R90[i];
 						break;//跳出本次循环
 					}
 				}
@@ -149,7 +147,7 @@ uint8_t FillReport(void)//报文填写
 					}
 				}
 				else if(CFG_K_MODE(keyAddr[sysCs][i]) == 6){//模式6:切换键
-					if(!(CFG_K_FUNC(keyAddr[sysCs][i]) & 0x08)){//若为非临时切换
+					if(!(CFG_K_FUNC(keyAddr[sysCs][i]) & 0x80)){//若为非临时切换
 						switch_i = 0xFF;//直接复位临时切换键标志
 						CsChange(CFG_K_FUNC(keyAddr[sysCs][i]));//切换
 					}
@@ -266,7 +264,7 @@ uint8_t FillReport(void)//报文填写
 
 void CsChange(uint8_t change)//切换
 {
-	change &= 0x07;//取低3位
+	change &= 0x0F;//取低4位
 	if(change == 0 || change > CFG_NUM) return;
 	sysCs = change - 1;
 	DATA_CFG = DATA_CFG_BASE - sysCs * 512;//修改键盘配置指针 逆序
@@ -334,7 +332,7 @@ void Mode3Handle(void)//mode3处理(按键组处理)
 	}
 	mode3_delaying = 0;//延时标志清零
 	
-	/*uint16_t */end_i = 0;//结束位置
+	end_i = 0;//结束位置
 	if(mode3_key) end_i = keyAddr[sysCs][mode3_key - 1] + 3 + CFG_K_LEN(keyAddr[sysCs][mode3_key - 1]);
 	
 	for(;report_i < KB_LEN;){//当报文未填满

@@ -17,11 +17,11 @@ PUINT8C DATA_CFG = DATA_CFG_BASE;//闪存区配置信息指针
 void AsyncHandle(uint8_t flag){//异步处理
 	uint8_t ret;
 	if(flag >= ASYNC_FLAG_CFG && flag < ASYNC_FLAG_CFG + CFG_NUM){			//键盘配置存储
-		ret = ParaWrite((DATA_CFG_BASE - (flag - ASYNC_FLAG_CFG) * 512), FlashBuf, 8);
+		ret = ParaWrite((DATA_CFG_BASE - (flag - ASYNC_FLAG_CFG) * 512), FlashBuf, 8);//逆序
 		ParaUpdate(flag - ASYNC_FLAG_CFG);//键盘配置参数更新
 	}
 	else if(flag >= ASYNC_FLAG_LIGHT && flag < ASYNC_FLAG_LIGHT + CFG_NUM){	//灯效配置存储
-		ret = ParaWrite((DATA_LIGHT_BASE - (flag - ASYNC_FLAG_LIGHT) * 256), FlashBuf, 4);
+		ret = ParaWrite((DATA_LIGHT_BASE + (flag - ASYNC_FLAG_LIGHT) * 256), FlashBuf, 4);//正序
 		KeyRGB(1);//键盘RGB控制清零
 	}
 	else if(flag == ASYNC_FLAG_GLOB){		//全局参数存储
@@ -122,10 +122,9 @@ uint8_t ParaWrite(uint16_t addr, uint8_t *buf, uint8_t num){//参数写入
 }
 
 void ParaLoad(void){//参数读取
+	uint8_t i;
 	GlobalParaLoad();//全局参数读取
-	ParaUpdate(2);
-	ParaUpdate(1);
-	ParaUpdate(0);
+	for(i = CFG_NUM - 1; i != 255; i--) ParaUpdate(i);//倒序装载以实现小序号优先
 	memset(keyWork, 0, sizeof(keyWork));
 	memset(keyFlag, 0, sizeof(keyFlag));
 }
@@ -142,7 +141,7 @@ void ParaUpdate(uint8_t pos){//参数更新
 	if(CFG_ACS(addr + (&CFG_ALL_PRI - CFG_THIS)) == 1){//若本配置为优先配置
 		sysCs = pos;//总选择为本配置
 		DATA_CFG = (PUINT8C)addr;//指针指向本配置
-		DATA_LIGHT = DATA_LIGHT_BASE - sysCs * 256;//修改灯效配置指针
+		DATA_LIGHT = DATA_LIGHT_BASE + sysCs * 256;//修改灯效配置指针 顺序
 	}
 	
 	for(i = 0; i < 16; i++){
