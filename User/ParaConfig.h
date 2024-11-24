@@ -15,7 +15,6 @@
 #define ASYNC_FLAG_GLOB		50
 #define ASYNC_FLAG_SRST		100
 #define ASYNC_FLAG_BOOT		101
-#define ASYNC_FLAG_DIAG		102
 
 //¥Ê¥¢Œª÷√∂®“Â
 //#define FLASH_POS_CFG		10

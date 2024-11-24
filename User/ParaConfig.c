@@ -15,18 +15,21 @@ PUINT8C DATA_CFG = DATA_CFG_BASE;//闪存区配置信息指针
 //PUINT8C GLOB_CFG = DATA_GLOB_BASE;//闪存区全局信息指针
 
 void AsyncHandle(uint8_t flag){//异步处理
-	uint8_t ret;
+	uint8_t ret = 0;
 	if(flag >= ASYNC_FLAG_CFG && flag < ASYNC_FLAG_CFG + CFG_NUM){			//键盘配置存储
 		ret = ParaWrite((DATA_CFG_BASE - (flag - ASYNC_FLAG_CFG) * 512), FlashBuf, 8);//逆序
 		ParaUpdate(flag - ASYNC_FLAG_CFG);//键盘配置参数更新
+		if(ret) DiagCountInc(DIAG_FMT_LOAD | DIAG_FMT_SAVE, DIAG_I_CFG + flag - ASYNC_FLAG_CFG);//诊断计数增加
 	}
 	else if(flag >= ASYNC_FLAG_LIGHT && flag < ASYNC_FLAG_LIGHT + CFG_NUM){	//灯效配置存储
 		ret = ParaWrite((DATA_LIGHT_BASE + (flag - ASYNC_FLAG_LIGHT) * 256), FlashBuf, 4);//正序
 		KeyRGB(1);//键盘RGB控制清零
+		if(ret) DiagCountInc(DIAG_FMT_LOAD | DIAG_FMT_SAVE, DIAG_I_LIGHT + flag - ASYNC_FLAG_LIGHT);//诊断计数增加
 	}
 	else if(flag == ASYNC_FLAG_GLOB){		//全局参数存储
 		GlobalParaUpdate();//全局参数更新
 		ret = ParaWrite(DATA_GLOB_BASE, FlashBuf, 1);
+		if(ret) DiagCountInc(DIAG_FMT_LOAD | DIAG_FMT_SAVE, DIAG_I_GLB);//诊断计数增加
 	}
 	else if(flag == ASYNC_FLAG_SRST){		//软复位
 		ClearKeyRGB();//清除键盘RGB
@@ -50,10 +53,36 @@ void AsyncHandle(uint8_t flag){//异步处理
 		FlashBuf[62] = 0x80; FlashBuf[63] = 0xFE;//使用SJMP汇编指令向前跳2字节 实现while(1)死循环
 		ret = ParaWrite(0, FlashBuf, 1);//擦除并写入第一扇区
 
-		while(1) WDOG_COUNT = 0;//死循环 清零看门狗计数
+		while(1){//死循环 BGR循环点灯提示
+			WDOG_COUNT = 0;//清零看门狗计数
+			PWM_R = 0; PWM_G = 0; PWM_B = 255;
+			mDelaymS(800);
+			WDOG_COUNT = 0;//清零看门狗计数
+			PWM_R = 0; PWM_G = 255; PWM_B = 0;
+			mDelaymS(800);
+			WDOG_COUNT = 0;//清零看门狗计数
+			PWM_R = 255; PWM_G = 0; PWM_B = 0;
+			mDelaymS(800);
+		}
 	}
-	else if(flag == ASYNC_FLAG_DIAG){		//诊断数据读取
-		
+	
+	if(ret){//发生存储错误
+		//以下为测试代码！！！！！！！！！！
+		WDOG_COUNT = 0;//清零看门狗计数
+		PWM_R = 255; PWM_G = 0; PWM_B = 0;
+		mDelaymS(150);
+		PWM_R = 0; PWM_G = 255; PWM_B = 0;
+		mDelaymS(150);
+		PWM_R = 0; PWM_G = 0; PWM_B = 255;
+		mDelaymS(150);
+		PWM_R = 255; PWM_G = 0; PWM_B = 0;
+		mDelaymS(150);
+		PWM_R = 0; PWM_G = 255; PWM_B = 0;
+		mDelaymS(150);
+		PWM_R = 0; PWM_G = 0; PWM_B = 255;
+		mDelaymS(150);
+		WDOG_COUNT = 0;//清零看门狗计数
+		//以上为测试代码！！！！！！！！！！
 	}
 }
 
@@ -93,30 +122,10 @@ uint8_t ParaWrite(uint16_t addr, uint8_t *buf, uint8_t num){//参数写入
 	Flash_Op_Check_Byte1 = 0;//保护检查标志复位
 	Flash_Op_Check_Byte2 = 0;
 	
-//	if(num == 4) buf[255]++;//错误注入 测试代码！！！！！！！！！！
+//	if(!KP_E1) buf[63]++;//若按下旋钮1则错误注入 测试代码！！！！！！！！！！
 	
 	for(i = 0; i < num * 64; i++){//数据正确性检验
-		if(*(PUINT8C)(addr + i) != buf[i]){
-			
-			//以下为测试代码！！！！！！！！！！
-			WDOG_COUNT = 0;//清零看门狗计数
-			PWM_R = 255; PWM_G = 0; PWM_B = 0;
-			mDelaymS(150);
-			PWM_R = 0; PWM_G = 255; PWM_B = 0;
-			mDelaymS(150);
-			PWM_R = 0; PWM_G = 0; PWM_B = 255;
-			mDelaymS(150);
-			PWM_R = 255; PWM_G = 0; PWM_B = 0;
-			mDelaymS(150);
-			PWM_R = 0; PWM_G = 255; PWM_B = 0;
-			mDelaymS(150);
-			PWM_R = 0; PWM_G = 0; PWM_B = 255;
-			mDelaymS(150);
-			WDOG_COUNT = 0;//清零看门狗计数
-			//以上为测试代码！！！！！！！！！！
-			
-			return 1;//数据错误
-		}
+		if(*(PUINT8C)(addr + i) != buf[i]) return 1;//数据错误
 	}
 	return 0;
 }

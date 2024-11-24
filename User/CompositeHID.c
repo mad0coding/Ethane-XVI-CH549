@@ -432,11 +432,15 @@ else{//若未在接收状态 则监听各种命令
 		}
 		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
 	}
+	else if(Buf[0] == 'B' && Buf[1] == 'G' && Buf[2] == 'P' && Buf[3] == 'M'){//参数读取命令
+		Buf[Offset+0] = 'R'; Buf[Offset+1] = Buf[1]; Buf[Offset+2] = Buf[2]; Buf[Offset+3] = Buf[3];//填入响应字节
+		memcpy(&Buf[Offset+4], (PUINT8C)DATA_GLOB_BASE, 56);//全局参数读取
+		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
+	}
 	else if(Buf[0] == 'B' && Buf[1] == 'D' && Buf[2] == 'G' && Buf[3] == 'C'){//诊断数据读取命令
 		Buf[Offset+0] = 'R'; Buf[Offset+1] = Buf[1]; Buf[Offset+2] = Buf[2]; Buf[Offset+3] = Buf[3];//填入响应字节
-		DiagRead(&Buf[Offset+4], 56);//诊断数据读取
+		DiagGet(&Buf[Offset+4], 56);//诊断数据获取
 		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
-		asyncFlag = ASYNC_FLAG_DIAG;//异步标志置位
 	}
 }
 /**************************************************以上CustomHID通信部分独立缩进**************************************************/

@@ -19,28 +19,30 @@
 #define DIAG_MARK_VALUE		0xEA16C549//诊断数据标志
 
 #define DIAG_THIS		(FlashBuf)//诊断数据起始 使用缓存地址
-#define DIAG_CNT(i)			(*(PUINT16X)(DIAG_THIS + 2*i))
-#define DIAG_CNT_MARK			(*(PUINT16X)(DIAG_THIS + 0))
-#define DIAG_CNT_SUM			(*(PUINT16X)(DIAG_THIS + 2))
-#define DIAG_CNT_WDG			(*(PUINT16X)(DIAG_THIS + 8))
-#define DIAG_CNT_WDGS			(*(PUINT16X)(DIAG_THIS + 10))
-#define DIAG_SUM				(*(PUINT16X)(DIAG_THIS + 58))
-#define DIAG_MARK				(*(PUINT32X)(DIAG_THIS + 60))
+#define DIAG_CNT(i)				(*(PUINT16X)(DIAG_THIS + 2*i))
+#define DIAG_I_MARK				(0)//标志错误
+#define DIAG_I_SUM				(1)//校验错误
+#define DIAG_I_WDG				(4)//看门狗复位
+#define DIAG_I_WDGS				(5)//连续看门狗复位
+#define DIAG_I_CFG				(8)//配置存储错误起始
+#define DIAG_I_LIGHT			(16)//灯效存储错误起始
+#define DIAG_I_GLB				(24)//全局存储错误
+#define DIAG_LAST				(*(PUINT8X)(DIAG_THIS + 54))//最后错误
+#define DIAG_SUM				(*(PUINT16X)(DIAG_THIS + 58))//校验
+#define DIAG_MARK				(*(PUINT32X)(DIAG_THIS + 60))//标志
 
 #define DIAG_KEEP		(RESET_KEEP)//接管复位保持寄存器
 #define DIAG_RST_FLAG			((PCON >> 4) & 0x03)//本次复位标志
 #define DIAG_RST_LAST			((DIAG_KEEP >> 3) & 0x01)//上次复位标志
-#define DIAG_RST_CNT			(DIAG_KEEP & 0x07)//连续复位标志
+#define DIAG_RST_CNT			(DIAG_KEEP & 0x07)//连续复位计数
 #define DIAG_RST_LAST_SET(x)	(DIAG_KEEP = (DIAG_KEEP & ~(0x01 << 3)) | ((x) << 3))
 #define DIAG_RST_CNT_SET(x)		(DIAG_KEEP = (DIAG_KEEP & ~0x07 | (x)))
 #define DIAG_RST_CNT_DEC		(DIAG_KEEP--)//计数递减 使用时注意溢出
 
 
+void DiagGet(uint8_t *buf, uint8_t len);//诊断数据获取
+void DiagCountInc(uint8_t setting, uint8_t pos);//诊断计数增加
 
-void FlashCountInc(uint8_t pos, uint8_t fail);		//闪存擦除计数增加
-uint32_t FlashCountGet(uint8_t pos, uint8_t fail);	//闪存擦除计数获取
-
-void DiagRead(uint8_t *buf, uint8_t len);//诊断数据读取
 
 
 #endif
