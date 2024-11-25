@@ -16,13 +16,6 @@
 #define ASYNC_FLAG_SRST		100
 #define ASYNC_FLAG_BOOT		101
 
-//存储位置定义
-//#define FLASH_POS_CFG		10
-//#define FLASH_POS_LIGHT		10
-//#define FLASH_POS_GLOB		100
-//#define FLASH_POS_DIAG		150
-//#define FLASH_POS_ZERO		200
-
 
 //靠前60k(0x0000~0xEFFF)为CodeFlash 寿命10k次
 //靠后1k(0xF000~0xF3FF)为DataFlash 寿命约能100k次

@@ -51,7 +51,7 @@ static UINT8C MyProdInfo[] = {22,0x03,'E',0,'t',0,'h',0,'a',0,'n',0,'e',0,'-',0,
 static UINT8C MyManuInfo[] = {36,0x03,
 	'L',0,'i',0,'g',0,'h',0,'t',0,'&',0,'E',0,'l',0,'e',0,'c',0,'t',0,'r',0,'i',0,'c',0,'i',0,'t',0,'y',0
 };//制造者名称
-UINT8X MySrNumInfo[26] _at_ XBASE_SERIAL_NUM;//序列号字符串 初始化时加载
+UINT8X MySrNumInfo[26];//序列号字符串 初始化时加载
 
 /*HID类报文描述符*/
 static UINT8C KeyRepDesc[] = {//HID报文描述符

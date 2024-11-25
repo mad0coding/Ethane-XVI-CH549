@@ -18,23 +18,21 @@ uint8_t debugBuf[64];
 
 UINT8D keyFltNum = 2;//按键滤波参数
 
-uint16_t Adc_Mid_Set[2] _at_ XBASE_ADC_BUF;			//ADC中位值
-uint16_t adcValue[2] _at_ (XBASE_ADC_BUF + 2*2);	//ADC采样值
+uint16_t Adc_Mid_Set[2] = {2048,2048};	//ADC中位值
+uint16_t adcValue[2] = {2048,2048};		//ADC采样值
 
-uint8_t keyNow[KP_NUM] _at_ XBASE_KEY_BUF;				//按键映射结果
-uint8_t keyOld[KP_NUM] _at_ (XBASE_KEY_BUF + KP_NUM*1);	//按键映射结果旧值
+uint8_t keyNow[KP_NUM];		//按键映射结果
+uint8_t keyOld[KP_NUM];		//按键映射结果旧值
 
-static uint8_t keyRaw[KP_NUM] _at_ (XBASE_KEY_BUF + KP_NUM*2);		//按键原始采样
-static uint8_t keyFlt[KP_NUM] _at_ (XBASE_KEY_BUF + KP_NUM*3);		//按键滤波结果
-static uint8_t fltOld[KP_NUM] _at_ (XBASE_KEY_BUF + KP_NUM*4);		//按键滤波用的旧值
-static uint8_t fltCount[KP_NUM] _at_ (XBASE_KEY_BUF + KP_NUM*5);	//按键滤波计数
+static uint8_t keyRaw[KP_NUM];		//按键原始采样
+static uint8_t keyFlt[KP_NUM];		//按键滤波结果
+static uint8_t fltOld[KP_NUM];		//按键滤波用的旧值
+static uint8_t fltCount[KP_NUM];	//按键滤波计数
 
 void ArrayInit(void){//数组初始化
-	ArrayInitRGB();
-	adcValue[0] = adcValue[1] = Adc_Mid_Set[0] = Adc_Mid_Set[1] = 2048;
 	//srand(*(PUINT16X)(2048 - 2));//填入种子
 	memset(KeyBrd_data + 1, 0, 21);//初始化键盘报文数组
-	memset(debugBuf, 0, 64);
+//	memset(debugBuf, 0, 64);
 	memset(keyNow, 0, KP_NUM);
 	memset(keyOld, 0, KP_NUM);
 	memset(keyFlt, 0, KP_NUM);

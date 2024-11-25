@@ -16,7 +16,7 @@
 
 #pragma  NOAREGS
 
-UINT8C FIRMWARE_VERSION[4] = {1,0,1,20};//固件版本
+UINT8C FIRMWARE_VERSION[4] = {1,0,1,21};//固件版本
 
 uint8_t asyncFlag = 0;//异步操作标志
 
@@ -49,6 +49,7 @@ void main()
 	if(!(PCON & bRST_FLAG0)) mDelaymS(50);	//若为软复位或看门狗复位 则额外追加延时
 	
 	ArrayInit();	//数组初始化
+	DiagInit();		//诊断初始化处理
 	
     USBDeviceInit();				//USB设备模式初始化
     EA = 1;							//总中断允许
@@ -93,7 +94,7 @@ void main()
 	
     while(1){
 		WDOG_COUNT = 0;//清零看门狗计数
-		
+//		if(!KP_E2) WDOG_COUNT = 0xFF;//按下旋钮2则触发看门狗 测试代码！！！！！！！！！！
 		/********************基本IO********************/
 		GetTime();//时间获取
 		

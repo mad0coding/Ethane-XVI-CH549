@@ -67,7 +67,6 @@ void AsyncHandle(uint8_t flag){//异步处理
 	}
 	
 	if(ret){//发生存储错误
-		//以下为测试代码！！！！！！！！！！
 		WDOG_COUNT = 0;//清零看门狗计数
 		PWM_R = 255; PWM_G = 0; PWM_B = 0;
 		mDelaymS(150);
@@ -82,25 +81,8 @@ void AsyncHandle(uint8_t flag){//异步处理
 		PWM_R = 0; PWM_G = 0; PWM_B = 255;
 		mDelaymS(150);
 		WDOG_COUNT = 0;//清零看门狗计数
-		//以上为测试代码！！！！！！！！！！
 	}
 }
-
-//void paraSave1(uint8_t pos, uint8_t num){//参数保存
-//	uint16_t addr;
-//	
-//	if(pos >= 1 && pos <= CFG_NUM) addr = DATA_CFG_BASE - (pos - 1) * 512;//键盘配置存储位置计算
-//	else if(pos >= 51 && pos <= 50 + CFG_NUM) addr = DATA_LIGHT_BASE - (pos - 51) * 256;//灯效配置存储位置计算
-//	else if(pos == 100) addr = DATA_GLOB_BASE;//全局参数地址
-//	else if(pos == 200) addr = 0;//0地址
-//	else return;
-//	
-//	
-//	if(ParaWrite(addr, FlashBuf, num) == 0){//参数写入
-//		FlashCountInc(0, 0);//正确计数增加
-//	}
-//	else FlashCountInc(0, 1);//错误计数增加
-//}
 
 uint8_t ParaWrite(uint16_t addr, uint8_t *buf, uint8_t num){//参数写入
 	uint16_t i;

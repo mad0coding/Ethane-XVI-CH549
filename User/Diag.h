@@ -42,7 +42,7 @@
 
 void DiagGet(uint8_t *buf, uint8_t len);//诊断数据获取
 void DiagCountInc(uint8_t setting, uint8_t pos);//诊断计数增加
-
+void DiagInit(void);//诊断初始化处理
 
 
 #endif

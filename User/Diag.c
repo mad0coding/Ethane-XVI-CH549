@@ -31,12 +31,12 @@ static void DiagFormat(uint8_t setting){//诊断数据格式化
 }
 
 void DiagCountInc(uint8_t setting, uint8_t pos){//诊断计数增加
-//	if(pos >= 28) return;//越界
-//	if(setting & DIAG_FMT_LOAD) DiagRead(DIAG_THIS);//诊断数据载入内存
-//	DIAG_CNT(pos)++;//计数+1
-//	DIAG_LAST = pos;//记录最后错误
-//	DIAG_SUM = DiagSum(DIAG_THIS, 56);//更新校验
-//	if(setting & DIAG_FMT_SAVE) DiagWrite(DIAG_THIS);//保存数据
+	if(pos >= 28) return;//越界
+	if(setting & DIAG_FMT_LOAD) DiagRead(DIAG_THIS);//诊断数据载入内存
+	DIAG_CNT(pos)++;//计数+1
+	DIAG_LAST = pos;//记录最后错误
+	DIAG_SUM = DiagSum(DIAG_THIS, 56);//更新校验
+	if(setting & DIAG_FMT_SAVE) DiagWrite(DIAG_THIS);//保存数据
 }
 
 void DiagInit(void){//诊断初始化处理
@@ -70,6 +70,7 @@ void DiagInit(void){//诊断初始化处理
 		DIAG_RST_LAST_SET(0);//记录为非看门狗复位
 	}
 	if(needSave) DiagWrite(DIAG_THIS);//诊断数据写入闪存
+//	DiagFormat(DIAG_FMT_LOAD | DIAG_FMT_SAVE | DIAG_FMT_MARK);//诊断数据强制格式化
 }
 
 

@@ -41,7 +41,7 @@
 
 extern PUINT8C DATA_LIGHT;//闪存区灯效信息指针
 
-void ArrayInitRGB(void);//数组初始化
+
 void ClearKeyRGB(void);//清除键盘RGB
 void KeyRGB(uint8_t clear);//键盘RGB控制
 
