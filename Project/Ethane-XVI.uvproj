@@ -324,7 +324,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>..\User;..\Libraries\Public;..\Libraries\GPIO;..\Libraries\ADC;..\Libraries\PWM;..\Libraries\Compare;..\Libraries\FlashRom;..\Libraries\TouchKey;..\Libraries\Timer</IncludePath>
+              <IncludePath>..\User;..\Libraries\Public;..\Libraries\GPIO;..\Libraries\ADC;..\Libraries\PWM;..\Libraries\FlashRom;..\Libraries\Timer</IncludePath>
             </VariousControls>
           </C51>
           <Ax51>
