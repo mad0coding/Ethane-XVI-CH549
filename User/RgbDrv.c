@@ -1,10 +1,10 @@
 
-//È«¿ªÀíÂÛµÆ¹¦ºÄ576£¬Êµ²â×Ü¹¦ºÄ604£¬È«¹ØÊµ²â×Ü¹¦ºÄ18£¬¹ÊµÃÈ«¿ªµÆ¹¦ºÄ604-18=590
+//å…¨å¼€ç†è®ºç¯åŠŸè€—576ï¼Œå®æµ‹æ€»åŠŸè€—604ï¼Œå…¨å…³å®æµ‹æ€»åŠŸè€—18ï¼Œæ•…å¾—å…¨å¼€ç¯åŠŸè€—604-18=590
 #include "RgbDrv.h"
 
-PUINT8C DATA_LIGHT = DATA_LIGHT_BASE;//ÉÁ´æÇøµÆĞ§ĞÅÏ¢Ö¸Õë
+PUINT8C DATA_LIGHT = DATA_LIGHT_BASE;//é—ªå­˜åŒºç¯æ•ˆä¿¡æ¯æŒ‡é’ˆ
 
-static UINT8C LED_CURVE[] = {//LED·ÇÏßĞÔĞ£Õı±í
+static UINT8C LED_CURVE[] = {//LEDéçº¿æ€§æ ¡æ­£è¡¨
 	  0,  0,  0,  0,   0,  0,  0,  0,   0,  0,  0,  0,   0,  0,  0,  0,   0,  0,  0,  0,
 	  0,  0,  0,  0,   0,  0,  0,  0,   0,  0,  0,  0,   1,  1,  1,  1,   1,  1,  1,  1,
 	  1,  1,  1,  1,   1,  2,  2,  2,   2,  2,  2,  2,   2,  2,  2,  3,   3,  3,  3,  3,
@@ -32,7 +32,7 @@ static UINT8C LED_CURVE[] = {//LED·ÇÏßĞÔĞ£Õı±í
 	235,235,236,237, 238,239,240,241, 242,243,244,245, 246,247,248,249, 250,251,252,253,
 	255,
 };
-static UINT8C ON_CURVE[] = {//ÉıÁÁ¶È¹Û¸ĞĞ£Õı±í
+static UINT8C ON_CURVE[] = {//å‡äº®åº¦è§‚æ„Ÿæ ¡æ­£è¡¨
 	  0,  0,  1,  2,  2,  3,  4,  4,  5,  6,  6,  7,  8,  9,  9, 10, 11, 11, 12, 13, 14, 14, 15, 16, 16, 17, 18, 19, 19, 20, 21, 22,
 	 22, 23, 24, 25, 26, 26, 27, 28, 29, 29, 30, 31, 32, 33, 33, 34, 35, 36, 37, 37, 38, 39, 40, 41, 41, 42, 43, 44, 45, 46, 46, 47,
 	 48, 49, 50, 51, 51, 52, 53, 54, 55, 56, 57, 58, 58, 59, 60, 61, 62, 63, 64, 65, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 75,
@@ -42,270 +42,270 @@ static UINT8C ON_CURVE[] = {//ÉıÁÁ¶È¹Û¸ĞĞ£Õı±í
 	177,178,180,181,182,183,184,186,187,188,189,190,192,193,194,195,196,198,199,200,201,203,204,205,206,207,209,210,211,212,214,215,
 	216,217,219,220,221,223,224,225,226,228,229,230,231,233,234,235,237,238,239,241,242,243,245,246,247,248,250,251,252,253,254,255,
 };
-static UINT8C NBHD_T[] = {//Ê®×ÖÁÚÓò±í
+static UINT8C NBHD_T[] = {//åå­—é‚»åŸŸè¡¨
 	1,4,255,255,	0,2,5,255,		1,3,6,255,		2,7,255,255,
 	0,5,8,255,		1,4,6,9,		2,5,7,10,		3,6,11,255,
 	4,9,12,255,		5,8,10,13,		6,9,11,14,		7,10,15,255,
 	8,13,255,255,	9,12,14,255,	10,13,15,255,	11,14,255,255,
 };
-static UINT8C NBHD_X[] = {//XĞÎÁÚÓò±í
+static UINT8C NBHD_X[] = {//Xå½¢é‚»åŸŸè¡¨
 	5,255,255,255,	4,6,255,255,	5,7,255,255,	6,255,255,255,
 	1,9,255,255,	0,2,8,10,		1,3,9,11,		2,10,255,255,
 	5,13,255,255,	4,6,12,14,		5,7,13,15,		6,14,255,255,
 	9,255,255,255,	8,10,255,255,	9,11,255,255,	10,255,255,255,
 };
-static UINT8C INX_TABLE[] = {//Ô¤ÖÃµÆĞ§ÏÂ±ê±í
-	0,0,0,0,	 1,1,1,1,	 2,2,2,2,	 3,3,3,3,//¡ı(²¨¶¯)
-	0,1,2,3,	 1,2,3,4,	 2,3,4,5,	 3,4,5,6,//¨K
-	0,1,2,3,	 0,1,2,3,	 0,1,2,3,	 0,1,2,3,//¡ú
-	3,4,5,6,	 2,3,4,5,	 1,2,3,4,	 0,1,2,3,//¨J
-	3,3,3,3,	 2,2,2,2,	 1,1,1,1,	 0,0,0,0,//¡ü
-	6,5,4,3,	 5,4,3,2,	 4,3,2,1,	 3,2,1,0,//¨I
-	3,2,1,0,	 3,2,1,0,	 3,2,1,0,	 3,2,1,0,//¡û
-	3,2,1,0,	 4,3,2,1,	 5,4,3,2,	 6,5,4,3,//¨L
-	0,1,2,3,	 4,5,6,7,	 8,9,10,11,	 12,13,14,15,//¡ú¡ı(ĞĞÁĞ)
-	0,4,8,12,	 1,5,9,13,	 2,6,10,14,	 3,7,11,15,//¡ı¡ú
-	3,7,11,15,	 2,6,10,14,	 1,5,9,13,	 0,4,8,12,//¡ü¡ú
-	12,13,14,15, 8,9,10,11,	 4,5,6,7,	 0,1,2,3,//¡ú¡ü
-	15,14,13,12, 11,10,9,8,	 7,6,5,4,	 3,2,1,0,//¡û¡ü
-	15,11,7,3,	 14,10,6,2,	 13,9,5,1,	 12,8,4,0,//¡ü¡û
-	12,8,4,0,	 13,9,5,1,	 14,10,6,2,	 15,11,7,3,//¡ı¡û
-	3,2,1,0,	 7,6,5,4,	 11,10,9,8,	 15,14,13,12,//¡û¡ı
-	0,1,2,3,	 7,6,5,4,	 8,9,10,11,	 15,14,13,12,//¡ú¡ı(ÉßĞĞ)
-	0,7,8,15,	 1,6,9,14,	 2,5,10,13,	 3,4,11,12,//¡ı¡ú
-	3,4,11,12,	 2,5,10,13,	 1,6,9,14,	 0,7,8,15,//¡ü¡ú
-	15,14,13,12, 8,9,10,11,	 7,6,5,4,	 0,1,2,3,//¡ú¡ü
-	12,13,14,15, 11,10,9,8,	 4,5,6,7,	 3,2,1,0,//¡û¡ü
-	12,11,4,3,	 13,10,5,2,	 14,9,6,1,	 15,8,7,0,//¡ü¡û
-	15,8,7,0,	 14,9,6,1,	 13,10,5,2,	 12,11,4,3,//¡ı¡û
-	3,2,1,0,	 4,5,6,7,	 11,10,9,8,	 12,13,14,15,//¡û¡ı
-	0,1,2,3,	 11,12,13,4, 10,15,14,5, 9,8,7,6,//¡ú¡ı(ÎĞĞı)
-	0,11,10,9,	 1,12,15,8,	 2,13,14,7,	 3,4,5,6,//¡ı¡ú
-	3,4,5,6,	 2,13,14,7,	 1,12,15,8,	 0,11,10,9,//¡ü¡ú
-	9,8,7,6,	 10,15,14,5, 11,12,13,4, 0,1,2,3,//¡ú¡ü
-	6,7,8,9,	 5,14,15,10, 4,13,12,11, 3,2,1,0,//¡û¡ü
-	6,5,4,3,	 7,14,13,2,	 8,15,12,1,	 9,10,11,0,//¡ü¡û
-	9,10,11,0,	 8,15,12,1,	 7,14,13,2,	 6,5,4,3,//¡ı¡û
-	3,2,1,0,	 4,13,12,11, 5,14,15,10, 6,7,8,9,//¡û¡ı
+static UINT8C INX_TABLE[] = {//é¢„ç½®ç¯æ•ˆä¸‹æ ‡è¡¨
+	0,0,0,0,	 1,1,1,1,	 2,2,2,2,	 3,3,3,3,//â†“(æ³¢åŠ¨)
+	0,1,2,3,	 1,2,3,4,	 2,3,4,5,	 3,4,5,6,//â†˜
+	0,1,2,3,	 0,1,2,3,	 0,1,2,3,	 0,1,2,3,//â†’
+	3,4,5,6,	 2,3,4,5,	 1,2,3,4,	 0,1,2,3,//â†—
+	3,3,3,3,	 2,2,2,2,	 1,1,1,1,	 0,0,0,0,//â†‘
+	6,5,4,3,	 5,4,3,2,	 4,3,2,1,	 3,2,1,0,//â†–
+	3,2,1,0,	 3,2,1,0,	 3,2,1,0,	 3,2,1,0,//â†
+	3,2,1,0,	 4,3,2,1,	 5,4,3,2,	 6,5,4,3,//â†™
+	0,1,2,3,	 4,5,6,7,	 8,9,10,11,	 12,13,14,15,//â†’â†“(è¡Œåˆ—)
+	0,4,8,12,	 1,5,9,13,	 2,6,10,14,	 3,7,11,15,//â†“â†’
+	3,7,11,15,	 2,6,10,14,	 1,5,9,13,	 0,4,8,12,//â†‘â†’
+	12,13,14,15, 8,9,10,11,	 4,5,6,7,	 0,1,2,3,//â†’â†‘
+	15,14,13,12, 11,10,9,8,	 7,6,5,4,	 3,2,1,0,//â†â†‘
+	15,11,7,3,	 14,10,6,2,	 13,9,5,1,	 12,8,4,0,//â†‘â†
+	12,8,4,0,	 13,9,5,1,	 14,10,6,2,	 15,11,7,3,//â†“â†
+	3,2,1,0,	 7,6,5,4,	 11,10,9,8,	 15,14,13,12,//â†â†“
+	0,1,2,3,	 7,6,5,4,	 8,9,10,11,	 15,14,13,12,//â†’â†“(è›‡è¡Œ)
+	0,7,8,15,	 1,6,9,14,	 2,5,10,13,	 3,4,11,12,//â†“â†’
+	3,4,11,12,	 2,5,10,13,	 1,6,9,14,	 0,7,8,15,//â†‘â†’
+	15,14,13,12, 8,9,10,11,	 7,6,5,4,	 0,1,2,3,//â†’â†‘
+	12,13,14,15, 11,10,9,8,	 4,5,6,7,	 3,2,1,0,//â†â†‘
+	12,11,4,3,	 13,10,5,2,	 14,9,6,1,	 15,8,7,0,//â†‘â†
+	15,8,7,0,	 14,9,6,1,	 13,10,5,2,	 12,11,4,3,//â†“â†
+	3,2,1,0,	 4,5,6,7,	 11,10,9,8,	 12,13,14,15,//â†â†“
+	0,1,2,3,	 11,12,13,4, 10,15,14,5, 9,8,7,6,//â†’â†“(æ¶¡æ—‹)
+	0,11,10,9,	 1,12,15,8,	 2,13,14,7,	 3,4,5,6,//â†“â†’
+	3,4,5,6,	 2,13,14,7,	 1,12,15,8,	 0,11,10,9,//â†‘â†’
+	9,8,7,6,	 10,15,14,5, 11,12,13,4, 0,1,2,3,//â†’â†‘
+	6,7,8,9,	 5,14,15,10, 4,13,12,11, 3,2,1,0,//â†â†‘
+	6,5,4,3,	 7,14,13,2,	 8,15,12,1,	 9,10,11,0,//â†‘â†
+	9,10,11,0,	 8,15,12,1,	 7,14,13,2,	 6,5,4,3,//â†“â†
+	3,2,1,0,	 4,13,12,11, 5,14,15,10, 6,7,8,9,//â†â†“
 };
 
-static uint8_t fracM[16] = {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,};//Ö÷Ğ§¹û±ÈÀı
-static uint8_t fracUD[16] = {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,};//°´¶¯Ğ§¹û±ÈÀı
+static uint8_t fracM[16] = {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,};//ä¸»æ•ˆæœæ¯”ä¾‹
+static uint8_t fracUD[16] = {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,};//æŒ‰åŠ¨æ•ˆæœæ¯”ä¾‹
 
 static uint8_t inXi[16] = {0,1,2,3, 4,5,6,7, 8,9,10,11, 12,13,14,15,};
 
-static uint8_t FrameRaw[16*3] = {//Ô­Ê¼Ö¡»º´æ
+static uint8_t FrameRaw[16*3] = {//åŸå§‹å¸§ç¼“å­˜
 	0,0,0,	0,0,0,	0,0,0,	0,0,0,
 	0,0,0,	0,0,0,	0,0,0,	0,0,0,
 	0,0,0,	0,0,0,	0,0,0,	0,0,0,
 	0,0,0,	0,0,0,	0,0,0,	0,0,0,
 };//RGB
-static UINT8I FrameBuf[16*3] = {//Ö¡»º´æ
+static UINT8I FrameBuf[16*3] = {//å¸§ç¼“å­˜
 	0,0,0,	0,0,0,	0,0,0,	0,0,0,
 	0,0,0,	0,0,0,	0,0,0,	0,0,0,
 	0,0,0,	0,0,0,	0,0,0,	0,0,0,
 	0,0,0,	0,0,0,	0,0,0,	0,0,0,
 };//GRB
 
-void ClearKeyRGB(void){//Çå³ı¼üÅÌRGB
+void ClearKeyRGB(void){//æ¸…é™¤é”®ç›˜RGB
 	memset(FrameBuf, 0, sizeof(FrameBuf));
 }
 
-void KeyRGB(uint8_t clear){//¼üÅÌRGB¿ØÖÆ
-	static uint16_t dTime = 0;//¼ä¸ôÊ±¼ä¼ÇÂ¼
-	static uint8_t taskTick = 0;//0~3bit:0ÎªÆô¶¯ÑØ,1Îª¶¯×÷ÆÚ,2Îª½áÊøÑØ,3Îª¼ä¸ôÆÚ;bit7:ºôÎüÄ£Ê½ÓÃ
-	static uint8_t eTime = 0, INXi = 0, fracSHLD = 0;//Ê±¼ä¼ÇÂ¼,×Ô¶¨ÒåÏÂ±ê,ÆÁ±ÎĞ§¹û±ÈÀı
+void KeyRGB(uint8_t clear){//é”®ç›˜RGBæ§åˆ¶
+	static uint16_t dTime = 0;//é—´éš”æ—¶é—´è®°å½•
+	static uint8_t taskTick = 0;//0~3bit:0ä¸ºå¯åŠ¨æ²¿,1ä¸ºåŠ¨ä½œæœŸ,2ä¸ºç»“æŸæ²¿,3ä¸ºé—´éš”æœŸ;bit7:å‘¼å¸æ¨¡å¼ç”¨
+	static uint8_t eTime = 0, INXi = 0, fracSHLD = 0;//æ—¶é—´è®°å½•,è‡ªå®šä¹‰ä¸‹æ ‡,å±è”½æ•ˆæœæ¯”ä¾‹
 	static uint8_t lightMode = 0;
-	uint8_t /*lightMode = 0, */ifINX = 0, leftSHLD = 255;//Ä£Ê½,ÊÇ·ñÓĞ×Ô¶¨Òå±ê¼Ç,ÆÁ±ÎÊ£Óà
-	UINT8D i, j;//°´¼üÑ­»·±äÁ¿,RGBÑ­»·±äÁ¿
-	int16_t tool16 = 0;//¹¤¾ß±äÁ¿
-	uint16_t h, s, v;//HSVÉ«Öµ
+	uint8_t /*lightMode = 0, */ifINX = 0, leftSHLD = 255;//æ¨¡å¼,æ˜¯å¦æœ‰è‡ªå®šä¹‰æ ‡è®°,å±è”½å‰©ä½™
+	UINT8D i, j;//æŒ‰é”®å¾ªç¯å˜é‡,RGBå¾ªç¯å˜é‡
+	int16_t tool16 = 0;//å·¥å…·å˜é‡
+	uint16_t h, s, v;//HSVè‰²å€¼
 	
 	if(clear){
-		if(LIGHT_MONO <= 0) memset(fracM, 0, 16);//¿ìÇĞ»»ÔòÇå¿ÕÖ÷Ğ§¹û±ÈÀı
-		if(LIGHT_MONO <= 1) taskTick = 0;//¿ì¡¢»ºÇĞ»»ÔòÇåÁãÈÎÎñ½ÚÅÄ
+		if(LIGHT_MONO <= 0) memset(fracM, 0, 16);//å¿«åˆ‡æ¢åˆ™æ¸…ç©ºä¸»æ•ˆæœæ¯”ä¾‹
+		if(LIGHT_MONO <= 1) taskTick = 0;//å¿«ã€ç¼“åˆ‡æ¢åˆ™æ¸…é›¶ä»»åŠ¡èŠ‚æ‹
 	}
 	
-	if((uint8_t)((uint8_t)Systime - eTime) < 20) return;//ÒÔ20msÖÜÆÚ´¦ÀíµÆĞ§
-	eTime += 20;//Ê±¼ä¸ú½ø
+	if((uint8_t)((uint8_t)Systime - eTime) < 20) return;//ä»¥20mså‘¨æœŸå¤„ç†ç¯æ•ˆ
+	eTime += 20;//æ—¶é—´è·Ÿè¿›
 	
-	if((taskTick & 0x0F) == 2){//ÈôÎª½áÊøÑØ
-		taskTick = 3;//½øÈë¼ä¸ôÆÚ
-		dTime = Systime;//¼ÇÂ¼¼ä¸ôÆÚÆğÊ¼Ê±¼ä
+	if((taskTick & 0x0F) == 2){//è‹¥ä¸ºç»“æŸæ²¿
+		taskTick = 3;//è¿›å…¥é—´éš”æœŸ
+		dTime = Systime;//è®°å½•é—´éš”æœŸèµ·å§‹æ—¶é—´
 		INXi = 255;
 	}
-	if((taskTick & 0x0F) == 3 && (uint16_t)((uint16_t)Systime - dTime) > LIGHT_D2WAVE){//ÈôÎª¼ä¸ôÆÚÇÒ¼ä¸ôÊ±¼äÒÑµ½
-		taskTick = 0;//½øÈëÆô¶¯ÑØ
+	if((taskTick & 0x0F) == 3 && (uint16_t)((uint16_t)Systime - dTime) > LIGHT_D2WAVE){//è‹¥ä¸ºé—´éš”æœŸä¸”é—´éš”æ—¶é—´å·²åˆ°
+		taskTick = 0;//è¿›å…¥å¯åŠ¨æ²¿
 	}
-	if((taskTick & 0x0F) == 0){//ÈôÎªÆô¶¯ÑØ
-		taskTick = 1;//½øÈë¶¯×÷ÆÚ
-		dTime = Systime;//¼ÇÂ¼¶¯×÷ÆÚÆğÊ¼Ê±¼ä
+	if((taskTick & 0x0F) == 0){//è‹¥ä¸ºå¯åŠ¨æ²¿
+		taskTick = 1;//è¿›å…¥åŠ¨ä½œæœŸ
+		dTime = Systime;//è®°å½•åŠ¨ä½œæœŸèµ·å§‹æ—¶é—´
 		INXi = 0;
 		//lightMode = (lightMode + 1) % 32;
-		if(LIGHT_WAVE == 0){//ºôÎü
+		if(LIGHT_WAVE == 0){//å‘¼å¸
 			lightMode = 200;
-		}else if(LIGHT_WAVE <= 4){//²¨¶¯,ĞĞÁĞ,ÉßĞĞ,ÎĞĞı
+		}else if(LIGHT_WAVE <= 4){//æ³¢åŠ¨,è¡Œåˆ—,è›‡è¡Œ,æ¶¡æ—‹
 			lightMode = (LIGHT_WAVE - 1) * 8 + LIGHT_DIR;
-		}else if(LIGHT_WAVE == 5){//×Ô¶¨Òå
+		}else if(LIGHT_WAVE == 5){//è‡ªå®šä¹‰
 			lightMode = 100;
 			memcpy(inXi, &LIGHT_IDX(0), 16);
-		}else if(LIGHT_WAVE == 6){//Ñ­»·1
+		}else if(LIGHT_WAVE == 6){//å¾ªç¯1
 			lightMode = (lightMode + 1) % 32;
-		}else if(LIGHT_WAVE == 7){//Ñ­»·2
+		}else if(LIGHT_WAVE == 7){//å¾ªç¯2
 			lightMode += 8;
 			if(lightMode >= 39) lightMode = 0;
 			else if(lightMode >= 32) lightMode -= 31;
-		}else if(LIGHT_WAVE == 8){//Ëæ»ú
-			do{ j = (rand() ^ TL0) % /*26*/32; }while(lightMode == j);//½èÓÃj´æ´¢²ôÈëÊ±¼äµÄËæ»úÊı,Ö±µ½ÓëÏÖÔÚ²»Í¬
+		}else if(LIGHT_WAVE == 8){//éšæœº
+			do{ j = (rand() ^ TL0) % /*26*/32; }while(lightMode == j);//å€Ÿç”¨jå­˜å‚¨æºå…¥æ—¶é—´çš„éšæœºæ•°,ç›´åˆ°ä¸ç°åœ¨ä¸åŒ
 			lightMode = j;
 		}
 		//if(lightMode >= 32) lightMode = 200;
 	}
-	if((taskTick & 0x0F) == 1 && (uint16_t)((uint16_t)Systime - dTime) > LIGHT_D1WAVE && lightMode != 200){//ÈôÎª¶¯×÷ÆÚÇÒ¶¯×÷Ê±¼äÒÑµ½ÇÒ·ÇºôÎüÄ£Ê½
-		dTime = Systime;//¼ÇÂ¼ĞÂ¶¯×÷ÆğÊ¼Ê±¼ä
+	if((taskTick & 0x0F) == 1 && (uint16_t)((uint16_t)Systime - dTime) > LIGHT_D1WAVE && lightMode != 200){//è‹¥ä¸ºåŠ¨ä½œæœŸä¸”åŠ¨ä½œæ—¶é—´å·²åˆ°ä¸”éå‘¼å¸æ¨¡å¼
+		dTime = Systime;//è®°å½•æ–°åŠ¨ä½œèµ·å§‹æ—¶é—´
 		INXi++;
 	}
 	
-	if(lightMode < 32) memcpy(inXi, INX_TABLE + 16*lightMode, 16);//32ÖÖÔ¤ÖÃµÆĞ§
+	if(lightMode < 32) memcpy(inXi, INX_TABLE + 16*lightMode, 16);//32ç§é¢„ç½®ç¯æ•ˆ
 	
-	memcpy(FrameRaw, &LIGHT_UP(0), 16*3);//½«ÉÏÅäÉ«ÔØÈëÔ­Ê¼Ö¡»º´æ
+	memcpy(FrameRaw, &LIGHT_UP(0), 16*3);//å°†ä¸Šé…è‰²è½½å…¥åŸå§‹å¸§ç¼“å­˜
 	
-	for(i = 0; i < 16; i++){//16¼ü´¦Àí¿ªÊ¼
-		if(LIGHT_COLORFUL){//ÈôÆôÓÃÉ«²Ê±ä»¯
+	for(i = 0; i < 16; i++){//16é”®å¤„ç†å¼€å§‹
+		if(LIGHT_COLORFUL){//è‹¥å¯ç”¨è‰²å½©å˜åŒ–
 			Rgb2Hsv(FrameRaw[3*i+0], FrameRaw[3*i+1], FrameRaw[3*i+2], &h, &s, &v);
-			h += (Systime / LIGHT_COLORFUL) % (COLOR_ANGLE * 6);//¼ÓÈëÉ«»·±ä»¯
-			if(h >= COLOR_ANGLE * 6) h -= COLOR_ANGLE * 6;//·ÀÖ¹Ô½½ç
+			h += (Systime / LIGHT_COLORFUL) % (COLOR_ANGLE * 6);//åŠ å…¥è‰²ç¯å˜åŒ–
+			if(h >= COLOR_ANGLE * 6) h -= COLOR_ANGLE * 6;//é˜²æ­¢è¶Šç•Œ
 			Hsv2Rgb(h, s, v, &FrameRaw[3*i+0], &FrameRaw[3*i+1], &FrameRaw[3*i+2]);
 		}
 		
-		//Ö÷Ğ§¹û
-		if(lightMode == 200 && LIGHT_D1WAVE){//ÈôÎª¶¯×÷ÆÚÇÒÎªºôÎüÄ£Ê½
-			v = ((uint16_t)((uint16_t)Systime - dTime) / (MAX(LIGHT_D1WAVE,1000) / 1000)) % (COLOR_ANGLE * 6);//ÓÃ¶¯×÷Ê±¼ä¿ØÖÆºôÎüÖÜÆÚ
-			if(v >= COLOR_ANGLE * 3){//ÏÂ½µ¶Î
+		//ä¸»æ•ˆæœ
+		if(lightMode == 200 && LIGHT_D1WAVE){//è‹¥ä¸ºåŠ¨ä½œæœŸä¸”ä¸ºå‘¼å¸æ¨¡å¼
+			v = ((uint16_t)((uint16_t)Systime - dTime) / (MAX(LIGHT_D1WAVE,1000) / 1000)) % (COLOR_ANGLE * 6);//ç”¨åŠ¨ä½œæ—¶é—´æ§åˆ¶å‘¼å¸å‘¨æœŸ
+			if(v >= COLOR_ANGLE * 3){//ä¸‹é™æ®µ
 				v = COLOR_ANGLE * 6 - 1 - v;//0~500
-				tool16 = LIGHT_T2WAVE;//ÓÃÃğÑÓ³Ù×Ö½ÚÀ´Ñ¡ÔñÏÂ½µ¶ÎÇúÏß
-				taskTick |= 0x80;//ÖÃÎ»×î¸ßÎ»
-			}else{//ÉÏÉı¶Î
-				tool16 = LIGHT_T1WAVE;//ÓÃÁÁÑÓ³Ù×Ö½ÚÀ´Ñ¡ÔñÉÏÉı¶ÎÇúÏß
-				if(taskTick == 0x81){//ÈôÎª¶¯×÷ÆÚ²¢µÚ¶ş´Î½øÈëÉÏÉı¶ÎÔò´ú±íÒ»´ÎÑ­»·ÒÑÍê
-					if(i == 16 - 1) taskTick = 2;//Çå³ı×î¸ßÎ»²¢½øÈë½áÊøÑØ(±ØĞëÔÚ×îºóÒ»¼ü´¦Àí)
-					v = 0;//ÇåÁãÁÁ¶È
+				tool16 = LIGHT_T2WAVE;//ç”¨ç­å»¶è¿Ÿå­—èŠ‚æ¥é€‰æ‹©ä¸‹é™æ®µæ›²çº¿
+				taskTick |= 0x80;//ç½®ä½æœ€é«˜ä½
+			}else{//ä¸Šå‡æ®µ
+				tool16 = LIGHT_T1WAVE;//ç”¨äº®å»¶è¿Ÿå­—èŠ‚æ¥é€‰æ‹©ä¸Šå‡æ®µæ›²çº¿
+				if(taskTick == 0x81){//è‹¥ä¸ºåŠ¨ä½œæœŸå¹¶ç¬¬äºŒæ¬¡è¿›å…¥ä¸Šå‡æ®µåˆ™ä»£è¡¨ä¸€æ¬¡å¾ªç¯å·²å®Œ
+					if(i == 16 - 1) taskTick = 2;//æ¸…é™¤æœ€é«˜ä½å¹¶è¿›å…¥ç»“æŸæ²¿(å¿…é¡»åœ¨æœ€åä¸€é”®å¤„ç†)
+					v = 0;//æ¸…é›¶äº®åº¦
 				}
 			}
-			if((taskTick & 0x0F) != 1) v = 0;//Èô·Ç¶¯×÷ÆÚÔòÇåÁãÁÁ¶È
-			//¼ÓÈëºôÎüĞ§¹û
-			if(tool16 == 0){//´¿ÏßĞÔ
+			if((taskTick & 0x0F) != 1) v = 0;//è‹¥éåŠ¨ä½œæœŸåˆ™æ¸…é›¶äº®åº¦
+			//åŠ å…¥å‘¼å¸æ•ˆæœ
+			if(tool16 == 0){//çº¯çº¿æ€§
 				for(j = 0; j < 3; j++) FrameRaw[3*i+j] = (uint32_t)FrameRaw[3*i+j] * v / 500;
-			}else if(tool16 == 1){//¶ş´Îº¯ÊıĞ£Õı
-				v = ON_CURVE[(uint32_t)v * 255 / 500];//»ñÈ¡Ğ£ÕıµÄÁÁ¶ÈÖµ(½èÓÃv´æ´¢)
+			}else if(tool16 == 1){//äºŒæ¬¡å‡½æ•°æ ¡æ­£
+				v = ON_CURVE[(uint32_t)v * 255 / 500];//è·å–æ ¡æ­£çš„äº®åº¦å€¼(å€Ÿç”¨vå­˜å‚¨)
 				for(j = 0; j < 3; j++) FrameRaw[3*i+j] = (uint16_t)FrameRaw[3*i+j] * v / 255;
-			}else{//´¿Æ½·½Ğ£Õı
-				v = LED_CURVE[v];//»ñÈ¡Ğ£ÕıµÄÁÁ¶ÈÖµ(½èÓÃv´æ´¢)
+			}else{//çº¯å¹³æ–¹æ ¡æ­£
+				v = LED_CURVE[v];//è·å–æ ¡æ­£çš„äº®åº¦å€¼(å€Ÿç”¨vå­˜å‚¨)
 				for(j = 0; j < 3; j++) FrameRaw[3*i+j] = (uint16_t)FrameRaw[3*i+j] * v / 255;
 			}
-			ifINX = 1;//×Ô¶¨Òå±ê¼ÇÖÃÎ»ÒÔ·ÀÖ¹´¥·¢·ÇºôÎüÄ£Ê½µÄ½áÊøÑØ½øÈë´úÂë
+			ifINX = 1;//è‡ªå®šä¹‰æ ‡è®°ç½®ä½ä»¥é˜²æ­¢è§¦å‘éå‘¼å¸æ¨¡å¼çš„ç»“æŸæ²¿è¿›å…¥ä»£ç 
 		}
-		else if(/*(taskTick & 0x0F) == 1 && */lightMode != 200){//ÈôÎª¶¯×÷ÆÚµ«ÎªÆäËûÄ£Ê½
-			if(inXi[i] == INXi){//ÉÏÉı¶Î
-				ifINX = 1;//×Ô¶¨Òå±ê¼ÇÖÃÎ»
+		else if(/*(taskTick & 0x0F) == 1 && */lightMode != 200){//è‹¥ä¸ºåŠ¨ä½œæœŸä½†ä¸ºå…¶ä»–æ¨¡å¼
+			if(inXi[i] == INXi){//ä¸Šå‡æ®µ
+				ifINX = 1;//è‡ªå®šä¹‰æ ‡è®°ç½®ä½
 //				tool16 = (255 - fracM[i]) / 50;
 //				if((255 - fracM[i]) && tool16 == 0) tool16 = 1;
 //				fracM[i] += tool16;
 				
 				tool16 = 31 - LIGHT_T1WAVE;
 				if(tool16 > 10) tool16 = (tool16 - 10) * 10 + 10;
-				if(255 - fracM[i] > tool16) fracM[i] += tool16;//ÁÁÑÓ³Ù
+				if(255 - fracM[i] > tool16) fracM[i] += tool16;//äº®å»¶è¿Ÿ
 				else fracM[i] = 255;
-				for(j = 0; j < 3; j++){//¼ÓÈëÉıÖ÷Ğ§¹û
+				for(j = 0; j < 3; j++){//åŠ å…¥å‡ä¸»æ•ˆæœ
 					FrameRaw[3*i+j] = (uint16_t)FrameRaw[3*i+j] * ON_CURVE[fracM[i]] / 255;
 				}
-			}else{//ÏÂ½µ¶Î
-//				tool16 = (fracSHLD - leftSHLD) / (LIGHT_T2SYS + 1);//ÆÁ±ÎÃğÑÓ³Ù
+			}else{//ä¸‹é™æ®µ
+//				tool16 = (fracSHLD - leftSHLD) / (LIGHT_T2SYS + 1);//å±è”½ç­å»¶è¿Ÿ
 //				if(tool16 == 0) tool16 = 1;
 //				fracSHLD -= tool16;
 				
-				tool16 = fracM[i] / (LIGHT_T2WAVE + 1);//ÃğÑÓ³Ù
+				tool16 = fracM[i] / (LIGHT_T2WAVE + 1);//ç­å»¶è¿Ÿ
 				if(fracM[i] && tool16 == 0) tool16 = 1;
 				fracM[i] -= tool16;
-				for(j = 0; j < 3; j++){//¼ÓÈë½µÖ÷Ğ§¹û
+				for(j = 0; j < 3; j++){//åŠ å…¥é™ä¸»æ•ˆæœ
 					FrameRaw[3*i+j] = (uint16_t)FrameRaw[3*i+j] * fracM[i] / 255;
 				}
 			}
 		}
 		
-		//¼ÆËãÆÁ±ÎĞ§¹û,»ñÈ¡ÆÁ±ÎĞèÇó,¼ÆËã°´¼üĞ§¹û
-		if(keyNow[i]){//Èô°´ÏÂ
+		//è®¡ç®—å±è”½æ•ˆæœ,è·å–å±è”½éœ€æ±‚,è®¡ç®—æŒ‰é”®æ•ˆæœ
+		if(keyNow[i]){//è‹¥æŒ‰ä¸‹
 			tool16 = (255 - fracUD[i]) / (LIGHT_T1(i) + 1);//31
 			if((255 - fracUD[i]) && tool16 == 0) tool16 = 1;
 			fracUD[i] += tool16;
-			if(leftSHLD > LIGHT_SHLD(i)/*i*16*/) leftSHLD = LIGHT_SHLD(i)/*i*16*/;//Èô°´ÏÂÇÒĞèÑ¹µÍÆÁ±Î
-		}else{//ÈôÌ§Æğ
+			if(leftSHLD > LIGHT_SHLD(i)/*i*16*/) leftSHLD = LIGHT_SHLD(i)/*i*16*/;//è‹¥æŒ‰ä¸‹ä¸”éœ€å‹ä½å±è”½
+		}else{//è‹¥æŠ¬èµ·
 			tool16 = fracUD[i] / (LIGHT_T2(i) + 1);//31
 			if(fracUD[i] && tool16 == 0) tool16 = 1;
 			fracUD[i] -= tool16;
-			for(j = 0; j < 3; j++){//¼ÓÈëÆÁ±ÎĞ§¹û
+			for(j = 0; j < 3; j++){//åŠ å…¥å±è”½æ•ˆæœ
 				FrameRaw[3*i+j] = FrameRaw[3*i+j] * fracSHLD / 255;
 			}
 		}
-		for(j = 0; j < 3; j++){//¼ÓÈë°´¶¯Ğ§¹û
+		for(j = 0; j < 3; j++){//åŠ å…¥æŒ‰åŠ¨æ•ˆæœ
 			FrameRaw[3*i+j] += ((int16_t)LIGHT_DOWN(3*i+j) - FrameRaw[3*i+j]) * fracUD[i] / 255;
 		}
-	}//16¼ü´¦Àí½áÊø
+	}//16é”®å¤„ç†ç»“æŸ
 	
-	if(ifINX == 0 && (taskTick & 0x0F) == 1) taskTick = 2;//ÎŞÆ¥ÅäÇÒÎª¶¯×÷ÆÚÔò½øÈë½áÊøÑØ
+	if(ifINX == 0 && (taskTick & 0x0F) == 1) taskTick = 2;//æ— åŒ¹é…ä¸”ä¸ºåŠ¨ä½œæœŸåˆ™è¿›å…¥ç»“æŸæ²¿
 	
-	//¼ÆËãÈ«¾ÖÆÁ±ÎĞ§¹û¹©ÏÂÒ»´ÎÊ¹ÓÃ
-	if(leftSHLD > fracSHLD){//ÈôÆÁ±ÎÊ£ÓàÖµ´óÓÚµ±Ç°ÆÁ±Î±ÈÀı
+	//è®¡ç®—å…¨å±€å±è”½æ•ˆæœä¾›ä¸‹ä¸€æ¬¡ä½¿ç”¨
+	if(leftSHLD > fracSHLD){//è‹¥å±è”½å‰©ä½™å€¼å¤§äºå½“å‰å±è”½æ¯”ä¾‹
 //		tool16 = (255 - fracSHLD) / 31;//(LIGHT_T1SYS + 1);
 //		if((255 - fracSHLD) && tool16 == 0) tool16 = 1;
 //		fracSHLD += tool16;
 		tool16 = 31 - LIGHT_T1SYS;
 		if(tool16 > 10) tool16 = (tool16 - 10) * 10 + 10;
-		if(leftSHLD - fracSHLD > tool16) fracSHLD += tool16;//5;//ÆÁ±ÎÁÁÑÓ³Ù
+		if(leftSHLD - fracSHLD > tool16) fracSHLD += tool16;//5;//å±è”½äº®å»¶è¿Ÿ
 		else fracSHLD = leftSHLD;
-	}else if(leftSHLD < fracSHLD){//ÈôÆÁ±ÎÊ£ÓàÖµĞ¡ÓÚµ±Ç°ÆÁ±Î±ÈÀı
-		tool16 = (fracSHLD - leftSHLD) / (LIGHT_T2SYS + 1);//ÆÁ±ÎÃğÑÓ³Ù
+	}else if(leftSHLD < fracSHLD){//è‹¥å±è”½å‰©ä½™å€¼å°äºå½“å‰å±è”½æ¯”ä¾‹
+		tool16 = (fracSHLD - leftSHLD) / (LIGHT_T2SYS + 1);//å±è”½ç­å»¶è¿Ÿ
 		if(tool16 == 0) tool16 = 1;
 		fracSHLD -= tool16;
 	}
 	
-	//GRB»»Î»ºÍĞı×ªÓ³Éä
-	if(CFG_KB_DIR == 0){//Õı³£·½Ïò
+	//GRBæ¢ä½å’Œæ—‹è½¬æ˜ å°„
+	if(CFG_KB_DIR == 0){//æ­£å¸¸æ–¹å‘
 		for(i = 0; i < 16; i++){	FrameBuf[i*3+1] = FrameRaw[i*3+0];
 			FrameBuf[i*3+0] = FrameRaw[i*3+1];FrameBuf[i*3+2] = FrameRaw[i*3+2];	}
-	}else if(CFG_KB_DIR == 3){//×óĞı90¶È(´Ë´¦Óë°´¼ü¶ÁÈ¡Ïà·´)
+	}else if(CFG_KB_DIR == 3){//å·¦æ—‹90åº¦(æ­¤å¤„ä¸æŒ‰é”®è¯»å–ç›¸å)
 		for(i = 0; i < 16; i++){	FrameBuf[i*3+1] = FrameRaw[TURN_R90[i]*3+0];
 			FrameBuf[i*3+0] = FrameRaw[TURN_R90[i]*3+1];FrameBuf[i*3+2] = FrameRaw[TURN_R90[i]*3+2];	}
-	}else if(CFG_KB_DIR == 2){//Ğı×ª180¶È
+	}else if(CFG_KB_DIR == 2){//æ—‹è½¬180åº¦
 		for(i = 0; i < 16; i++){	FrameBuf[i*3+1] = FrameRaw[(16 - i)*3+0];
 			FrameBuf[i*3+0] = FrameRaw[(16 - i)*3+1];FrameBuf[i*3+2] = FrameRaw[(16 - i)*3+2];	}
-	}else if(CFG_KB_DIR == 1){//ÓÒĞı90¶È(´Ë´¦Óë°´¼ü¶ÁÈ¡Ïà·´)
+	}else if(CFG_KB_DIR == 1){//å³æ—‹90åº¦(æ­¤å¤„ä¸æŒ‰é”®è¯»å–ç›¸å)
 		for(i = 0; i < 16; i++){	FrameBuf[i*3+1] = FrameRaw[TURN_L90[i]*3+0];
 			FrameBuf[i*3+0] = FrameRaw[TURN_L90[i]*3+1];FrameBuf[i*3+2] = FrameRaw[TURN_L90[i]*3+2];	}
 	}
 }
 
-void WsWrite16(void){//Ğ´Èë16¸öµÆ
+void WsWrite16(void){//å†™å…¥16ä¸ªç¯
 	UINT8D i, iBit;
-	EA = 0;//¹ØÖĞ¶Ï
+	EA = 0;//å…³ä¸­æ–­
 	for(i = 0; i < 16*3; i++){//GRB
 		for(iBit = 7; iBit < 8; iBit--){
-			if((FrameBuf[i] >> iBit) & 0x01){//1Âë
+			if((FrameBuf[i] >> iBit) & 0x01){//1ç 
 				WS_DOUT = 1;//P2 |= 0x80;
 				_nop_();_nop_();_nop_();_nop_();_nop_();_nop_();_nop_();_nop_();_nop_();_nop_();
 				WS_DOUT = 0;//P2 &= ~0x80;
-			}else{//0Âë
+			}else{//0ç 
 				WS_DOUT = 1;
 				_nop_();
 				WS_DOUT = 0;
 			}
 		}
 	}
-	EA = 1;//¿ªÖĞ¶Ï
+	EA = 1;//å¼€ä¸­æ–­
 }
 
-//H:0~COLOR_ANGLE*6,S:0~100(ÒÑÓÃdelta´úÌæ),V:0~255
-void Rgb2Hsv(uint8_t vR, uint8_t vG, uint8_t vB, uint16_t* pH, uint16_t* pS, uint16_t* pV){//RGB×ªHSV
+//H:0~COLOR_ANGLE*6,S:0~100(å·²ç”¨deltaä»£æ›¿),V:0~255
+void Rgb2Hsv(uint8_t vR, uint8_t vG, uint8_t vB, uint16_t* pH, uint16_t* pS, uint16_t* pV){//RGBè½¬HSV
     uint8_t max = MAX(MAX(vR,vG),vB), min = MIN(MIN(vR,vG),vB);
     uint8_t delta = max - min;
     if(delta == 0) *pH = 0;
@@ -314,10 +314,10 @@ void Rgb2Hsv(uint8_t vR, uint8_t vG, uint8_t vB, uint16_t* pH, uint16_t* pS, uin
     else if(max == vB) *pH = (uint16_t)COLOR_ANGLE*(vR-vG)/delta + COLOR_ANGLE*4;
     if(*pH > COLOR_ANGLE * 6) *pH += COLOR_ANGLE * 6;
     if(max == 0) *pS = 0;
-    else *pS = delta;//100 * delta / max;//×¢Òâ´Ë´¦SÖ±½ÓÓÃdelta´úÌæ,¹Êº¯ÊıÍâÖ±½ÓĞŞ¸ÄV²»ºÏ·¨
+    else *pS = delta;//100 * delta / max;//æ³¨æ„æ­¤å¤„Sç›´æ¥ç”¨deltaä»£æ›¿,æ•…å‡½æ•°å¤–ç›´æ¥ä¿®æ”¹Vä¸åˆæ³•
     *pV = max;
 }
-void Hsv2Rgb(uint16_t vH, uint16_t vS, uint16_t vV, uint8_t* pR, uint8_t* pG, uint8_t* pB){//HSV×ªRGB
+void Hsv2Rgb(uint16_t vH, uint16_t vS, uint16_t vV, uint8_t* pR, uint8_t* pG, uint8_t* pB){//HSVè½¬RGB
 	uint8_t hi = (uint16_t)(vH / COLOR_ANGLE) % 6;
     uint16_t f = vH - hi * COLOR_ANGLE;
     uint8_t p = vV - vS;
@@ -331,19 +331,19 @@ void Hsv2Rgb(uint16_t vH, uint16_t vS, uint16_t vV, uint8_t* pR, uint8_t* pG, ui
     else if(hi == 5){*pR = vV;   *pG = p;    *pB = q;}
 }
 
-static UINT16C RGB_DELAY[8] = {0,1,10,50, 100,500,1000,2000};//RGBÑÓÊ±±í(µ¥Î»ms)
+static UINT16C RGB_DELAY[8] = {0,1,10,50, 100,500,1000,2000};//RGBå»¶æ—¶è¡¨(å•ä½ms)
 
-extern bit bitNUM, bitCAPS, bitSCROLL;//Êı×ÖËø¶¨ ´óĞ´Ëø¶¨ ¹ö¶¯Ëø¶¨
-extern uint8_t clickerNum;//×Ô¶¯Á¬µãÊı
-extern uint8_t mode3_key;//Ä£Ê½3°´¼ü(1-16)
+extern bit bitNUM, bitCAPS, bitSCROLL;//æ•°å­—é”å®š å¤§å†™é”å®š æ»šåŠ¨é”å®š
+extern uint8_t clickerNum;//è‡ªåŠ¨è¿ç‚¹æ•°
+extern uint8_t mode3_key;//æ¨¡å¼3æŒ‰é”®(1-16)
 
-extern uint32_t changeTime;//ÅäÖÃÇĞ»»Ê±¼ä
+extern uint32_t changeTime;//é…ç½®åˆ‡æ¢æ—¶é—´
 
-void SysRGB(){//ÏµÍ³RGB¿ØÖÆ
+void SysRGB(){//ç³»ç»ŸRGBæ§åˆ¶
 	uint8_t i;
-	static uint8_t rgbWeight = 0;//ÏµÍ³RGBÖ¸Ê¾µÆÈ¨ÖØ
-	uint8_t rgbOutput[3];//ÏµÍ³RGBÖ¸Ê¾µÆÊä³ö
-	uint8_t rgbInput[6];//ÏµÍ³RGBÖ¸Ê¾µÆÊäÈë
+	static uint8_t rgbWeight = 0;//ç³»ç»ŸRGBæŒ‡ç¤ºç¯æƒé‡
+	uint8_t rgbOutput[3];//ç³»ç»ŸRGBæŒ‡ç¤ºç¯è¾“å‡º
+	uint8_t rgbInput[6];//ç³»ç»ŸRGBæŒ‡ç¤ºç¯è¾“å…¥
 	rgbInput[0] = 0;
 	rgbInput[1] = bitNUM;
 	rgbInput[2] = bitCAPS;
@@ -351,26 +351,26 @@ void SysRGB(){//ÏµÍ³RGB¿ØÖÆ
 	rgbInput[4] = !!clickerNum;
 	rgbInput[5] = !!mode3_key;
 	
-	if(CFGb_RGB_T_ON && (Systime - changeTime) < RGB_DELAY[CFGb_RGB_T_ON]){//ÅäÖÃÇĞ»»ºóÔÚÉè¶¨Ê±¼äÖ®ÄÚ
+	if(CFGb_RGB_T_ON && (Systime - changeTime) < RGB_DELAY[CFGb_RGB_T_ON]){//é…ç½®åˆ‡æ¢ååœ¨è®¾å®šæ—¶é—´ä¹‹å†…
 		rgbWeight = 255;
 	}
-	else if(CFGb_RGB_T_OFF){//³¬¹ıÉè¶¨Ê±¼ä ÇÒ ²»ÊÇÅäÖÃÎª²»Ãğ
-		if(CFGb_RGB_T_OFF >= 4) rgbWeight = 0;//ÅäÖÃÎªÁ¢¿ÌÃğ
+	else if(CFGb_RGB_T_OFF){//è¶…è¿‡è®¾å®šæ—¶é—´ ä¸” ä¸æ˜¯é…ç½®ä¸ºä¸ç­
+		if(CFGb_RGB_T_OFF >= 4) rgbWeight = 0;//é…ç½®ä¸ºç«‹åˆ»ç­
 		else if(rgbWeight >= (1 << (CFGb_RGB_T_OFF - 1))) rgbWeight -= (1 << (CFGb_RGB_T_OFF - 1));
 		else rgbWeight = 0;
 	}
 
-	for(i = 0; i < 3; i++){//ÂÖÁ÷´¦ÀíR G B
-		rgbOutput[i] = rgbInput[CFGb_RGB_MAP(i)] ^ CFGb_RGB_DIR(i);//Ó³Éä ¼ÆËãÖ¸Ê¾µÆ×´Ì¬
-		if(rgbOutput[i] && !CFGb_RGB_T_OFF){//ÈôÖ¸Ê¾µÆÁÁ ÇÒ ±êÇ©ÅäÖÃÎª²»Ãğ
-			rgbOutput[i] *= CFG_RGB_SIGN(i);//Ö¸Ê¾µÆÁÁ
+	for(i = 0; i < 3; i++){//è½®æµå¤„ç†R G B
+		rgbOutput[i] = rgbInput[CFGb_RGB_MAP(i)] ^ CFGb_RGB_DIR(i);//æ˜ å°„ è®¡ç®—æŒ‡ç¤ºç¯çŠ¶æ€
+		if(rgbOutput[i] && !CFGb_RGB_T_OFF){//è‹¥æŒ‡ç¤ºç¯äº® ä¸” æ ‡ç­¾é…ç½®ä¸ºä¸ç­
+			rgbOutput[i] *= CFG_RGB_SIGN(i);//æŒ‡ç¤ºç¯äº®
 		}
 		else{
 			rgbOutput[i] = (CFG_RGB_SIGN(i) * (255 - rgbWeight) * rgbOutput[i]
-							+ CFG_RGB_RGB(i) * rgbWeight) / 255;//¼ÓÈ¨Æ½¾ù
+							+ CFG_RGB_RGB(i) * rgbWeight) / 255;//åŠ æƒå¹³å‡
 		}
 //		rgbOutput[i] = (CFG_RGB_SIGN(i) * (255 - rgbWeight) * (rgbInput[CFGb_RGB_MAP(i)] ^ CFGb_RGB_DIR(i)) 
-//						+ CFG_RGB_RGB(i) * rgbWeight) / 255;//Ó³Éä ¼ÓÈ¨Æ½¾ù
+//						+ CFG_RGB_RGB(i) * rgbWeight) / 255;//æ˜ å°„ åŠ æƒå¹³å‡
 	}
 	PWM_R = rgbOutput[0];
 	PWM_G = rgbOutput[1];

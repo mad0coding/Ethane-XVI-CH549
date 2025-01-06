@@ -15,42 +15,42 @@
 #define PWM_G		PWM_DATA2
 #define PWM_B		PWM_DATA4
 
-#define COLOR_ANGLE		167//É«»·µÄ1/6
+#define COLOR_ANGLE		167//è‰²ç¯çš„1/6
 
 #define LIGHT_THIS		(DATA_LIGHT)
 
 //#define LIGHT_ACS(a)		(*((PUINT8C)(a) + 0))
 
-#define LIGHT_UP(n)			(*(LIGHT_THIS + (n) + 0))//°´¼üÉÏÅäÉ«
-#define LIGHT_DOWN(n)		(*(LIGHT_THIS + (n) + 3*16))//°´¼üÏÂÅäÉ«
-#define LIGHT_T1(n)			(*(LIGHT_THIS + (n) + 6*16))//°´¼ü°´ÏÂµÆÑÓ³Ù
-#define LIGHT_T2(n)			(*(LIGHT_THIS + (n) + 7*16))//°´¼üÌ§ÆğµÆÑÓ³Ù
-#define LIGHT_SHLD(n)		(*(LIGHT_THIS + (n) + 8*16))//°´¼üÆÁ±ÎÊ£Óà
-#define LIGHT_IDX(n)		(*(LIGHT_THIS + (n) + 9*16))//°´¼ü×Ô¶¨ÒåÏÂ±ê
-#define LIGHT_MONO			(*(LIGHT_THIS + 244))//ÅäÖÃ¶ÀÕ¼
-#define LIGHT_DIR			(*(LIGHT_THIS + 245))//¶¯×÷·½ÏòÉèÖÃ
-#define LIGHT_WAVE			(*(LIGHT_THIS + 246))//¶¯×÷Ä£Ê½ÉèÖÃ
-#define LIGHT_COLORFUL		(*(LIGHT_THIS + 247))//±äÉ«ÖÜÆÚ(s)
-#define LIGHT_D1WAVE		(*((PUINT16C)(LIGHT_THIS + 248)))//¶¯×÷Ê±¼ä(ms)
-#define LIGHT_D2WAVE		(*((PUINT16C)(LIGHT_THIS + 250)))//¼ä¸ôÊ±¼ä(ms)
-#define LIGHT_T1WAVE		(*(LIGHT_THIS + 252))//ÁÁÑÓ³Ù
-#define LIGHT_T2WAVE		(*(LIGHT_THIS + 253))//ÃğÑÓ³Ù
-#define LIGHT_T1SYS			(*(LIGHT_THIS + 254))//ÆÁ±ÎÁÁÑÓ³Ù
-#define LIGHT_T2SYS			(*(LIGHT_THIS + 255))//ÆÁ±ÎÃğÑÓ³Ù
+#define LIGHT_UP(n)			(*(LIGHT_THIS + (n) + 0))//æŒ‰é”®ä¸Šé…è‰²
+#define LIGHT_DOWN(n)		(*(LIGHT_THIS + (n) + 3*16))//æŒ‰é”®ä¸‹é…è‰²
+#define LIGHT_T1(n)			(*(LIGHT_THIS + (n) + 6*16))//æŒ‰é”®æŒ‰ä¸‹ç¯å»¶è¿Ÿ
+#define LIGHT_T2(n)			(*(LIGHT_THIS + (n) + 7*16))//æŒ‰é”®æŠ¬èµ·ç¯å»¶è¿Ÿ
+#define LIGHT_SHLD(n)		(*(LIGHT_THIS + (n) + 8*16))//æŒ‰é”®å±è”½å‰©ä½™
+#define LIGHT_IDX(n)		(*(LIGHT_THIS + (n) + 9*16))//æŒ‰é”®è‡ªå®šä¹‰ä¸‹æ ‡
+#define LIGHT_MONO			(*(LIGHT_THIS + 244))//é…ç½®ç‹¬å 
+#define LIGHT_DIR			(*(LIGHT_THIS + 245))//åŠ¨ä½œæ–¹å‘è®¾ç½®
+#define LIGHT_WAVE			(*(LIGHT_THIS + 246))//åŠ¨ä½œæ¨¡å¼è®¾ç½®
+#define LIGHT_COLORFUL		(*(LIGHT_THIS + 247))//å˜è‰²å‘¨æœŸ(s)
+#define LIGHT_D1WAVE		(*((PUINT16C)(LIGHT_THIS + 248)))//åŠ¨ä½œæ—¶é—´(ms)
+#define LIGHT_D2WAVE		(*((PUINT16C)(LIGHT_THIS + 250)))//é—´éš”æ—¶é—´(ms)
+#define LIGHT_T1WAVE		(*(LIGHT_THIS + 252))//äº®å»¶è¿Ÿ
+#define LIGHT_T2WAVE		(*(LIGHT_THIS + 253))//ç­å»¶è¿Ÿ
+#define LIGHT_T1SYS			(*(LIGHT_THIS + 254))//å±è”½äº®å»¶è¿Ÿ
+#define LIGHT_T2SYS			(*(LIGHT_THIS + 255))//å±è”½ç­å»¶è¿Ÿ
 
 
-extern PUINT8C DATA_LIGHT;//ÉÁ´æÇøµÆĞ§ĞÅÏ¢Ö¸Õë
+extern PUINT8C DATA_LIGHT;//é—ªå­˜åŒºç¯æ•ˆä¿¡æ¯æŒ‡é’ˆ
 
 
-void ClearKeyRGB(void);//Çå³ı¼üÅÌRGB
-void KeyRGB(uint8_t clear);//¼üÅÌRGB¿ØÖÆ
+void ClearKeyRGB(void);//æ¸…é™¤é”®ç›˜RGB
+void KeyRGB(uint8_t clear);//é”®ç›˜RGBæ§åˆ¶
 
-void Rgb2Hsv(uint8_t vR, uint8_t vG, uint8_t vB, uint16_t* pH, uint16_t* pS, uint16_t* pV);//RGB×ªHSV
-void Hsv2Rgb(uint16_t vH, uint16_t vS, uint16_t vV, uint8_t* pR, uint8_t* pG, uint8_t* pB);//HSV×ªRGB
+void Rgb2Hsv(uint8_t vR, uint8_t vG, uint8_t vB, uint16_t* pH, uint16_t* pS, uint16_t* pV);//RGBè½¬HSV
+void Hsv2Rgb(uint16_t vH, uint16_t vS, uint16_t vV, uint8_t* pR, uint8_t* pG, uint8_t* pB);//HSVè½¬RGB
 
-void WsWrite16(void);//Ğ´Èë16¸öµÆ
+void WsWrite16(void);//å†™å…¥16ä¸ªç¯
 
-void SysRGB();//ÏµÍ³RGB¿ØÖÆ
+void SysRGB();//ç³»ç»ŸRGBæ§åˆ¶
 
 
 

@@ -1,76 +1,76 @@
 
 #include "Diag.h"
 
-void DiagGet(uint8_t *buf, uint8_t len){//Õï¶ÏÊý¾Ý»ñÈ¡ ¶ÔÍâ½Ó¿Ú
+void DiagGet(uint8_t *buf, uint8_t len){//è¯Šæ–­æ•°æ®èŽ·å– å¯¹å¤–æŽ¥å£
 	memcpy(buf, (PUINT8C)DATA_DIAG_BASE, len);
 }
 
-static void DiagRead(uint8_t *buf){//Õï¶ÏÊý¾Ý¶ÁÈ¡
+static void DiagRead(uint8_t *buf){//è¯Šæ–­æ•°æ®è¯»å–
 	memcpy(buf, (PUINT8C)DATA_DIAG_BASE, 64);
 }
 
-static void DiagWrite(uint8_t *buf){//Õï¶ÏÊý¾ÝÐ´Èë
-	ParaWrite(DATA_DIAG_BASE, buf, 1);//²ÎÊýÐ´Èë
+static void DiagWrite(uint8_t *buf){//è¯Šæ–­æ•°æ®å†™å…¥
+	ParaWrite(DATA_DIAG_BASE, buf, 1);//å‚æ•°å†™å…¥
 }
 
-static uint16_t DiagSum(uint8_t *buf, uint8_t len){//Õï¶ÏÊý¾Ý¼ÆËãÐ£Ñé
+static uint16_t DiagSum(uint8_t *buf, uint8_t len){//è¯Šæ–­æ•°æ®è®¡ç®—æ ¡éªŒ
 	uint16_t sum = 0;
 	do{ sum += buf[len--]; }while(len);
-	return ~sum;//È¡·´
+	return ~sum;//å–å
 }
 
-static void DiagFormat(uint8_t setting){//Õï¶ÏÊý¾Ý¸ñÊ½»¯
-	if(setting & DIAG_FMT_LOAD) DiagRead(DIAG_THIS);//Õï¶ÏÊý¾ÝÔØÈëÄÚ´æ
-	if(setting & DIAG_FMT_MARK) DIAG_CNT(DIAG_I_MARK) = 0;//Á¬±êÖ¾´íÎóÒ»Í¬¹é0
-	else DIAG_CNT(DIAG_I_MARK)++;//±êÖ¾´íÎó¼ÆÊý+1
-	memset(DIAG_THIS + 2, 0, 56 - 2 + 2);//ÇåÁã
-	DIAG_LAST = DIAG_I_MARK;//¼ÇÂ¼×îºó´íÎó
-	DIAG_MARK = DIAG_MARK_VALUE;//ÉèÖÃ±êÖ¾
-	DIAG_SUM = DiagSum(DIAG_THIS, 56);//¸üÐÂÐ£Ñé
-	if(setting & DIAG_FMT_SAVE) DiagWrite(DIAG_THIS);//±£´æÊý¾Ý
+static void DiagFormat(uint8_t setting){//è¯Šæ–­æ•°æ®æ ¼å¼åŒ–
+	if(setting & DIAG_FMT_LOAD) DiagRead(DIAG_THIS);//è¯Šæ–­æ•°æ®è½½å…¥å†…å­˜
+	if(setting & DIAG_FMT_MARK) DIAG_CNT(DIAG_I_MARK) = 0;//è¿žæ ‡å¿—é”™è¯¯ä¸€åŒå½’0
+	else DIAG_CNT(DIAG_I_MARK)++;//æ ‡å¿—é”™è¯¯è®¡æ•°+1
+	memset(DIAG_THIS + 2, 0, 56 - 2 + 2);//æ¸…é›¶
+	DIAG_LAST = DIAG_I_MARK;//è®°å½•æœ€åŽé”™è¯¯
+	DIAG_MARK = DIAG_MARK_VALUE;//è®¾ç½®æ ‡å¿—
+	DIAG_SUM = DiagSum(DIAG_THIS, 56);//æ›´æ–°æ ¡éªŒ
+	if(setting & DIAG_FMT_SAVE) DiagWrite(DIAG_THIS);//ä¿å­˜æ•°æ®
 }
 
-void DiagCountInc(uint8_t setting, uint8_t pos){//Õï¶Ï¼ÆÊýÔö¼Ó
-	if(pos >= 28) return;//Ô½½ç
-	if(setting & DIAG_FMT_LOAD) DiagRead(DIAG_THIS);//Õï¶ÏÊý¾ÝÔØÈëÄÚ´æ
-	DIAG_CNT(pos)++;//¼ÆÊý+1
-	DIAG_LAST = pos;//¼ÇÂ¼×îºó´íÎó
-	DIAG_SUM = DiagSum(DIAG_THIS, 56);//¸üÐÂÐ£Ñé
-	if(setting & DIAG_FMT_SAVE) DiagWrite(DIAG_THIS);//±£´æÊý¾Ý
+void DiagCountInc(uint8_t setting, uint8_t pos){//è¯Šæ–­è®¡æ•°å¢žåŠ 
+	if(pos >= 28) return;//è¶Šç•Œ
+	if(setting & DIAG_FMT_LOAD) DiagRead(DIAG_THIS);//è¯Šæ–­æ•°æ®è½½å…¥å†…å­˜
+	DIAG_CNT(pos)++;//è®¡æ•°+1
+	DIAG_LAST = pos;//è®°å½•æœ€åŽé”™è¯¯
+	DIAG_SUM = DiagSum(DIAG_THIS, 56);//æ›´æ–°æ ¡éªŒ
+	if(setting & DIAG_FMT_SAVE) DiagWrite(DIAG_THIS);//ä¿å­˜æ•°æ®
 }
 
-void DiagInit(void){//Õï¶Ï³õÊ¼»¯´¦Àí
+void DiagInit(void){//è¯Šæ–­åˆå§‹åŒ–å¤„ç†
 	uint8_t needSave = 0;
-	DiagRead(DIAG_THIS);//Õï¶ÏÊý¾ÝÔØÈëÄÚ´æ
-	if(DIAG_MARK != DIAG_MARK_VALUE){//±êÖ¾´íÎó
-		DiagFormat(DIAG_FMT_NONE);//Õï¶ÏÊý¾Ý¸ñÊ½»¯
+	DiagRead(DIAG_THIS);//è¯Šæ–­æ•°æ®è½½å…¥å†…å­˜
+	if(DIAG_MARK != DIAG_MARK_VALUE){//æ ‡å¿—é”™è¯¯
+		DiagFormat(DIAG_FMT_NONE);//è¯Šæ–­æ•°æ®æ ¼å¼åŒ–
 		needSave = 1;
 	}
-	if(DIAG_SUM != DiagSum(DIAG_THIS, 56)){//Ð£Ñé´íÎó
-		DIAG_SUM = DiagSum(DIAG_THIS, 56);//¸üÐÂÐ£Ñé
-		DiagCountInc(DIAG_FMT_NONE, DIAG_I_SUM);//Õï¶Ï¼ÆÊýÔö¼Ó
+	if(DIAG_SUM != DiagSum(DIAG_THIS, 56)){//æ ¡éªŒé”™è¯¯
+		DIAG_SUM = DiagSum(DIAG_THIS, 56);//æ›´æ–°æ ¡éªŒ
+		DiagCountInc(DIAG_FMT_NONE, DIAG_I_SUM);//è¯Šæ–­è®¡æ•°å¢žåŠ 
 		needSave = 1;
 	}
-	if(DIAG_RST_FLAG == RST_REASON_WDG){//Èô±¾´ÎÎª¿´ÃÅ¹·¸´Î»
-		if(DIAG_RST_LAST){//ÈôÉÏ´ÎÒ²ÊÇ¿´ÃÅ¹·¸´Î»
-			if(DIAG_RST_CNT == 0){//ÈôÎªÐÂ·¢ÉúµÄÁ¬Ðø¿´ÃÅ¹·¸´Î»
-				DiagCountInc(DIAG_FMT_NONE, DIAG_I_WDGS);//Õï¶Ï¼ÆÊýÔö¼Ó
+	if(DIAG_RST_FLAG == RST_REASON_WDG){//è‹¥æœ¬æ¬¡ä¸ºçœ‹é—¨ç‹—å¤ä½
+		if(DIAG_RST_LAST){//è‹¥ä¸Šæ¬¡ä¹Ÿæ˜¯çœ‹é—¨ç‹—å¤ä½
+			if(DIAG_RST_CNT == 0){//è‹¥ä¸ºæ–°å‘ç”Ÿçš„è¿žç»­çœ‹é—¨ç‹—å¤ä½
+				DiagCountInc(DIAG_FMT_NONE, DIAG_I_WDGS);//è¯Šæ–­è®¡æ•°å¢žåŠ 
 				needSave = 1;
 			}
-			DIAG_RST_CNT_SET(7);//ÉèÖÃ¼ÆÊýÖµ
+			DIAG_RST_CNT_SET(7);//è®¾ç½®è®¡æ•°å€¼
 		}
-		else if(DIAG_RST_CNT == 0){//ÈôÉÏ´Î·Ç¿´ÃÅ¹·¸´Î» ÇÒ ¼ÆÊýÎª0
-			DiagCountInc(DIAG_FMT_NONE, DIAG_I_WDG);//Õï¶Ï¼ÆÊýÔö¼Ó
+		else if(DIAG_RST_CNT == 0){//è‹¥ä¸Šæ¬¡éžçœ‹é—¨ç‹—å¤ä½ ä¸” è®¡æ•°ä¸º0
+			DiagCountInc(DIAG_FMT_NONE, DIAG_I_WDG);//è¯Šæ–­è®¡æ•°å¢žåŠ 
 			needSave = 1;
 		}
-		DIAG_RST_LAST_SET(1);//¼ÇÂ¼Îª¿´ÃÅ¹·¸´Î»
+		DIAG_RST_LAST_SET(1);//è®°å½•ä¸ºçœ‹é—¨ç‹—å¤ä½
 	}
-	else{//Èô±¾´Î·Ç¿´ÃÅ¹·¸´Î»
-		if(DIAG_RST_CNT > 0) DIAG_RST_CNT_DEC;//¼ÆÊý·Ç0Ôò¼ÆÊýµÝ¼õ
-		DIAG_RST_LAST_SET(0);//¼ÇÂ¼Îª·Ç¿´ÃÅ¹·¸´Î»
+	else{//è‹¥æœ¬æ¬¡éžçœ‹é—¨ç‹—å¤ä½
+		if(DIAG_RST_CNT > 0) DIAG_RST_CNT_DEC;//è®¡æ•°éž0åˆ™è®¡æ•°é€’å‡
+		DIAG_RST_LAST_SET(0);//è®°å½•ä¸ºéžçœ‹é—¨ç‹—å¤ä½
 	}
-	if(needSave) DiagWrite(DIAG_THIS);//Õï¶ÏÊý¾ÝÐ´ÈëÉÁ´æ
-//	DiagFormat(DIAG_FMT_LOAD | DIAG_FMT_SAVE | DIAG_FMT_MARK);//Õï¶ÏÊý¾ÝÇ¿ÖÆ¸ñÊ½»¯
+	if(needSave) DiagWrite(DIAG_THIS);//è¯Šæ–­æ•°æ®å†™å…¥é—ªå­˜
+//	DiagFormat(DIAG_FMT_LOAD | DIAG_FMT_SAVE | DIAG_FMT_MARK);//è¯Šæ–­æ•°æ®å¼ºåˆ¶æ ¼å¼åŒ–
 }
 
 

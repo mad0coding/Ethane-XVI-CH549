@@ -9,7 +9,7 @@
 #include "Diag.h"
 //#include "CompositeHID.H"
 
-//Òì²½±êÖ¾¶¨Òå
+//å¼‚æ­¥æ ‡å¿—å®šä¹‰
 #define ASYNC_FLAG_CFG		10
 #define ASYNC_FLAG_LIGHT	30
 #define ASYNC_FLAG_GLOB		50
@@ -17,104 +17,104 @@
 #define ASYNC_FLAG_BOOT		101
 
 
-//¿¿Ç°60k(0x0000~0xEFFF)ÎªCodeFlash ÊÙÃü10k´Î
-//¿¿ºó1k(0xF000~0xF3FF)ÎªDataFlash ÊÙÃüÔ¼ÄÜ100k´Î
-//×îºó3k(0xF400~0xFFFF)ÎªBootLoaderºÍConfigInfo ÓÃ»§²»¿ÉÊ¹ÓÃ
-#define DATA_CFG_BASE		0xF200//ÅäÖÃÊı¾İÆğÊ¼
-#define DATA_LIGHT_BASE		0xDC00//µÆĞ§Êı¾İÆğÊ¼
-#define DATA_GLOB_BASE		0xDA00//È«¾ÖÊı¾İÆğÊ¼
-#define DATA_DIAG_BASE		0xD800//Õï¶ÏÊı¾İÆğÊ¼
-//ÅäÖÃÊı¾İÕ¼CodeFlashµÄºó3kºÍDataFlashµÄ1k,Ã¿Ì×512B,¿Õ¼ä8Ì×,Ä¿Ç°Ê¹ÓÃºó4Ì×,´ÓºóÍùÇ°ÅÅ
-//µÆĞ§Êı¾İÕ¼CodeFlashµÄµ¹ÊıµÚ4~5k,Ã¿Ì×256B,¿Õ¼ä8Ì×,Ä¿Ç°Ê¹ÓÃÇ°4Ì×,´ÓÇ°ÍùºóÅÅ
-//È«¾ÖÊı¾İÕ¼CodeFlashµÄµ¹ÊıµÚ6kµÄºóÒ»°ëµÄ¿ªÍ·²¿·Ö,Ä¿Ç°Ê¹ÓÃ64B
-//Õï¶ÏÊı¾İÕ¼CodeFlashµÄµ¹ÊıµÚ6kµÄÇ°Ò»°ëµÄ¿ªÍ·²¿·Ö,Ä¿Ç°Ê¹ÓÃ64B
-//Ä¿Ç°È«²¿´æ´¢Êı¾İÊ¹ÓÃ7k¿Õ¼ä,Ê£Óà´úÂë¿Õ¼äÎª54k
+//é å‰60k(0x0000~0xEFFF)ä¸ºCodeFlash å¯¿å‘½10kæ¬¡
+//é å1k(0xF000~0xF3FF)ä¸ºDataFlash å¯¿å‘½çº¦èƒ½100kæ¬¡
+//æœ€å3k(0xF400~0xFFFF)ä¸ºBootLoaderå’ŒConfigInfo ç”¨æˆ·ä¸å¯ä½¿ç”¨
+#define DATA_CFG_BASE		0xF200//é…ç½®æ•°æ®èµ·å§‹
+#define DATA_LIGHT_BASE		0xDC00//ç¯æ•ˆæ•°æ®èµ·å§‹
+#define DATA_GLOB_BASE		0xDA00//å…¨å±€æ•°æ®èµ·å§‹
+#define DATA_DIAG_BASE		0xD800//è¯Šæ–­æ•°æ®èµ·å§‹
+//é…ç½®æ•°æ®å CodeFlashçš„å3kå’ŒDataFlashçš„1k,æ¯å¥—512B,ç©ºé—´8å¥—,ç›®å‰ä½¿ç”¨å4å¥—,ä»åå¾€å‰æ’
+//ç¯æ•ˆæ•°æ®å CodeFlashçš„å€’æ•°ç¬¬4~5k,æ¯å¥—256B,ç©ºé—´8å¥—,ç›®å‰ä½¿ç”¨å‰4å¥—,ä»å‰å¾€åæ’
+//å…¨å±€æ•°æ®å CodeFlashçš„å€’æ•°ç¬¬6kçš„åä¸€åŠçš„å¼€å¤´éƒ¨åˆ†,ç›®å‰ä½¿ç”¨64B
+//è¯Šæ–­æ•°æ®å CodeFlashçš„å€’æ•°ç¬¬6kçš„å‰ä¸€åŠçš„å¼€å¤´éƒ¨åˆ†,ç›®å‰ä½¿ç”¨64B
+//ç›®å‰å…¨éƒ¨å­˜å‚¨æ•°æ®ä½¿ç”¨7kç©ºé—´,å‰©ä½™ä»£ç ç©ºé—´ä¸º54k
 
-#define CFG_NUM		8	//ÅäÖÃ¸öÊı
+#define CFG_NUM		8	//é…ç½®ä¸ªæ•°
 
-//¼üÅÌÅäÖÃ
-#define CFG_THIS		(DATA_CFG)//¼üÅÌÅäÖÃÆğÊ¼
-#define CFG_ACS(a)			(*((PUINT8C)(a) + 0))//°´¼üÖ±½Ó·ÃÎÊ
-#define CFG_K_ID(a)			(*((PUINT8C)(a) + 0))//°´¼üID
-#define CFG_K_MODE(a)		(*((PUINT8C)(a) + 1))//°´¼üÄ£Ê½
-#define CFG_K_KEY(a)		(*((PUINT8C)(a) + 2))//°´¼ü¼üÖµ
-#define CFG_K_LEN(a)		(*((PUINT8C)(a) + 2))//°´¼ü×éÄ£Ê½Ê±°´¼ü³¤¶È
-#define CFG_K_FUNC(a)		(*((PUINT8C)(a) + 3))//°´¼ü¹¦ÄÜ¼ü
-#define CFG_K_M3DT(a)		(*((PUINT8C)(a) + 3))//°´¼ü×éÄ£Ê½Ê±Êı¾İÆğÊ¼
-#define CFG_K_X(a)			(*((PUINT16C)((a) + 2)))//¹â±êÄ£Ê½Ê±XÖµ
-#define CFG_K_Y(a)			(*((PUINT16C)((a) + 4)))//¹â±êÄ£Ê½Ê±YÖµ
-#define CFG_K_T(a)			(*((PUINT16C)((a) + 4)))//Á¬µãÄ£Ê½Ê±ÖÜÆÚ
+//é”®ç›˜é…ç½®
+#define CFG_THIS		(DATA_CFG)//é”®ç›˜é…ç½®èµ·å§‹
+#define CFG_ACS(a)			(*((PUINT8C)(a) + 0))//æŒ‰é”®ç›´æ¥è®¿é—®
+#define CFG_K_ID(a)			(*((PUINT8C)(a) + 0))//æŒ‰é”®ID
+#define CFG_K_MODE(a)		(*((PUINT8C)(a) + 1))//æŒ‰é”®æ¨¡å¼
+#define CFG_K_KEY(a)		(*((PUINT8C)(a) + 2))//æŒ‰é”®é”®å€¼
+#define CFG_K_LEN(a)		(*((PUINT8C)(a) + 2))//æŒ‰é”®ç»„æ¨¡å¼æ—¶æŒ‰é”®é•¿åº¦
+#define CFG_K_FUNC(a)		(*((PUINT8C)(a) + 3))//æŒ‰é”®åŠŸèƒ½é”®
+#define CFG_K_M3DT(a)		(*((PUINT8C)(a) + 3))//æŒ‰é”®ç»„æ¨¡å¼æ—¶æ•°æ®èµ·å§‹
+#define CFG_K_X(a)			(*((PUINT16C)((a) + 2)))//å…‰æ ‡æ¨¡å¼æ—¶Xå€¼
+#define CFG_K_Y(a)			(*((PUINT16C)((a) + 4)))//å…‰æ ‡æ¨¡å¼æ—¶Yå€¼
+#define CFG_K_T(a)			(*((PUINT16C)((a) + 4)))//è¿ç‚¹æ¨¡å¼æ—¶å‘¨æœŸ
 
-#define CFG_R_DATA_S		(CFG_THIS + 468)//Ò¡¸ËÊı¾İÆğÊ¼
-#define CFG_R_DATA_L		(12)//Ò¡¸ËÊı¾İ³¤¶È
-#define CFG_R_MODE(i)		(*(CFG_R_DATA_S + (i) * CFG_R_DATA_L + 0))//Ò¡¸ËÄ£Ê½¼°°´¼üÄ£Ê½
-#define CFG_R_DIR(i)		(*(CFG_R_DATA_S + (i) * CFG_R_DATA_L + 1))//Ò¡¸Ë·½Ïò
-#define CFG_R_KEY(i,n)		(*(CFG_R_DATA_S + (i) * CFG_R_DATA_L + 2 + (n)))//Ò¡¸Ë°´¼ü ÖĞÉÏÏÂ×óÓÒ
-#define CFG_R_FUNC(i)		(*(CFG_R_DATA_S + (i) * CFG_R_DATA_L + 7))//Ò¡¸Ë¹¦ÄÜ¼ü
-#define CFG_R_DEAD(i)		(*(CFG_R_DATA_S + (i) * CFG_R_DATA_L + 8))//Ò¡¸ËËÀÇø
-#define CFG_R_PARA(i)		(*(CFG_R_DATA_S + (i) * CFG_R_DATA_L + 9))//Ò¡¸Ë²ÎÊı
-#define CFG_R_NEER(i)		(*(CFG_R_DATA_S + (i) * CFG_R_DATA_L + 10))//Ò¡¸Ë½ü¶Ë²ÎÊı
-#define CFG_R_FAR(i)		(*(CFG_R_DATA_S + (i) * CFG_R_DATA_L + 11))//Ò¡¸ËÔ¶¶Ë²ÎÊı
+#define CFG_R_DATA_S		(CFG_THIS + 468)//æ‘‡æ†æ•°æ®èµ·å§‹
+#define CFG_R_DATA_L		(12)//æ‘‡æ†æ•°æ®é•¿åº¦
+#define CFG_R_MODE(i)		(*(CFG_R_DATA_S + (i) * CFG_R_DATA_L + 0))//æ‘‡æ†æ¨¡å¼åŠæŒ‰é”®æ¨¡å¼
+#define CFG_R_DIR(i)		(*(CFG_R_DATA_S + (i) * CFG_R_DATA_L + 1))//æ‘‡æ†æ–¹å‘
+#define CFG_R_KEY(i,n)		(*(CFG_R_DATA_S + (i) * CFG_R_DATA_L + 2 + (n)))//æ‘‡æ†æŒ‰é”® ä¸­ä¸Šä¸‹å·¦å³
+#define CFG_R_FUNC(i)		(*(CFG_R_DATA_S + (i) * CFG_R_DATA_L + 7))//æ‘‡æ†åŠŸèƒ½é”®
+#define CFG_R_DEAD(i)		(*(CFG_R_DATA_S + (i) * CFG_R_DATA_L + 8))//æ‘‡æ†æ­»åŒº
+#define CFG_R_PARA(i)		(*(CFG_R_DATA_S + (i) * CFG_R_DATA_L + 9))//æ‘‡æ†å‚æ•°
+#define CFG_R_NEER(i)		(*(CFG_R_DATA_S + (i) * CFG_R_DATA_L + 10))//æ‘‡æ†è¿‘ç«¯å‚æ•°
+#define CFG_R_FAR(i)		(*(CFG_R_DATA_S + (i) * CFG_R_DATA_L + 11))//æ‘‡æ†è¿œç«¯å‚æ•°
 
-#define CFG_E_DATA_S		(CFG_THIS + 480)//ĞıÅ¥Êı¾İÆğÊ¼
-#define CFG_E_DATA_L		(8)//ĞıÅ¥Êı¾İ³¤¶È
-#define CFG_E_MODE(i)		(*(CFG_E_DATA_S + (i) * CFG_E_DATA_L + 0))//ĞıÅ¥Ä£Ê½¼°°´¼üÄ£Ê½
-#define CFG_E_DIR(i)		(*(CFG_E_DATA_S + (i) * CFG_E_DATA_L + 1))//ĞıÅ¥·½Ïò
-#define CFG_E_KEY(i,n)		(*(CFG_E_DATA_S + (i) * CFG_E_DATA_L + 2 + (n)))//ĞıÅ¥°´¼ü ÖĞÄæË³
-#define CFG_E_FUNC(i,n)		(*(CFG_E_DATA_S + (i) * CFG_E_DATA_L + 5 + (n)))//ĞıÅ¥¹¦ÄÜ¼ü ÖĞÄæË³
+#define CFG_E_DATA_S		(CFG_THIS + 480)//æ—‹é’®æ•°æ®èµ·å§‹
+#define CFG_E_DATA_L		(8)//æ—‹é’®æ•°æ®é•¿åº¦
+#define CFG_E_MODE(i)		(*(CFG_E_DATA_S + (i) * CFG_E_DATA_L + 0))//æ—‹é’®æ¨¡å¼åŠæŒ‰é”®æ¨¡å¼
+#define CFG_E_DIR(i)		(*(CFG_E_DATA_S + (i) * CFG_E_DATA_L + 1))//æ—‹é’®æ–¹å‘
+#define CFG_E_KEY(i,n)		(*(CFG_E_DATA_S + (i) * CFG_E_DATA_L + 2 + (n)))//æ—‹é’®æŒ‰é”® ä¸­é€†é¡º
+#define CFG_E_FUNC(i,n)		(*(CFG_E_DATA_S + (i) * CFG_E_DATA_L + 5 + (n)))//æ—‹é’®åŠŸèƒ½é”® ä¸­é€†é¡º
 
-#define CFG_RGB_RGB(i)		(*(CFG_THIS + 496 + (i)))//RGBµÆ±êÇ©É«ÖµRGB
-#define CFG_RGB_SIGN(i)		(*(CFG_THIS + 499 + (i)))//RGBµÆÖ¸Ê¾É«ÖµRGB
-#define CFG_RGB_CFG(i)		(*(CFG_THIS + 502 + (i)))//RGBµÆÖ¸Ê¾µÆÅäÖÃ
-#define CFG_RGB_TIME		(*(CFG_THIS + 505))//RGBµÆ±êÇ©Ê±¼ä
+#define CFG_RGB_RGB(i)		(*(CFG_THIS + 496 + (i)))//RGBç¯æ ‡ç­¾è‰²å€¼RGB
+#define CFG_RGB_SIGN(i)		(*(CFG_THIS + 499 + (i)))//RGBç¯æŒ‡ç¤ºè‰²å€¼RGB
+#define CFG_RGB_CFG(i)		(*(CFG_THIS + 502 + (i)))//RGBç¯æŒ‡ç¤ºç¯é…ç½®
+#define CFG_RGB_TIME		(*(CFG_THIS + 505))//RGBç¯æ ‡ç­¾æ—¶é—´
 
-#define CFG_SCN_W			(*((PUINT16C)(CFG_THIS + 506)))//ÆÁÄ»¿í¶È
-#define CFG_SCN_H			(*((PUINT16C)(CFG_THIS + 508)))//ÆÁÄ»¸ß¶È
-#define CFG_KB_DIR			(*(CFG_THIS + 510))//¼üÅÌ·½Ïò
-#define CFG_ALL_PRI			(*(CFG_THIS + 511))//×ÜÓÅÏÈ¼¶
+#define CFG_SCN_W			(*((PUINT16C)(CFG_THIS + 506)))//å±å¹•å®½åº¦
+#define CFG_SCN_H			(*((PUINT16C)(CFG_THIS + 508)))//å±å¹•é«˜åº¦
+#define CFG_KB_DIR			(*(CFG_THIS + 510))//é”®ç›˜æ–¹å‘
+#define CFG_ALL_PRI			(*(CFG_THIS + 511))//æ€»ä¼˜å…ˆçº§
 
-//¼üÅÌÅäÖÃ±ÈÌØ
-#define CFGb_R_DIRx(i)		((CFG_R_DIR(i) >> 0) & 1)//Ò¡¸ËX·´Ïò
-#define CFGb_R_DIRy(i)		((CFG_R_DIR(i) >> 1) & 1)//Ò¡¸ËY·´Ïò
-#define CFGb_R_DIRr(i)		((CFG_R_DIR(i) >> 2) & 1)//Ò¡¸Ë90¶È×ªÏò
-#define CFGb_Rk_MODE(i)		(CFG_R_MODE(i) >> 4)//Ò¡¸Ë°´¼üÄ£Ê½
-#define CFGb_R_MODE(i)		(CFG_R_MODE(i) & 0x0F)//Ò¡¸ËÄ£Ê½
-#define CFGb_Ek_MODE(i)		(CFG_E_MODE(i) >> 4)//ĞıÅ¥°´¼üÄ£Ê½
-#define CFGb_E_MODE(i)		(CFG_E_MODE(i) & 0x0F)//ĞıÅ¥Ä£Ê½
+//é”®ç›˜é…ç½®æ¯”ç‰¹
+#define CFGb_R_DIRx(i)		((CFG_R_DIR(i) >> 0) & 1)//æ‘‡æ†Xåå‘
+#define CFGb_R_DIRy(i)		((CFG_R_DIR(i) >> 1) & 1)//æ‘‡æ†Yåå‘
+#define CFGb_R_DIRr(i)		((CFG_R_DIR(i) >> 2) & 1)//æ‘‡æ†90åº¦è½¬å‘
+#define CFGb_Rk_MODE(i)		(CFG_R_MODE(i) >> 4)//æ‘‡æ†æŒ‰é”®æ¨¡å¼
+#define CFGb_R_MODE(i)		(CFG_R_MODE(i) & 0x0F)//æ‘‡æ†æ¨¡å¼
+#define CFGb_Ek_MODE(i)		(CFG_E_MODE(i) >> 4)//æ—‹é’®æŒ‰é”®æ¨¡å¼
+#define CFGb_E_MODE(i)		(CFG_E_MODE(i) & 0x0F)//æ—‹é’®æ¨¡å¼
 
-#define CFGb_RGB_DIR(i)		(CFG_RGB_CFG(i) >> 7)//RGBµÆÖ¸Ê¾µÆ·½Ïò
-#define CFGb_RGB_MAP(i)		(CFG_RGB_CFG(i) & 0x0F)//RGBµÆÖ¸Ê¾µÆÓ³Éä
-#define CFGb_RGB_T_ON		(CFG_RGB_TIME >> 4)//RGBµÆ±êÇ©ÁÁÊ±¼ä
-#define CFGb_RGB_T_OFF		(CFG_RGB_TIME & 0x0F)//RGBµÆ±êÇ©½¥ÃğËÙ¶È
-
-
-
-//È«¾ÖÅäÖÃ
-#define GLOB_THIS		((PUINT8C)DATA_GLOB_BASE)//È«¾ÖÅäÖÃÆğÊ¼
-#define GLOB_ANA_MID1		(*((PUINT16C)(GLOB_THIS + 0)))//Ò¡¸ËÖĞÎ»
-#define GLOB_ANA_MID2		(*((PUINT16C)(GLOB_THIS + 2)))//Ò¡¸ËÖĞÎ»
-#define GLOB_KEY_FLT		(*(GLOB_THIS + 4))//°´¼üÂË²¨Öµ
-#define GLOB_EC_FREQ		(*(GLOB_THIS + 5))//ĞıÅ¥±¶Æµ
-//È«¾ÖÅäÖÃ±ÈÌØ
-#define GLOBb_EC_FREQ1		((GLOB_EC_FREQ >> 0) & 1)//Ò»ºÅĞıÅ¥±¶Æµ
-#define GLOBb_EC_FREQ2		((GLOB_EC_FREQ >> 1) & 1)//¶şºÅĞıÅ¥±¶Æµ
+#define CFGb_RGB_DIR(i)		(CFG_RGB_CFG(i) >> 7)//RGBç¯æŒ‡ç¤ºç¯æ–¹å‘
+#define CFGb_RGB_MAP(i)		(CFG_RGB_CFG(i) & 0x0F)//RGBç¯æŒ‡ç¤ºç¯æ˜ å°„
+#define CFGb_RGB_T_ON		(CFG_RGB_TIME >> 4)//RGBç¯æ ‡ç­¾äº®æ—¶é—´
+#define CFGb_RGB_T_OFF		(CFG_RGB_TIME & 0x0F)//RGBç¯æ ‡ç­¾æ¸ç­é€Ÿåº¦
 
 
-extern UINT8X FlashBuf[512];//ÅäÖÃ»º´æÊı×é
-extern uint16_t keyAddr[CFG_NUM][16];//3×éÃ¿×é16°´¼üµÄÊı¾İµØÖ·
-extern uint16_t keyWork[16];//3×éÃ¿×é16°´¼üµÄ¹¤×÷ÓÃÊı×é
-extern uint8_t keyFlag[16];//16°´¼üµÄ±ê¼ÇÓÃÊı×é
-extern uint8_t keyDir[CFG_NUM];//¼üÅÌ·½Ïò
-extern uint8_t sysCs;//×ÜÅäÖÃÑ¡Ôñ
-extern PUINT8C DATA_CFG;//ÉÁ´æÇøÅäÖÃĞÅÏ¢Ö¸Õë
 
-void AsyncHandle(uint8_t flag);//Òì²½´¦Àí
-void ParaSave(uint8_t pos, uint8_t num);	//²ÎÊı±£´æ
-uint8_t ParaWrite(uint16_t addr, uint8_t *buf, uint8_t num);	//²ÎÊıĞ´Èë
-void ParaLoad(void);					//²ÎÊı¶ÁÈ¡
-void ParaUpdate(uint8_t pos);			//²ÎÊı¸üĞÂ
-void GlobalParaLoad(void);		//È«¾Ö²ÎÊı¶ÁÈ¡
-void GlobalParaUpdate(void);	//È«¾Ö²ÎÊı¸üĞÂ
+//å…¨å±€é…ç½®
+#define GLOB_THIS		((PUINT8C)DATA_GLOB_BASE)//å…¨å±€é…ç½®èµ·å§‹
+#define GLOB_ANA_MID1		(*((PUINT16C)(GLOB_THIS + 0)))//æ‘‡æ†ä¸­ä½
+#define GLOB_ANA_MID2		(*((PUINT16C)(GLOB_THIS + 2)))//æ‘‡æ†ä¸­ä½
+#define GLOB_KEY_FLT		(*(GLOB_THIS + 4))//æŒ‰é”®æ»¤æ³¢å€¼
+#define GLOB_EC_FREQ		(*(GLOB_THIS + 5))//æ—‹é’®å€é¢‘
+//å…¨å±€é…ç½®æ¯”ç‰¹
+#define GLOBb_EC_FREQ1		((GLOB_EC_FREQ >> 0) & 1)//ä¸€å·æ—‹é’®å€é¢‘
+#define GLOBb_EC_FREQ2		((GLOB_EC_FREQ >> 1) & 1)//äºŒå·æ—‹é’®å€é¢‘
+
+
+extern UINT8X FlashBuf[512];//é…ç½®ç¼“å­˜æ•°ç»„
+extern uint16_t keyAddr[CFG_NUM][16];//3ç»„æ¯ç»„16æŒ‰é”®çš„æ•°æ®åœ°å€
+extern uint16_t keyWork[16];//3ç»„æ¯ç»„16æŒ‰é”®çš„å·¥ä½œç”¨æ•°ç»„
+extern uint8_t keyFlag[16];//16æŒ‰é”®çš„æ ‡è®°ç”¨æ•°ç»„
+extern uint8_t keyDir[CFG_NUM];//é”®ç›˜æ–¹å‘
+extern uint8_t sysCs;//æ€»é…ç½®é€‰æ‹©
+extern PUINT8C DATA_CFG;//é—ªå­˜åŒºé…ç½®ä¿¡æ¯æŒ‡é’ˆ
+
+void AsyncHandle(uint8_t flag);//å¼‚æ­¥å¤„ç†
+void ParaSave(uint8_t pos, uint8_t num);	//å‚æ•°ä¿å­˜
+uint8_t ParaWrite(uint16_t addr, uint8_t *buf, uint8_t num);	//å‚æ•°å†™å…¥
+void ParaLoad(void);					//å‚æ•°è¯»å–
+void ParaUpdate(uint8_t pos);			//å‚æ•°æ›´æ–°
+void GlobalParaLoad(void);		//å…¨å±€å‚æ•°è¯»å–
+void GlobalParaUpdate(void);	//å…¨å±€å‚æ•°æ›´æ–°
 
 
 #endif

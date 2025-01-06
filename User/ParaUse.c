@@ -1,111 +1,111 @@
 
 #include "ParaUse.h"
 
-//******************************±¨ÎÄ·¢ËÍ******************************//
-extern uint8_t KeyBrd_data[];//¼üÅÌ±¨ÎÄ
-extern uint8_t Mouse_data[];//Êó±ê±¨ÎÄ
-extern uint8_t Point_data[];//Ö¸Õë±¨ÎÄ
-extern uint8_t Vol_data[];//ÒôÁ¿±¨ÎÄ
-uint8_t KeyBrd_data_old[KB_LEN];//ÉÏ´Î¼üÅÌ±¨ÎÄ
-uint8_t Mouse_data_old = 0;//ÉÏ´ÎÊó±ê±¨ÎÄ
-uint8_t Vol_data_old = 0;//ÉÏ´ÎÒôÁ¿±¨ÎÄ
-extern uint8_t KeyBrd_if_send;//¼üÅÌ±¨ÎÄÊÇ·ñ·¢ËÍ
-extern uint8_t Vol_if_send;//ÒôÁ¿±¨ÎÄÊÇ·ñ·¢ËÍ
-extern uint8_t Point_if_send;//Ö¸Õë±¨ÎÄÊÇ·ñ·¢ËÍ
-extern uint8_t Mouse_if_send;//Êó±ê±¨ÎÄÊÇ·ñ·¢ËÍ
+//******************************æŠ¥æ–‡å‘é€******************************//
+extern uint8_t KeyBrd_data[];//é”®ç›˜æŠ¥æ–‡
+extern uint8_t Mouse_data[];//é¼ æ ‡æŠ¥æ–‡
+extern uint8_t Point_data[];//æŒ‡é’ˆæŠ¥æ–‡
+extern uint8_t Vol_data[];//éŸ³é‡æŠ¥æ–‡
+uint8_t KeyBrd_data_old[KB_LEN];//ä¸Šæ¬¡é”®ç›˜æŠ¥æ–‡
+uint8_t Mouse_data_old = 0;//ä¸Šæ¬¡é¼ æ ‡æŠ¥æ–‡
+uint8_t Vol_data_old = 0;//ä¸Šæ¬¡éŸ³é‡æŠ¥æ–‡
+extern uint8_t KeyBrd_if_send;//é”®ç›˜æŠ¥æ–‡æ˜¯å¦å‘é€
+extern uint8_t Vol_if_send;//éŸ³é‡æŠ¥æ–‡æ˜¯å¦å‘é€
+extern uint8_t Point_if_send;//æŒ‡é’ˆæŠ¥æ–‡æ˜¯å¦å‘é€
+extern uint8_t Mouse_if_send;//é¼ æ ‡æŠ¥æ–‡æ˜¯å¦å‘é€
 //********************************************************************//
 
-uint8_t clickerNum = 0;//×Ô¶¯Á¬µãÊı
-uint32_t changeTime = -10000*0;//ÅäÖÃÇĞ»»Ê±¼ä
+uint8_t clickerNum = 0;//è‡ªåŠ¨è¿ç‚¹æ•°
+uint32_t changeTime = -10000*0;//é…ç½®åˆ‡æ¢æ—¶é—´
 
-//******************************Êı¾İÏà¹Ø******************************//
-uint8_t mode3_key = 0;//Ä£Ê½3°´¼ü(1-16)
-uint16_t mode3_i = 0;//Ä£Ê½3Ô´Êı¾İÏÂ±ê(·ÃÎÊmode3_data)
-uint16_t mode3_loop_count = 0;//Ä£Ê½3Ñ­»·¼ÆÊı
-uint8_t mode3_loop_flag = 0;//Ä£Ê½3Ñ­»·²Ù×÷±êÖ¾
-uint8_t mode3_pulse = 0;//Ä£Ê½3¼ä¸ô
-uint8_t mode3_delaying = 0;//Ä£Ê½3ÊÇ·ñÑÓÊ±ÖĞ
+//******************************æ•°æ®ç›¸å…³******************************//
+uint8_t mode3_key = 0;//æ¨¡å¼3æŒ‰é”®(1-16)
+uint16_t mode3_i = 0;//æ¨¡å¼3æºæ•°æ®ä¸‹æ ‡(è®¿é—®mode3_data)
+uint16_t mode3_loop_count = 0;//æ¨¡å¼3å¾ªç¯è®¡æ•°
+uint8_t mode3_loop_flag = 0;//æ¨¡å¼3å¾ªç¯æ“ä½œæ ‡å¿—
+uint8_t mode3_pulse = 0;//æ¨¡å¼3é—´éš”
+uint8_t mode3_delaying = 0;//æ¨¡å¼3æ˜¯å¦å»¶æ—¶ä¸­
 //********************************************************************//
-uint8_t switch_i = 0xFF, switch_count = 0;//ÇĞ»»¼üÑ¡ÔñºÍ¼ÆÊı
-uint8_t switch_key = 0, switch_func = 0;//ÇĞ»»¼ü»º´æ
+uint8_t switch_i = 0xFF, switch_count = 0;//åˆ‡æ¢é”®é€‰æ‹©å’Œè®¡æ•°
+uint8_t switch_key = 0, switch_func = 0;//åˆ‡æ¢é”®ç¼“å­˜
 
 
-uint8_t FillReport(void)//±¨ÎÄÌîĞ´
+uint8_t FillReport(void)//æŠ¥æ–‡å¡«å†™
 {
-	static uint32_t oldTime = 0;//¼ÇÂ¼Ê±¼ä
+	static uint32_t oldTime = 0;//è®°å½•æ—¶é—´
 	uint8_t mode1_num = 0, mode2_num = 0, mode7_num = 0;
-	uint8_t i = 0;//¹«¹²ÓÃ
+	uint8_t i = 0;//å…¬å…±ç”¨
 //	struct config_key *fill_key = cfg_key[sysCs];
 	
 	uint16_t x, y;
 	uint8_t turn_old, turn_dif;
 	int8_t auto_num;
 	
-	//***********************************¸÷±¨ÎÄ¼°·¢ËÍ±êÖ¾³õÊ¼»¯***********************************//
-	KeyBrd_if_send = Mouse_if_send = Point_if_send = Vol_if_send = 0;//·¢ËÍ±êÖ¾ÖÃÁã
+	//***********************************å„æŠ¥æ–‡åŠå‘é€æ ‡å¿—åˆå§‹åŒ–***********************************//
+	KeyBrd_if_send = Mouse_if_send = Point_if_send = Vol_if_send = 0;//å‘é€æ ‡å¿—ç½®é›¶
 	
-	memcpy(KeyBrd_data_old + 1, KeyBrd_data + 1, KB_LEN - 1);//¼ÇÂ¼ÉÏÒ»´Î±¨ÎÄ
-	memset(KeyBrd_data + 1, 0, KB_LEN - 1);//Çå³ıËùÓĞ¼ü
+	memcpy(KeyBrd_data_old + 1, KeyBrd_data + 1, KB_LEN - 1);//è®°å½•ä¸Šä¸€æ¬¡æŠ¥æ–‡
+	memset(KeyBrd_data + 1, 0, KB_LEN - 1);//æ¸…é™¤æ‰€æœ‰é”®
 
-	Mouse_data_old = Mouse_data[1];//¼ÇÂ¼ÉÏÒ»´Î±¨ÎÄ
-	memset(Mouse_data + 1, 0, 4);//Çå³ıÊó±ê±¨ÎÄ
+	Mouse_data_old = Mouse_data[1];//è®°å½•ä¸Šä¸€æ¬¡æŠ¥æ–‡
+	memset(Mouse_data + 1, 0, 4);//æ¸…é™¤é¼ æ ‡æŠ¥æ–‡
 
 	Point_data[1] = 0x10;
-	memset(Point_data + 3, 0xFF, 4);//Çå³ıÖ¸Õë±¨ÎÄ
+	memset(Point_data + 3, 0xFF, 4);//æ¸…é™¤æŒ‡é’ˆæŠ¥æ–‡
 
-	Vol_data_old = Vol_data[1];//¼ÇÂ¼ÉÏÒ»´Î±¨ÎÄ
-	Vol_data[1] = 0;//Çå³ıÒôÁ¿±¨ÎÄ
+	Vol_data_old = Vol_data[1];//è®°å½•ä¸Šä¸€æ¬¡æŠ¥æ–‡
+	Vol_data[1] = 0;//æ¸…é™¤éŸ³é‡æŠ¥æ–‡
 	//********************************************************************************************//
 	
-	if(keyAddr[sysCs][0] == 0) return 0xFF;//Èô±¾ÅäÖÃÊı¾İ´íÎóÔòÍË³ö
+	if(keyAddr[sysCs][0] == 0) return 0xFF;//è‹¥æœ¬é…ç½®æ•°æ®é”™è¯¯åˆ™é€€å‡º
 	
-	//****************************************¼üÅÌ°´¼ü´¦Àí****************************************//
-	if(mode3_key){//Èô´¦ÓÚmode3Î´Íê³É×´Ì¬
-		if(keyOld[mode3_key - 1] && !keyNow[mode3_key - 1] && mode3_loop_flag < 2) mode3_loop_flag++;//ÊÍ·ÅÑØ¼ÆÊı
-		mode3_pulse = !mode3_pulse;//¼ä¸ô±êÖ¾ÏÈ·­×ª
-		if(mode3_pulse) Mode3Handle();//Èô·­×ªºóÒª¼ä¸ôÒ²¼´·­×ªÇ°²»ÓÃ¼ä¸ôÔòÖ´ĞĞ´¦Àí
+	//****************************************é”®ç›˜æŒ‰é”®å¤„ç†****************************************//
+	if(mode3_key){//è‹¥å¤„äºmode3æœªå®ŒæˆçŠ¶æ€
+		if(keyOld[mode3_key - 1] && !keyNow[mode3_key - 1] && mode3_loop_flag < 2) mode3_loop_flag++;//é‡Šæ”¾æ²¿è®¡æ•°
+		mode3_pulse = !mode3_pulse;//é—´éš”æ ‡å¿—å…ˆç¿»è½¬
+		if(mode3_pulse) Mode3Handle();//è‹¥ç¿»è½¬åè¦é—´éš”ä¹Ÿå³ç¿»è½¬å‰ä¸ç”¨é—´éš”åˆ™æ‰§è¡Œå¤„ç†
 	}
-	else{//¿ÕÏĞ×´Ì¬
-		for(i = 0; i < 16; i++){//Í³¼Æ°´ÏÂµÄ¸÷Ä£Ê½ÊıÁ¿
+	else{//ç©ºé—²çŠ¶æ€
+		for(i = 0; i < 16; i++){//ç»Ÿè®¡æŒ‰ä¸‹çš„å„æ¨¡å¼æ•°é‡
 			if(keyNow[i/*+1*/]){
 				if(CFG_K_MODE(keyAddr[sysCs][i]) == 1 && i != switch_i) mode1_num++;
 				else if(CFG_K_MODE(keyAddr[sysCs][i]) == 2 && i != switch_i) mode2_num++;
 				else if(CFG_K_MODE(keyAddr[sysCs][i]) == 7 && i != switch_i) mode7_num++;
 			}
 		}
-		for(i = 0; i < 16; i++){//¶ÔÓÚ16¸ö°´¼ü
-			if(i == switch_i){//ÈôÓĞÕıÔÚÉúĞ§µÄÁÙÊ±ÇĞ»»¼ü
-				if(!keyNow[i] && !keyOld[i]){//ÊÍ·ÅÑØÖ®ºóÒ»ÅÄ
-					switch_count++;//¼ÆÊıÂË²¨
+		for(i = 0; i < 16; i++){//å¯¹äº16ä¸ªæŒ‰é”®
+			if(i == switch_i){//è‹¥æœ‰æ­£åœ¨ç”Ÿæ•ˆçš„ä¸´æ—¶åˆ‡æ¢é”®
+				if(!keyNow[i] && !keyOld[i]){//é‡Šæ”¾æ²¿ä¹‹åä¸€æ‹
+					switch_count++;//è®¡æ•°æ»¤æ³¢
 					if(switch_count > 10){
-						switch_count = 0;//¼ÆÊıÇåÁã
-						KeyInsert(i + 3,switch_key);//ÌîÈë¼üÖµ
-						CsChange(switch_func);//ÇĞ»»»ØÀ´
-						switch_i = 0xFF;//¸´Î»
+						switch_count = 0;//è®¡æ•°æ¸…é›¶
+						KeyInsert(i + 3,switch_key);//å¡«å…¥é”®å€¼
+						CsChange(switch_func);//åˆ‡æ¢å›æ¥
+						switch_i = 0xFF;//å¤ä½
 					}
 				}
-				continue;//ÆÁ±ÎÁÙÊ±ÇĞ»»¼ü
+				continue;//å±è”½ä¸´æ—¶åˆ‡æ¢é”®
 			}
-			if(keyNow[i]){//Èô°´ÏÂ
-				if(CFG_K_MODE(keyAddr[sysCs][i]) == 1){//Ä£Ê½1:µ¥¼ü
-					KeyInsert(i + 3,CFG_K_KEY(keyAddr[sysCs][i]));//ÌîÈë¼üÖµ
+			if(keyNow[i]){//è‹¥æŒ‰ä¸‹
+				if(CFG_K_MODE(keyAddr[sysCs][i]) == 1){//æ¨¡å¼1:å•é”®
+					KeyInsert(i + 3,CFG_K_KEY(keyAddr[sysCs][i]));//å¡«å…¥é”®å€¼
 				}
-				else if(CFG_K_MODE(keyAddr[sysCs][i]) == 2){//Ä£Ê½2:¿ì½İ¼ü
-					KeyInsert(i + 3,CFG_K_KEY(keyAddr[sysCs][i]));//ÌîÈë¼üÖµ
-					KeyBrd_data[1] |= CFG_K_FUNC(keyAddr[sysCs][i]);//ÌîÈë¹¦ÄÜ¼ü
+				else if(CFG_K_MODE(keyAddr[sysCs][i]) == 2){//æ¨¡å¼2:å¿«æ·é”®
+					KeyInsert(i + 3,CFG_K_KEY(keyAddr[sysCs][i]));//å¡«å…¥é”®å€¼
+					KeyBrd_data[1] |= CFG_K_FUNC(keyAddr[sysCs][i]);//å¡«å…¥åŠŸèƒ½é”®
 				}
-				else if(CFG_K_MODE(keyAddr[sysCs][i]) == 3){//Ä£Ê½3:°´¼ü×é
-					if(mode1_num == 0 && mode2_num == 0 && mode7_num == 0 && !keyOld[i]){//²»´æÔÚ1,2,7Ä£Ê½°´¼üÇÒ°´ÏÂÑØ
-						mode3_key = i + 1;//¼ÇÂ¼mode3°´¼ü(Òª+1)
-						mode3_i = keyAddr[sysCs][i] + 3;//¶ÁÈ¡ÆğÊ¼ÏÂ±ê
-						mode3_loop_count = 0;//Ä£Ê½3Ñ­»·¼ÆÊıÇåÁã
-						mode3_loop_flag = 0;//Ä£Ê½3Ñ­»·²Ù×÷±êÖ¾ÇåÁã
-						mode3_pulse = 1;//²åÈë¼ä¸ô
+				else if(CFG_K_MODE(keyAddr[sysCs][i]) == 3){//æ¨¡å¼3:æŒ‰é”®ç»„
+					if(mode1_num == 0 && mode2_num == 0 && mode7_num == 0 && !keyOld[i]){//ä¸å­˜åœ¨1,2,7æ¨¡å¼æŒ‰é”®ä¸”æŒ‰ä¸‹æ²¿
+						mode3_key = i + 1;//è®°å½•mode3æŒ‰é”®(è¦+1)
+						mode3_i = keyAddr[sysCs][i] + 3;//è¯»å–èµ·å§‹ä¸‹æ ‡
+						mode3_loop_count = 0;//æ¨¡å¼3å¾ªç¯è®¡æ•°æ¸…é›¶
+						mode3_loop_flag = 0;//æ¨¡å¼3å¾ªç¯æ“ä½œæ ‡å¿—æ¸…é›¶
+						mode3_pulse = 1;//æ’å…¥é—´éš”
 						Mode3Handle();
 					}
 				}
-				else if(CFG_K_MODE(keyAddr[sysCs][i]) == 4 || CFG_K_MODE(keyAddr[sysCs][i]) == 5){//Ä£Ê½4:¹â±êÒÆÎ»,Ä£Ê½5:¹â±êµã»÷
-					if(!keyOld[i]) keyFlag[i] = 2;//´ı°´ÏÂÌ¬
+				else if(CFG_K_MODE(keyAddr[sysCs][i]) == 4 || CFG_K_MODE(keyAddr[sysCs][i]) == 5){//æ¨¡å¼4:å…‰æ ‡ç§»ä½,æ¨¡å¼5:å…‰æ ‡ç‚¹å‡»
+					if(!keyOld[i]) keyFlag[i] = 2;//å¾…æŒ‰ä¸‹æ€
 					
 					x = CFG_K_X(keyAddr[sysCs][i]) * 32768 / CFG_SCN_W;
 					y = CFG_K_Y(keyAddr[sysCs][i]) * 32768 / CFG_SCN_H;
@@ -119,54 +119,54 @@ uint8_t FillReport(void)//±¨ÎÄÌîĞ´
 					
 					Point_data[2] = i;
 				}
-				else if(CFG_K_MODE(keyAddr[sysCs][i]) == 6){//Ä£Ê½6:ÇĞ»»¼ü
-					if((CFG_K_FUNC(keyAddr[sysCs][i]) & 0x80) && switch_i == 0xFF && !keyOld[i]){//ÈôÎªÁÙÊ±ÇĞ»»ÇÒÎª¶ÀÓĞÇÒ°´ÏÂÑØ
-						switch_key = CFG_K_KEY(keyAddr[sysCs][i]);//»º´æ¼üÖµ
-						switch_func = sysCs + 1;//»º´æ¾É¼üÅÌÑ¡Ôñ
-						turn_old = keyDir[sysCs];//¾É¼üÅÌ·½Ïò
-						CsChange(CFG_K_FUNC(keyAddr[sysCs][i]));//ÇĞ»»
-						turn_dif = (keyDir[sysCs] + 4 - turn_old) % 4;//Ïà¶Ô¾É¼üÅÌ·½Ïò
+				else if(CFG_K_MODE(keyAddr[sysCs][i]) == 6){//æ¨¡å¼6:åˆ‡æ¢é”®
+					if((CFG_K_FUNC(keyAddr[sysCs][i]) & 0x80) && switch_i == 0xFF && !keyOld[i]){//è‹¥ä¸ºä¸´æ—¶åˆ‡æ¢ä¸”ä¸ºç‹¬æœ‰ä¸”æŒ‰ä¸‹æ²¿
+						switch_key = CFG_K_KEY(keyAddr[sysCs][i]);//ç¼“å­˜é”®å€¼
+						switch_func = sysCs + 1;//ç¼“å­˜æ—§é”®ç›˜é€‰æ‹©
+						turn_old = keyDir[sysCs];//æ—§é”®ç›˜æ–¹å‘
+						CsChange(CFG_K_FUNC(keyAddr[sysCs][i]));//åˆ‡æ¢
+						turn_dif = (keyDir[sysCs] + 4 - turn_old) % 4;//ç›¸å¯¹æ—§é”®ç›˜æ–¹å‘
 						if(turn_dif == 0) switch_i = i;
 						else if(turn_dif == 1) switch_i = TURN_L90[i];
 						else if(turn_dif == 2) switch_i = 16 - i;
 						else if(turn_dif == 3) switch_i = TURN_R90[i];
-						break;//Ìø³ö±¾´ÎÑ­»·
+						break;//è·³å‡ºæœ¬æ¬¡å¾ªç¯
 					}
 				}
-				else if(CFG_K_MODE(keyAddr[sysCs][i]) == 7){//Ä£Ê½7:°´¼üÁ¬µã
-					if(!keyOld[i] && !(CFG_K_FUNC(keyAddr[sysCs][i]) & 0x01)){//ÈôÎª°´ÏÂÑØÇÒ·Ç×Ô¶¯Á¬µã
-						keyFlag[i] |= 0x02;//Æô¶¯Á¬µã
-						keyWork[i] = 0;//¼ÆÊ±Æ÷ÇåÁã
+				else if(CFG_K_MODE(keyAddr[sysCs][i]) == 7){//æ¨¡å¼7:æŒ‰é”®è¿ç‚¹
+					if(!keyOld[i] && !(CFG_K_FUNC(keyAddr[sysCs][i]) & 0x01)){//è‹¥ä¸ºæŒ‰ä¸‹æ²¿ä¸”éè‡ªåŠ¨è¿ç‚¹
+						keyFlag[i] |= 0x02;//å¯åŠ¨è¿ç‚¹
+						keyWork[i] = 0;//è®¡æ—¶å™¨æ¸…é›¶
 					}
 				}
 			}
-			else if(keyOld[i]){//Èô¸ÕÌ§Æğ(ÊÍ·ÅÑØ)
-				if(CFG_K_MODE(keyAddr[sysCs][i]) == 5){//Ä£Ê½5:¹â±êµã»÷
-					if(keyOld[i]){//ÊÍ·ÅÑØ
-						keyFlag[i] = 1;//´ıÌ§ÆğÌ¬
+			else if(keyOld[i]){//è‹¥åˆšæŠ¬èµ·(é‡Šæ”¾æ²¿)
+				if(CFG_K_MODE(keyAddr[sysCs][i]) == 5){//æ¨¡å¼5:å…‰æ ‡ç‚¹å‡»
+					if(keyOld[i]){//é‡Šæ”¾æ²¿
+						keyFlag[i] = 1;//å¾…æŠ¬èµ·æ€
 					}
 				}
-				else if(CFG_K_MODE(keyAddr[sysCs][i]) == 6){//Ä£Ê½6:ÇĞ»»¼ü
-					if(!(CFG_K_FUNC(keyAddr[sysCs][i]) & 0x80)){//ÈôÎª·ÇÁÙÊ±ÇĞ»»
-						switch_i = 0xFF;//Ö±½Ó¸´Î»ÁÙÊ±ÇĞ»»¼ü±êÖ¾
-						CsChange(CFG_K_FUNC(keyAddr[sysCs][i]));//ÇĞ»»
+				else if(CFG_K_MODE(keyAddr[sysCs][i]) == 6){//æ¨¡å¼6:åˆ‡æ¢é”®
+					if(!(CFG_K_FUNC(keyAddr[sysCs][i]) & 0x80)){//è‹¥ä¸ºéä¸´æ—¶åˆ‡æ¢
+						switch_i = 0xFF;//ç›´æ¥å¤ä½ä¸´æ—¶åˆ‡æ¢é”®æ ‡å¿—
+						CsChange(CFG_K_FUNC(keyAddr[sysCs][i]));//åˆ‡æ¢
 					}
 				}
-				else if(CFG_K_MODE(keyAddr[sysCs][i]) == 7){//Ä£Ê½7:°´¼üÁ¬µã
-					if((CFG_K_FUNC(keyAddr[sysCs][i]) & 0x01) && !(keyFlag[i] & 0x02)){//×Ô¶¯Á¬µãÇÒµ±Ç°Î´ÔÚÁ¬µã
-						keyFlag[i] |= 0x02;//Æô¶¯Á¬µã
-						keyWork[i] = 0;//¼ÆÊ±Æ÷ÇåÁã
+				else if(CFG_K_MODE(keyAddr[sysCs][i]) == 7){//æ¨¡å¼7:æŒ‰é”®è¿ç‚¹
+					if((CFG_K_FUNC(keyAddr[sysCs][i]) & 0x01) && !(keyFlag[i] & 0x02)){//è‡ªåŠ¨è¿ç‚¹ä¸”å½“å‰æœªåœ¨è¿ç‚¹
+						keyFlag[i] |= 0x02;//å¯åŠ¨è¿ç‚¹
+						keyWork[i] = 0;//è®¡æ—¶å™¨æ¸…é›¶
 					}
-					else keyFlag[i] &= ~0x02;//Í£Ö¹Á¬µã
+					else keyFlag[i] &= ~0x02;//åœæ­¢è¿ç‚¹
 				}
-				else if(CFG_K_MODE(keyAddr[sysCs][i]) == 8){//Ä£Ê½8:·äÃùÆ÷
+				else if(CFG_K_MODE(keyAddr[sysCs][i]) == 8){//æ¨¡å¼8:èœ‚é¸£å™¨
 					return 1;
 				}
 			}
-		}//´¦ÀíÍê16¸ö°´¼üµÄÖ÷ÒªÄÚÈİ
+		}//å¤„ç†å®Œ16ä¸ªæŒ‰é”®çš„ä¸»è¦å†…å®¹
 		
-		for(i = 0; i < 16; i++){//¶ÔÓÚ16¸ö°´¼üµÄ´¥Ãş
-			if(CFG_K_MODE(keyAddr[sysCs][i]) == 4 || CFG_K_MODE(keyAddr[sysCs][i]) == 5){//Ä£Ê½4:¹â±êÒÆÎ»,Ä£Ê½5:¹â±êµã»÷
+		for(i = 0; i < 16; i++){//å¯¹äº16ä¸ªæŒ‰é”®çš„è§¦æ‘¸
+			if(CFG_K_MODE(keyAddr[sysCs][i]) == 4 || CFG_K_MODE(keyAddr[sysCs][i]) == 5){//æ¨¡å¼4:å…‰æ ‡ç§»ä½,æ¨¡å¼5:å…‰æ ‡ç‚¹å‡»
 				if(CFG_K_FUNC(keyAddr[sysCs][i]) == 1 || CFG_K_FUNC(keyAddr[sysCs][i]) == 2){
 					x = CFG_K_X(keyAddr[sysCs][i]) * 32768 / CFG_SCN_W;
 					y = CFG_K_Y(keyAddr[sysCs][i]) * 32768 / CFG_SCN_H;
@@ -189,88 +189,88 @@ uint8_t FillReport(void)//±¨ÎÄÌîĞ´
 					break;
 				}
 			}
-		}//´¦ÀíÍê16¸ö°´¼üµÄ´¥Ãş
+		}//å¤„ç†å®Œ16ä¸ªæŒ‰é”®çš„è§¦æ‘¸
 		
-		/*int8_t */auto_num = 0;//ÕıÔÚÖ´ĞĞ×Ô¶¯Á¬µãµÄ°´¼üÊıÁ¿
-		for(i = 0; i < 16; i++){//¶ÔÓÚ16¸ö°´¼üµÄÁ¬µã
-			if(CFG_K_MODE(keyAddr[sysCs][i]) == 7){//Ä£Ê½7:°´¼üÁ¬µã
-				if(oldTime > Systime){//ÈôÏµÍ³Ê±¼äÖØÖÃ
-					keyWork[i] = 0;//Çå¿ÕÉè¶¨Ê±¼ä
-					keyFlag[i] &= ~0x04;//¸´Î»µã»÷±êÖ¾
-					keyFlag[i] &= ~0x02;//Í£Ö¹Á¬µã
+		/*int8_t */auto_num = 0;//æ­£åœ¨æ‰§è¡Œè‡ªåŠ¨è¿ç‚¹çš„æŒ‰é”®æ•°é‡
+		for(i = 0; i < 16; i++){//å¯¹äº16ä¸ªæŒ‰é”®çš„è¿ç‚¹
+			if(CFG_K_MODE(keyAddr[sysCs][i]) == 7){//æ¨¡å¼7:æŒ‰é”®è¿ç‚¹
+				if(oldTime > Systime){//è‹¥ç³»ç»Ÿæ—¶é—´é‡ç½®
+					keyWork[i] = 0;//æ¸…ç©ºè®¾å®šæ—¶é—´
+					keyFlag[i] &= ~0x04;//å¤ä½ç‚¹å‡»æ ‡å¿—
+					keyFlag[i] &= ~0x02;//åœæ­¢è¿ç‚¹
 				}
-				else if(keyFlag[i] & 0x02){//ÈôÁ¬µãÆôÓÃ
-					if(CFG_K_T(keyAddr[sysCs][i]) == 0){//ÈôÖÜÆÚÎª0Ôò³¤°´
-						KeyInsert(i + 3,CFG_K_KEY(keyAddr[sysCs][i]));//ÌîÈë¼üÖµ
+				else if(keyFlag[i] & 0x02){//è‹¥è¿ç‚¹å¯ç”¨
+					if(CFG_K_T(keyAddr[sysCs][i]) == 0){//è‹¥å‘¨æœŸä¸º0åˆ™é•¿æŒ‰
+						KeyInsert(i + 3,CFG_K_KEY(keyAddr[sysCs][i]));//å¡«å…¥é”®å€¼
 					}
-					else if(keyFlag[i] & 0x04){//ÈôÉÏ´ÎÒÑµã»÷
-						keyFlag[i] &= ~0x04;//¸´Î»µã»÷±êÖ¾
+					else if(keyFlag[i] & 0x04){//è‹¥ä¸Šæ¬¡å·²ç‚¹å‡»
+						keyFlag[i] &= ~0x04;//å¤ä½ç‚¹å‡»æ ‡å¿—
 					}
-					else{//ÈôÉÏ´ÎÎ´µã»÷
-						if((uint16_t)((uint16_t)Systime - keyWork[i]) >= CFG_K_T(keyAddr[sysCs][i])){//Èô¶¨Ê±ÒÑµ½
-							KeyInsert(i + 3,CFG_K_KEY(keyAddr[sysCs][i]));//ÌîÈë¼üÖµ
-							keyWork[i] = Systime;//¼ÇÂ¼·¢ËÍÊ±¼äµÍ16Î»
-							keyFlag[i] |= 0x04;//ÖÃÎ»µã»÷±êÖ¾
+					else{//è‹¥ä¸Šæ¬¡æœªç‚¹å‡»
+						if((uint16_t)((uint16_t)Systime - keyWork[i]) >= CFG_K_T(keyAddr[sysCs][i])){//è‹¥å®šæ—¶å·²åˆ°
+							KeyInsert(i + 3,CFG_K_KEY(keyAddr[sysCs][i]));//å¡«å…¥é”®å€¼
+							keyWork[i] = Systime;//è®°å½•å‘é€æ—¶é—´ä½16ä½
+							keyFlag[i] |= 0x04;//ç½®ä½ç‚¹å‡»æ ‡å¿—
 						}
 					}
-					if(CFG_K_FUNC(keyAddr[sysCs][i]) & 0x01) auto_num++;//×Ô¶¯Á¬µã°´¼ü¼ÆÊı
+					if(CFG_K_FUNC(keyAddr[sysCs][i]) & 0x01) auto_num++;//è‡ªåŠ¨è¿ç‚¹æŒ‰é”®è®¡æ•°
 				}
 			}
-		}//´¦ÀíÍê16¸ö°´¼üµÄÁ¬µã
-		oldTime = Systime;//¼ÇÂ¼Ê±¼ä¸üĞÂ
-		clickerNum = auto_num;//×Ô¶¯Á¬µãÊı¸üĞÂ
+		}//å¤„ç†å®Œ16ä¸ªæŒ‰é”®çš„è¿ç‚¹
+		oldTime = Systime;//è®°å½•æ—¶é—´æ›´æ–°
+		clickerNum = auto_num;//è‡ªåŠ¨è¿ç‚¹æ•°æ›´æ–°
 	}
 	//********************************************************************************************//
 	
-	//***********************************Ò¡¸ËĞıÅ¥´¦Àí***********************************//
-	RkHandle(0);//Ò¡¸Ë´¦Àí
-	EcHandle(0);//ĞıÅ¥´¦Àí
-	if(!mode3_key) RkEcKeyHandle();//Ò¡¸ËĞıÅ¥°´¼ü´¦Àí
+	//***********************************æ‘‡æ†æ—‹é’®å¤„ç†***********************************//
+	RkHandle(0);//æ‘‡æ†å¤„ç†
+	EcHandle(0);//æ—‹é’®å¤„ç†
+	if(!mode3_key) RkEcKeyHandle();//æ‘‡æ†æ—‹é’®æŒ‰é”®å¤„ç†
 	//**********************************************************************************//
 	
-	//***********************************ÅĞ¶Ï¸÷±¨ÎÄÊÇ·ñÒª·¢ËÍ***********************************//
+	//***********************************åˆ¤æ–­å„æŠ¥æ–‡æ˜¯å¦è¦å‘é€***********************************//
 	for(i = 1; i < KB_LEN; i++){
-		if(KeyBrd_data_old[i] != KeyBrd_data[i]){//¼üÅÌ±¨ÎÄÓëÉÏÒ»´Î²»Í¬Ôò·¢ËÍ
+		if(KeyBrd_data_old[i] != KeyBrd_data[i]){//é”®ç›˜æŠ¥æ–‡ä¸ä¸Šä¸€æ¬¡ä¸åŒåˆ™å‘é€
 			KeyBrd_if_send = 1;	break;
 		}
 	}
-	if(Mouse_data[1] != Mouse_data_old) Mouse_if_send = 1;//Êó±ê°´¼üÓëÉÏ´Î²»Í¬Ôò·¢ËÍ
+	if(Mouse_data[1] != Mouse_data_old) Mouse_if_send = 1;//é¼ æ ‡æŒ‰é”®ä¸ä¸Šæ¬¡ä¸åŒåˆ™å‘é€
 	else{
 		for(i = 2; i < 5; i++){
-			if(Mouse_data[i] != 0){//Êó±ê´æÔÚÒÆ¶¯»ò¹ö¶¯Ôò·¢ËÍ
+			if(Mouse_data[i] != 0){//é¼ æ ‡å­˜åœ¨ç§»åŠ¨æˆ–æ»šåŠ¨åˆ™å‘é€
 				Mouse_if_send = 1;	break;
 			}
 		}
 	}
 	for(i = 3; i < 7; i++){
-		if(Point_data[i] != 0xFF){//´¥Ãş´æÔÚÓĞĞ§×ø±êÔò·¢ËÍ
+		if(Point_data[i] != 0xFF){//è§¦æ‘¸å­˜åœ¨æœ‰æ•ˆåæ ‡åˆ™å‘é€
 			Point_if_send = 1;	break;
 		}
 	}
-	if(Vol_data[1] != Vol_data_old) Vol_if_send = 1;//Ã½Ìå±¨ÎÄÓëÉÏ´Î²»Í¬Ôò·¢ËÍ
+	if(Vol_data[1] != Vol_data_old) Vol_if_send = 1;//åª’ä½“æŠ¥æ–‡ä¸ä¸Šæ¬¡ä¸åŒåˆ™å‘é€
 	//******************************************************************************************//
 	
 	if(switch_i != 0xFF 
 		&& (KeyBrd_if_send || Mouse_if_send || Point_if_send || Vol_if_send)){
-		switch_key = 0;//ÈôÁÙÊ±ÇĞ»»¼ü°´ÏÂÆÚ¼äÓĞÆäËû²Ù×÷ÔòÇå³ıÇĞ»»¼ü×ÔÉí¼üÖµ
+		switch_key = 0;//è‹¥ä¸´æ—¶åˆ‡æ¢é”®æŒ‰ä¸‹æœŸé—´æœ‰å…¶ä»–æ“ä½œåˆ™æ¸…é™¤åˆ‡æ¢é”®è‡ªèº«é”®å€¼
 	}
 	
-	if(mode3_delaying == 1){//ÑÓÊ±ÖĞÔò·¢ËÍ±êÖ¾ÖÃÁã
+	if(mode3_delaying == 1){//å»¶æ—¶ä¸­åˆ™å‘é€æ ‡å¿—ç½®é›¶
 		KeyBrd_if_send = Mouse_if_send = Point_if_send = Vol_if_send = 0;
 	}
 	
 	return 0;
 }
 
-void CsChange(uint8_t change)//ÇĞ»»
+void CsChange(uint8_t change)//åˆ‡æ¢
 {
-	change &= 0x0F;//È¡µÍ4Î»
+	change &= 0x0F;//å–ä½4ä½
 	if(change == 0 || change > CFG_NUM) return;
 	sysCs = change - 1;
-	DATA_CFG = DATA_CFG_BASE - sysCs * 512;//ĞŞ¸Ä¼üÅÌÅäÖÃÖ¸Õë ÄæĞò
+	DATA_CFG = DATA_CFG_BASE - sysCs * 512;//ä¿®æ”¹é”®ç›˜é…ç½®æŒ‡é’ˆ é€†åº
 	
-	KeyRGB(1);//¼üÅÌRGB¿ØÖÆÇåÁã
-	if(LIGHT_MONO != 3) DATA_LIGHT = DATA_LIGHT_BASE + sysCs * 256;//Èô²»ÊÇµÆĞ§²»ÇĞ»»ÔòĞŞ¸ÄµÆĞ§ÅäÖÃÖ¸Õë ÕıĞò
+	KeyRGB(1);//é”®ç›˜RGBæ§åˆ¶æ¸…é›¶
+	if(LIGHT_MONO != 3) DATA_LIGHT = DATA_LIGHT_BASE + sysCs * 256;//è‹¥ä¸æ˜¯ç¯æ•ˆä¸åˆ‡æ¢åˆ™ä¿®æ”¹ç¯æ•ˆé…ç½®æŒ‡é’ˆ æ­£åº
 	
 	changeTime = Systime;
 	
@@ -281,113 +281,113 @@ void CsChange(uint8_t change)//ÇĞ»»
 	memset(keyFlag,0,sizeof(keyFlag));
 }
 
-void KeyInsert(uint8_t r_i, uint8_t key_v)//µ¥¼üÌîÈë
+void KeyInsert(uint8_t r_i, uint8_t key_v)//å•é”®å¡«å…¥
 {
-	if(key_v == kv_wheel_down) Mouse_data[4] += -1;//¹öÂÖÏòÏÂ
-	else if(key_v == kv_wheel_up) Mouse_data[4] += 1;//¹öÂÖÏòÉÏ
-	else if(key_v == kv_vol_up) Vol_data[1] |= 0x01;//ÒôÁ¿¼Ó
-	else if(key_v == kv_vol_down) Vol_data[1] |= 0x02;//ÒôÁ¿¼õ
-	else if(key_v == kv_vol_mute) Vol_data[1] |= 0x04;//¾²Òô
-	else if(key_v == kv_vol_stop) Vol_data[1] |= 0x08;//²¥·ÅÔİÍ£
-	else if(key_v == kv_vol_next) Vol_data[1] |= 0x10;//ÏÂÒ»¸ö
-	else if(key_v == kv_vol_prev) Vol_data[1] |= 0x20;//ÉÏÒ»¸ö
-	else if(key_v == kv_mouse_l) Mouse_data[1] |= 0x01;//Êó±ê×ó¼ü
-	else if(key_v == kv_mouse_m) Mouse_data[1] |= 0x04;//Êó±êÖĞ¼ü
-	else if(key_v == kv_mouse_r) Mouse_data[1] |= 0x02;//Êó±êÓÒ¼ü
+	if(key_v == kv_wheel_down) Mouse_data[4] += -1;//æ»šè½®å‘ä¸‹
+	else if(key_v == kv_wheel_up) Mouse_data[4] += 1;//æ»šè½®å‘ä¸Š
+	else if(key_v == kv_vol_up) Vol_data[1] |= 0x01;//éŸ³é‡åŠ 
+	else if(key_v == kv_vol_down) Vol_data[1] |= 0x02;//éŸ³é‡å‡
+	else if(key_v == kv_vol_mute) Vol_data[1] |= 0x04;//é™éŸ³
+	else if(key_v == kv_vol_stop) Vol_data[1] |= 0x08;//æ’­æ”¾æš‚åœ
+	else if(key_v == kv_vol_next) Vol_data[1] |= 0x10;//ä¸‹ä¸€ä¸ª
+	else if(key_v == kv_vol_prev) Vol_data[1] |= 0x20;//ä¸Šä¸€ä¸ª
+	else if(key_v == kv_mouse_l) Mouse_data[1] |= 0x01;//é¼ æ ‡å·¦é”®
+	else if(key_v == kv_mouse_m) Mouse_data[1] |= 0x04;//é¼ æ ‡ä¸­é”®
+	else if(key_v == kv_mouse_r) Mouse_data[1] |= 0x02;//é¼ æ ‡å³é”®
 	else if(key_v == kv_ctrl) KeyBrd_data[1] |= 0x01;//ctrl
 	else if(key_v == kv_shift) KeyBrd_data[1] |= 0x02;//shift
 	else if(key_v == kv_alt) KeyBrd_data[1] |= 0x04;//alt
 	else if(key_v == kv_win) KeyBrd_data[1] |= 0x08;//win
-	else{//ÆÕÍ¨¼üÅÌ°´¼ü
-		if(r_i == 0xFF){//ÈôÊ¹ÓÃ×Ô¶¯ÌîÈë
-			for(r_i = 3; r_i < KB_LEN; r_i++){//ËÑË÷¿ÕÎ»
-				if(!KeyBrd_data[r_i]) break;//Èô´Ë´¦Îª¿Õ
+	else{//æ™®é€šé”®ç›˜æŒ‰é”®
+		if(r_i == 0xFF){//è‹¥ä½¿ç”¨è‡ªåŠ¨å¡«å…¥
+			for(r_i = 3; r_i < KB_LEN; r_i++){//æœç´¢ç©ºä½
+				if(!KeyBrd_data[r_i]) break;//è‹¥æ­¤å¤„ä¸ºç©º
 			}
 		}
-		if(r_i == 0xFF) return;//ÈôÎ´ÕÒµ½¿ÕÎ»ÔòÍË³ö
-		KeyBrd_data[r_i] = key_v;//ÌîÈë¼üÖµ
+		if(r_i == 0xFF) return;//è‹¥æœªæ‰¾åˆ°ç©ºä½åˆ™é€€å‡º
+		KeyBrd_data[r_i] = key_v;//å¡«å…¥é”®å€¼
 	}
 }
 
-void Mode3Handle(void)//mode3´¦Àí(°´¼ü×é´¦Àí)
+void Mode3Handle(void)//mode3å¤„ç†(æŒ‰é”®ç»„å¤„ç†)
 {
-	static uint32_t setTime = 0, oldTime = 0;//Éè¶¨Ê±¼ä¼°¼ÇÂ¼Ê±¼ä
-	static uint16_t loopStart = 0xFFFF;//Ñ­»·ÆğÊ¼µØÖ·
-	uint8_t report_i = 3;//±¨ÎÄĞ´ÈëÎ»ÖÃ
+	static uint32_t setTime = 0, oldTime = 0;//è®¾å®šæ—¶é—´åŠè®°å½•æ—¶é—´
+	static uint16_t loopStart = 0xFFFF;//å¾ªç¯èµ·å§‹åœ°å€
+	uint8_t report_i = 3;//æŠ¥æ–‡å†™å…¥ä½ç½®
 	
 	uint16_t x, y;
 	uint16_t end_i;
 	uint8_t check_i;
-//	uint8_t mode3_key = 0;//Ä£Ê½3°´¼ü(1-16)
-//	uint16_t mode3_i = 0;//Ä£Ê½3Ô´Êı¾İÏÂ±ê(·ÃÎÊmode3_data)
-//	uint16_t mode3_loop_count = 0xFFFF;//Ä£Ê½3Ñ­»·¼ÆÊı
-//	uint8_t mode3_loop_flag = 0;//Ä£Ê½3Ñ­»·²Ù×÷±êÖ¾
+//	uint8_t mode3_key = 0;//æ¨¡å¼3æŒ‰é”®(1-16)
+//	uint16_t mode3_i = 0;//æ¨¡å¼3æºæ•°æ®ä¸‹æ ‡(è®¿é—®mode3_data)
+//	uint16_t mode3_loop_count = 0xFFFF;//æ¨¡å¼3å¾ªç¯è®¡æ•°
+//	uint8_t mode3_loop_flag = 0;//æ¨¡å¼3å¾ªç¯æ“ä½œæ ‡å¿—
 	
-	if(oldTime > Systime) setTime = 0;//ÈôÏµÍ³Ê±¼äÖØÖÃÔòÖÕÖ¹ÑÓÊ±
-	oldTime = Systime;//¼ÇÂ¼Ê±¼ä¸üĞÂ
-	if(setTime > Systime){//ÑÓÊ±Î´½áÊø
-		mode3_delaying = 1;//ÑÓÊ±±êÖ¾ÖÃÎ»
-		mode3_pulse = 0;//ÇåÁãÔİÍ£±êÖ¾
-		return;//ÍË³öµÈ´ı
+	if(oldTime > Systime) setTime = 0;//è‹¥ç³»ç»Ÿæ—¶é—´é‡ç½®åˆ™ç»ˆæ­¢å»¶æ—¶
+	oldTime = Systime;//è®°å½•æ—¶é—´æ›´æ–°
+	if(setTime > Systime){//å»¶æ—¶æœªç»“æŸ
+		mode3_delaying = 1;//å»¶æ—¶æ ‡å¿—ç½®ä½
+		mode3_pulse = 0;//æ¸…é›¶æš‚åœæ ‡å¿—
+		return;//é€€å‡ºç­‰å¾…
 	}
-	mode3_delaying = 0;//ÑÓÊ±±êÖ¾ÇåÁã
+	mode3_delaying = 0;//å»¶æ—¶æ ‡å¿—æ¸…é›¶
 	
-	end_i = 0;//½áÊøÎ»ÖÃ
+	end_i = 0;//ç»“æŸä½ç½®
 	if(mode3_key) end_i = keyAddr[sysCs][mode3_key - 1] + 3 + CFG_K_LEN(keyAddr[sysCs][mode3_key - 1]);
 	
-	for(;report_i < KB_LEN;){//µ±±¨ÎÄÎ´ÌîÂú
-		if(mode3_i >= end_i){//µ±¶ÁÍêÊı¾İ
+	for(;report_i < KB_LEN;){//å½“æŠ¥æ–‡æœªå¡«æ»¡
+		if(mode3_i >= end_i){//å½“è¯»å®Œæ•°æ®
 			mode3_key = 0;
 			break;
 		}
-		if(CFG_ACS(mode3_i) == kv_report){//±¨ÎÄ¿ØÖÆ
-			mode3_pulse = CFG_ACS(mode3_i + 1) & 0x01;//ÇåÁã»òÖÃÎ»ÔİÍ£±êÖ¾
-			if(CFG_ACS(mode3_i + 1) & 0x02){//×÷Îª±¨ÎÄÖĞÖ¹
+		if(CFG_ACS(mode3_i) == kv_report){//æŠ¥æ–‡æ§åˆ¶
+			mode3_pulse = CFG_ACS(mode3_i + 1) & 0x01;//æ¸…é›¶æˆ–ç½®ä½æš‚åœæ ‡å¿—
+			if(CFG_ACS(mode3_i + 1) & 0x02){//ä½œä¸ºæŠ¥æ–‡ä¸­æ­¢
 				mode3_i += 2;
-				break;//¶ÀÕ¼±¾´Î±¨ÎÄ
+				break;//ç‹¬å æœ¬æ¬¡æŠ¥æ–‡
 			}
 			else mode3_i++;
 		}
-		else if(CFG_ACS(mode3_i) == kv_loop){//ÈôÓĞÑ­»·
-			if(CFG_ACS(mode3_i + 1) == 0x02){//ÈôÎªÆğÊ¼·û
-				loopStart = mode3_i + 4;//Ñ­»·ÆğÊ¼µØÖ·
+		else if(CFG_ACS(mode3_i) == kv_loop){//è‹¥æœ‰å¾ªç¯
+			if(CFG_ACS(mode3_i + 1) == 0x02){//è‹¥ä¸ºèµ·å§‹ç¬¦
+				loopStart = mode3_i + 4;//å¾ªç¯èµ·å§‹åœ°å€
 				mode3_i += 4;
 				continue;
 			}
-			mode3_loop_count++;//Ñ­»·¼ÆÊıµİÔö
-			x = ((uint16_t)CFG_ACS(mode3_i + 2) << 8) | CFG_ACS(mode3_i + 3);//½èÓÃx´æ´¢Ñ­»·´ÎÊı
+			mode3_loop_count++;//å¾ªç¯è®¡æ•°é€’å¢
+			x = ((uint16_t)CFG_ACS(mode3_i + 2) << 8) | CFG_ACS(mode3_i + 3);//å€Ÿç”¨xå­˜å‚¨å¾ªç¯æ¬¡æ•°
 			if(CFG_ACS(mode3_i + 1) && mode3_loop_flag == 2 || !CFG_ACS(mode3_i + 1) && mode3_loop_flag
-				|| x && mode3_loop_count >= x){//ÈôÏÂ½µÑØ´ÎÊı´ï±ê»ò¼ÆÊıµ½Î»
-				mode3_loop_flag = 3;//ÖÃÎª½áÊø±êÖ¾
+				|| x && mode3_loop_count >= x){//è‹¥ä¸‹é™æ²¿æ¬¡æ•°è¾¾æ ‡æˆ–è®¡æ•°åˆ°ä½
+				mode3_loop_flag = 3;//ç½®ä¸ºç»“æŸæ ‡å¿—
 			}
-			if(mode3_loop_flag == 3){//½áÊøÑ­»·
-				mode3_i += 3;//ÏÂ±êÌø¹ıÑ­»·µ¥Ôª
-				mode3_loop_flag = mode3_loop_count = 0;//²Ù×÷±êÖ¾ºÍ¼ÆÊı¶¼ÇåÁã
-				loopStart = 0xFFFF;//Ñ­»·ÆğÊ¼µØÖ·¸´Î»
+			if(mode3_loop_flag == 3){//ç»“æŸå¾ªç¯
+				mode3_i += 3;//ä¸‹æ ‡è·³è¿‡å¾ªç¯å•å…ƒ
+				mode3_loop_flag = mode3_loop_count = 0;//æ“ä½œæ ‡å¿—å’Œè®¡æ•°éƒ½æ¸…é›¶
+				loopStart = 0xFFFF;//å¾ªç¯èµ·å§‹åœ°å€å¤ä½
 			}
-			else{//¼ÌĞøÑ­»·
-				if(loopStart != 0xFFFF) mode3_i = loopStart;//ÏÂ±êÌø×ª»ØÑ­»·ÆğÊ¼µØÖ·
-				else mode3_i = keyAddr[sysCs][mode3_key - 1] + 3;//ÏÂ±êÌø×ª»Ø¿ªÍ·
-				break;//¶ÀÕ¼±¾´Î±¨ÎÄ
+			else{//ç»§ç»­å¾ªç¯
+				if(loopStart != 0xFFFF) mode3_i = loopStart;//ä¸‹æ ‡è·³è½¬å›å¾ªç¯èµ·å§‹åœ°å€
+				else mode3_i = keyAddr[sysCs][mode3_key - 1] + 3;//ä¸‹æ ‡è·³è½¬å›å¼€å¤´
+				break;//ç‹¬å æœ¬æ¬¡æŠ¥æ–‡
 			}
 		}
-		else if(CFG_ACS(mode3_i) == kv_delay){//ÈôÓĞÑÓÊ±
+		else if(CFG_ACS(mode3_i) == kv_delay){//è‹¥æœ‰å»¶æ—¶
 			uint16_t delayTime = (CFG_ACS(mode3_i + 1) << 8) | CFG_ACS(mode3_i + 2);
 			setTime = Systime + delayTime;
-//			mode3_pulse = 0;//ÇåÁãÔİÍ£±êÖ¾
+//			mode3_pulse = 0;//æ¸…é›¶æš‚åœæ ‡å¿—
 			mode3_i += 2;
-			if(++mode3_i == end_i) mode3_key = 0;//µ±¶ÁÍêÊı¾İ
-			break;//¶ÀÕ¼±¾´Î±¨ÎÄ
+			if(++mode3_i == end_i) mode3_key = 0;//å½“è¯»å®Œæ•°æ®
+			break;//ç‹¬å æœ¬æ¬¡æŠ¥æ–‡
 		}
-		else if(CFG_ACS(mode3_i) == kv_shortcut){//ÈôÓĞ¿ì½İ¼ü
-			if(report_i > 3 || Mouse_data[1] != 0) break;//Èô±¾´Î±¨ÎÄÒÑÓĞÄÚÈİÔòÍË³öµÈÏÂÒ»´Î
-			KeyInsert(report_i,CFG_ACS(++mode3_i));//ÌîÈë¼üÖµ
-			KeyBrd_data[1] = CFG_ACS(++mode3_i);//ÌîÈë¹¦ÄÜ¼ü
-			if(++mode3_i == end_i) mode3_key = 0;//µ±¶ÁÍêÊı¾İ
-			break;//¶ÀÕ¼±¾´Î±¨ÎÄ
+		else if(CFG_ACS(mode3_i) == kv_shortcut){//è‹¥æœ‰å¿«æ·é”®
+			if(report_i > 3 || Mouse_data[1] != 0) break;//è‹¥æœ¬æ¬¡æŠ¥æ–‡å·²æœ‰å†…å®¹åˆ™é€€å‡ºç­‰ä¸‹ä¸€æ¬¡
+			KeyInsert(report_i,CFG_ACS(++mode3_i));//å¡«å…¥é”®å€¼
+			KeyBrd_data[1] = CFG_ACS(++mode3_i);//å¡«å…¥åŠŸèƒ½é”®
+			if(++mode3_i == end_i) mode3_key = 0;//å½“è¯»å®Œæ•°æ®
+			break;//ç‹¬å æœ¬æ¬¡æŠ¥æ–‡
 		}
-		else if(CFG_ACS(mode3_i) == kv_point){//ÈôÓĞ¹â±êÒÆÎ»
-			if(report_i > 3 || Mouse_data[1] != 0) break;//Èô±¾´Î±¨ÎÄÒÑÓĞÄÚÈİÔòÍË³öµÈÏÂÒ»´Î
+		else if(CFG_ACS(mode3_i) == kv_point){//è‹¥æœ‰å…‰æ ‡ç§»ä½
+			if(report_i > 3 || Mouse_data[1] != 0) break;//è‹¥æœ¬æ¬¡æŠ¥æ–‡å·²æœ‰å†…å®¹åˆ™é€€å‡ºç­‰ä¸‹ä¸€æ¬¡
 			x = (CFG_ACS(mode3_i + 1) << 8) | CFG_ACS(mode3_i + 2);
 			y = (CFG_ACS(mode3_i + 3) << 8) | CFG_ACS(mode3_i + 4);
 			x = x * 32768 / CFG_SCN_W;
@@ -397,137 +397,137 @@ void Mode3Handle(void)//mode3´¦Àí(°´¼ü×é´¦Àí)
 			Point_data[5] = y & 0xFF;
 			Point_data[6] = (y >> 8) & 0xFF;
 			if(1){
-				Point_data[1] |= 0x01;//¹â±êµã»÷
+				Point_data[1] |= 0x01;//å…‰æ ‡ç‚¹å‡»
 			}
 			mode3_i += 4;
-			if(++mode3_i == end_i) mode3_key = 0;//µ±¶ÁÍêÊı¾İ
-			break;//¶ÀÕ¼±¾´Î±¨ÎÄ
+			if(++mode3_i == end_i) mode3_key = 0;//å½“è¯»å®Œæ•°æ®
+			break;//ç‹¬å æœ¬æ¬¡æŠ¥æ–‡
 		}
-		else if(CFG_ACS(mode3_i) == kv_shift){//ÈôÓĞshift
+		else if(CFG_ACS(mode3_i) == kv_shift){//è‹¥æœ‰shift
 			check_i = 3;
-			for(check_i = 3; check_i < report_i; check_i++){//¼ì²éÊÇ·ñÒÑÓĞÏàÍ¬¼üÖµ
+			for(check_i = 3; check_i < report_i; check_i++){//æ£€æŸ¥æ˜¯å¦å·²æœ‰ç›¸åŒé”®å€¼
 				if(KeyBrd_data[check_i] == CFG_ACS(mode3_i)){
 					check_i = 0;
 					break;
 				}
 			}
-			if(!check_i) break;//ÈôÒÑÓĞÏàÍ¬¼üÖµÔòÍË³öµÈÏÂÒ»´Î
-			if(Mouse_data[1] != 0) break;//ÈôÊó±ê±¨ÎÄÒÑÓĞÄÚÈİÔòÍË³öµÈÏÂÒ»´Î
-			if(KeyBrd_data[1]){//Èô±¨ÎÄÒÑº¬shift
-				KeyInsert(report_i++,CFG_ACS(++mode3_i));//ÌîÈë¼üÖµ
+			if(!check_i) break;//è‹¥å·²æœ‰ç›¸åŒé”®å€¼åˆ™é€€å‡ºç­‰ä¸‹ä¸€æ¬¡
+			if(Mouse_data[1] != 0) break;//è‹¥é¼ æ ‡æŠ¥æ–‡å·²æœ‰å†…å®¹åˆ™é€€å‡ºç­‰ä¸‹ä¸€æ¬¡
+			if(KeyBrd_data[1]){//è‹¥æŠ¥æ–‡å·²å«shift
+				KeyInsert(report_i++,CFG_ACS(++mode3_i));//å¡«å…¥é”®å€¼
 			}
-			else if(report_i == 3){//µ±ÊÇÆğÊ¼
-				KeyInsert(report_i++,CFG_ACS(++mode3_i));//ÌîÈë¼üÖµ
-				KeyBrd_data[1] |= 0x02;//ÌîÈëshift
+			else if(report_i == 3){//å½“æ˜¯èµ·å§‹
+				KeyInsert(report_i++,CFG_ACS(++mode3_i));//å¡«å…¥é”®å€¼
+				KeyBrd_data[1] |= 0x02;//å¡«å…¥shift
 			}
-			else break;//ÒòÇ°ÃæÅÅ³âshift¶øÎŞ·¨ÌîÈë
+			else break;//å› å‰é¢æ’æ–¥shiftè€Œæ— æ³•å¡«å…¥
 		}
-		else{//ÈôÎŞshift
+		else{//è‹¥æ— shift
 			check_i = 3;
-			for(check_i = 3; check_i < report_i; check_i++){//¼ì²éÊÇ·ñÒÑÓĞÏàÍ¬¼üÖµ
+			for(check_i = 3; check_i < report_i; check_i++){//æ£€æŸ¥æ˜¯å¦å·²æœ‰ç›¸åŒé”®å€¼
 				if(KeyBrd_data[check_i] == CFG_ACS(mode3_i)){
 					check_i = 0;
 					break;
 				}
 			}
-			if(!check_i) break;//ÈôÒÑÓĞÏàÍ¬¼üÖµÔòÍË³öµÈÏÂÒ»´Î
-			if(Mouse_data[1] != 0) break;//ÈôÊó±ê±¨ÎÄÒÑÓĞÄÚÈİÔòÍË³öµÈÏÂÒ»´Î
-			if(!KeyBrd_data[1]){//Èô±¨ÎÄÎ´º¬shift
-				KeyInsert(report_i++,CFG_ACS(mode3_i));//ÌîÈë¼üÖµ
+			if(!check_i) break;//è‹¥å·²æœ‰ç›¸åŒé”®å€¼åˆ™é€€å‡ºç­‰ä¸‹ä¸€æ¬¡
+			if(Mouse_data[1] != 0) break;//è‹¥é¼ æ ‡æŠ¥æ–‡å·²æœ‰å†…å®¹åˆ™é€€å‡ºç­‰ä¸‹ä¸€æ¬¡
+			if(!KeyBrd_data[1]){//è‹¥æŠ¥æ–‡æœªå«shift
+				KeyInsert(report_i++,CFG_ACS(mode3_i));//å¡«å…¥é”®å€¼
 			}
-			else if(report_i == 3){//µ±ÊÇÆğÊ¼
-				KeyInsert(report_i++,CFG_ACS(mode3_i));//ÌîÈë¼üÖµ
+			else if(report_i == 3){//å½“æ˜¯èµ·å§‹
+				KeyInsert(report_i++,CFG_ACS(mode3_i));//å¡«å…¥é”®å€¼
 			}
-			else break;//ÒòÇ°ÃæÒÑÓĞshift¶øÎŞ·¨ÌîÈë
+			else break;//å› å‰é¢å·²æœ‰shiftè€Œæ— æ³•å¡«å…¥
 		}
 		mode3_i++;
-//		if(mode3_i >= end_i){//µ±¶ÁÍêÊı¾İ
+//		if(mode3_i >= end_i){//å½“è¯»å®Œæ•°æ®
 //			mode3_key = 0;
 //			break;
 //		}
 	}
 }
 
-//1:°´¼ü/¿ì½İ¼ü,2:ÓÀ¾ÃÇĞ»»¼ü
-void RkEcKeyHandle(void)//Ò¡¸ËĞıÅ¥°´¼ü´¦Àí
+//1:æŒ‰é”®/å¿«æ·é”®,2:æ°¸ä¹…åˆ‡æ¢é”®
+void RkEcKeyHandle(void)//æ‘‡æ†æ—‹é’®æŒ‰é”®å¤„ç†
 {
-	uint8_t keyM[3], keyV[3], keyF[3];//°´¼üÄ£Ê½,¼üÖµ,¹¦ÄÜ¼ü
+	uint8_t keyM[3], keyV[3], keyF[3];//æŒ‰é”®æ¨¡å¼,é”®å€¼,åŠŸèƒ½é”®
 	uint8_t i;
 	
 	keyM[0] = CFGb_Ek_MODE(0);	keyV[0] = CFG_E_KEY(0,0);	keyF[0] = CFG_E_FUNC(0,0);
 	keyM[1] = CFGb_Ek_MODE(1);	keyV[1] = CFG_E_KEY(1,0);	keyF[1] = CFG_E_FUNC(1,0);
 	keyM[2] = CFGb_Rk_MODE(0);	keyV[2] = CFG_R_KEY(0,0);	keyF[2] = CFG_R_FUNC(0);
 	
-	for(i = 0; i < 3; i++){//2¸öĞıÅ¥°´¼ü1¸öÒ¡¸Ë°´¼ü
-		if(keyNow[i + 16]){//ÈôÎª°´ÏÂ×´Ì¬
-			if(keyM[i] == 1){//°´¼ü/¿ì½İ¼ü
-				if(keyV[i]) KeyInsert(0xFF, keyV[i]);//ÌîÈë¼üÖµ
-				KeyBrd_data[1] |= keyF[i];//ÌîÈë¹¦ÄÜ¼ü
+	for(i = 0; i < 3; i++){//2ä¸ªæ—‹é’®æŒ‰é”®1ä¸ªæ‘‡æ†æŒ‰é”®
+		if(keyNow[i + 16]){//è‹¥ä¸ºæŒ‰ä¸‹çŠ¶æ€
+			if(keyM[i] == 1){//æŒ‰é”®/å¿«æ·é”®
+				if(keyV[i]) KeyInsert(0xFF, keyV[i]);//å¡«å…¥é”®å€¼
+				KeyBrd_data[1] |= keyF[i];//å¡«å…¥åŠŸèƒ½é”®
 			}
 		}
-		else if(keyOld[i + 16]){//ÈôÎªÊÍ·ÅÑØ
-			if(keyM[i] == 2){//ÓÀ¾ÃÇĞ»»¼ü
-				switch_i = 0xFF;//Ö±½Ó¸´Î»ÁÙÊ±ÇĞ»»¼ü±êÖ¾
-				CsChange(keyV[i] - kv_orig_1 + 1);//ÇĞ»» ¸Ãº¯ÊıÄÚÓĞ²ÎÊı¼ì²é ´Ë´¦USB¼üÖµ´ÓÊı×Ö¼ü1µÄ¼üÖµ¿ªÊ¼ÓĞĞ§
+		else if(keyOld[i + 16]){//è‹¥ä¸ºé‡Šæ”¾æ²¿
+			if(keyM[i] == 2){//æ°¸ä¹…åˆ‡æ¢é”®
+				switch_i = 0xFF;//ç›´æ¥å¤ä½ä¸´æ—¶åˆ‡æ¢é”®æ ‡å¿—
+				CsChange(keyV[i] - kv_orig_1 + 1);//åˆ‡æ¢ è¯¥å‡½æ•°å†…æœ‰å‚æ•°æ£€æŸ¥ æ­¤å¤„USBé”®å€¼ä»æ•°å­—é”®1çš„é”®å€¼å¼€å§‹æœ‰æ•ˆ
 			}
 		}
 	}
 }
 
-//1:ËÄÏòËÄ°´¼ü,2:°ËÏòËÄ°´¼ü,3:ËÙ¶ÈÊó±ê,4:¹â±êÎ»ÖÃ
-void RkHandle(uint8_t clear)//Ò¡¸Ë´¦Àí
+//1:å››å‘å››æŒ‰é”®,2:å…«å‘å››æŒ‰é”®,3:é€Ÿåº¦é¼ æ ‡,4:å…‰æ ‡ä½ç½®
+void RkHandle(uint8_t clear)//æ‘‡æ†å¤„ç†
 {
-	static int16_t RK_pulse = 0;//¼ä¸ô±êÖ¾
+	static int16_t RK_pulse = 0;//é—´éš”æ ‡å¿—
 	static int16_t x_pic = 0, y_pic = 0;
 	static int16_t dx = 0, dy = 0;
 	int16_t x, y;
-	int16_t equal_r;//µÈĞ§°ë¾¶
+	int16_t equal_r;//ç­‰æ•ˆåŠå¾„
 	
-	if(clear){//Çå³ı
+	if(clear){//æ¸…é™¤
 		RK_pulse = x_pic = y_pic = 0;
 		return;
 	}
 	
-	x = (CFGb_R_DIRx(0)*2 - 1);//¾ö¶¨·½Ïò
+	x = (CFGb_R_DIRx(0)*2 - 1);//å†³å®šæ–¹å‘
 	y = (CFGb_R_DIRy(0)*2 - 1);
 	
-	if(CFGb_R_DIRr(0)){//Èô×ª90¶È
+	if(CFGb_R_DIRr(0)){//è‹¥è½¬90åº¦
 		if(adcValue[0] < ANA_MID_0) x *= ((int16_t)adcValue[0] - (int16_t)ANA_MID_0) * 4096L / ANA_MID_0;
-		else x *= ((int16_t)adcValue[0] - (int16_t)ANA_MID_0) * 4096L / (4095 - ANA_MID_0);//·Å´óµ½Õı¸º4096
+		else x *= ((int16_t)adcValue[0] - (int16_t)ANA_MID_0) * 4096L / (4095 - ANA_MID_0);//æ”¾å¤§åˆ°æ­£è´Ÿ4096
 		
 		if(adcValue[1] < ANA_MID_1) y *= ((int16_t)adcValue[1] - (int16_t)ANA_MID_1) * 4096L / ANA_MID_1;
 		else y *= ((int16_t)adcValue[1] - (int16_t)ANA_MID_1) * 4096L / (4095 - ANA_MID_1);
 	}
 	else{
-		if(adcValue[0] < ANA_MID_0) y *= ((int16_t)adcValue[0] - (int16_t)ANA_MID_0) * 4096L / ANA_MID_0;//ÏòÉÏÎªÕı
-		else y *= ((int16_t)adcValue[0] - (int16_t)ANA_MID_0) * 4096L / (4095 - ANA_MID_0);//·Å´óµ½Õı¸º4096
+		if(adcValue[0] < ANA_MID_0) y *= ((int16_t)adcValue[0] - (int16_t)ANA_MID_0) * 4096L / ANA_MID_0;//å‘ä¸Šä¸ºæ­£
+		else y *= ((int16_t)adcValue[0] - (int16_t)ANA_MID_0) * 4096L / (4095 - ANA_MID_0);//æ”¾å¤§åˆ°æ­£è´Ÿ4096
 		
-		if(adcValue[1] < ANA_MID_1) x *= -((int16_t)adcValue[1] - (int16_t)ANA_MID_1) * 4096L / ANA_MID_1;//ÏòÓÒÎªÕı
+		if(adcValue[1] < ANA_MID_1) x *= -((int16_t)adcValue[1] - (int16_t)ANA_MID_1) * 4096L / ANA_MID_1;//å‘å³ä¸ºæ­£
 		else x *= -((int16_t)adcValue[1] - (int16_t)ANA_MID_1) * 4096L / (4095 - ANA_MID_1);
 	}
 	
-	equal_r = MAX(ABS(x), ABS(y)) - (uint16_t)CFG_R_DEAD(0) * 21;//¼ÆËãµÈĞ§°ë¾¶²¢¼õÈ¥ËÀÇø
-	if(equal_r <= 0){//ÔÚËÀÇøÄÚ
+	equal_r = MAX(ABS(x), ABS(y)) - (uint16_t)CFG_R_DEAD(0) * 21;//è®¡ç®—ç­‰æ•ˆåŠå¾„å¹¶å‡å»æ­»åŒº
+	if(equal_r <= 0){//åœ¨æ­»åŒºå†…
 		dx = dy = 0;
 		x_pic = y_pic = 0;
-		return;//ÍË³ö
+		return;//é€€å‡º
 	}
 	
 	switch(CFGb_R_MODE(0)){
-		case 1:{//ËÄÏòËÄ°´¼ü
-			if(RK_pulse){//ÈôÉÏ´ÎÒÑ·¢ËÍÔò±¾´Î¼ä¸ô
-				RK_pulse--;//±êÖ¾µİ¼õ
+		case 1:{//å››å‘å››æŒ‰é”®
+			if(RK_pulse){//è‹¥ä¸Šæ¬¡å·²å‘é€åˆ™æœ¬æ¬¡é—´éš”
+				RK_pulse--;//æ ‡å¿—é€’å‡
 				break;
 			}
 			
-			if(CFG_R_NEER(0) == 0 && CFG_R_FAR(0) == 0) RK_pulse = 0;//³¤°´
-			else{//·Ç³¤°´Ôò¼ä¸ô°´
-				equal_r = ((uint16_t)CFG_R_NEER(0) << 1) + (((int8_t)(CFG_R_FAR(0) - CFG_R_NEER(0)) * (equal_r >> 3)) >> 8);//¼ÆËãËÙ¶È ½èÓÃequal_r´æ´¢
+			if(CFG_R_NEER(0) == 0 && CFG_R_FAR(0) == 0) RK_pulse = 0;//é•¿æŒ‰
+			else{//éé•¿æŒ‰åˆ™é—´éš”æŒ‰
+				equal_r = ((uint16_t)CFG_R_NEER(0) << 1) + (((int8_t)(CFG_R_FAR(0) - CFG_R_NEER(0)) * (equal_r >> 3)) >> 8);//è®¡ç®—é€Ÿåº¦ å€Ÿç”¨equal_rå­˜å‚¨
 
-				if(equal_r <= ABS(dx)) dx = equal_r;//¼õËÙÊ±Ö±½Ó¸³Öµ²»Ê¹ÓÃ¹ßĞÔ
-				else{//¼ÓËÙÊ±Ê¹ÓÃ¹ßĞÔ
-					equal_r = (equal_r - dx) / (CFG_R_PARA(0) + 1);//½èÓÃequal_r´æ´¢
-					if(equal_r == 0) dx += 1;//²»×ã1ÔòÎª1
+				if(equal_r <= ABS(dx)) dx = equal_r;//å‡é€Ÿæ—¶ç›´æ¥èµ‹å€¼ä¸ä½¿ç”¨æƒ¯æ€§
+				else{//åŠ é€Ÿæ—¶ä½¿ç”¨æƒ¯æ€§
+					equal_r = (equal_r - dx) / (CFG_R_PARA(0) + 1);//å€Ÿç”¨equal_rå­˜å‚¨
+					if(equal_r == 0) dx += 1;//ä¸è¶³1åˆ™ä¸º1
 					else dx += equal_r;
 					equal_r = dx;
 				}
@@ -537,29 +537,29 @@ void RkHandle(uint8_t clear)//Ò¡¸Ë´¦Àí
 			}
 			
 			if(y > x){
-				if(y > -x) KeyInsert(0xFF, CFG_R_KEY(0,1));//ÌîÈëÉÏ¼üÖµ
-				else KeyInsert(0xFF, CFG_R_KEY(0,3));//ÌîÈë×ó¼üÖµ
+				if(y > -x) KeyInsert(0xFF, CFG_R_KEY(0,1));//å¡«å…¥ä¸Šé”®å€¼
+				else KeyInsert(0xFF, CFG_R_KEY(0,3));//å¡«å…¥å·¦é”®å€¼
 			}
 			else{
-				if(y > -x) KeyInsert(0xFF, CFG_R_KEY(0,4));//ÌîÈëÓÒ¼üÖµ
-				else KeyInsert(0xFF, CFG_R_KEY(0,2));//ÌîÈëÏÂ¼üÖµ
+				if(y > -x) KeyInsert(0xFF, CFG_R_KEY(0,4));//å¡«å…¥å³é”®å€¼
+				else KeyInsert(0xFF, CFG_R_KEY(0,2));//å¡«å…¥ä¸‹é”®å€¼
 			}
 			break;
 		}
-		case 2:{//°ËÏòËÄ°´¼ü
-			if(RK_pulse){//ÈôÉÏ´ÎÒÑ·¢ËÍÔò±¾´Î¼ä¸ô
-				RK_pulse--;//±êÖ¾µİ¼õ
+		case 2:{//å…«å‘å››æŒ‰é”®
+			if(RK_pulse){//è‹¥ä¸Šæ¬¡å·²å‘é€åˆ™æœ¬æ¬¡é—´éš”
+				RK_pulse--;//æ ‡å¿—é€’å‡
 				break;
 			}
 			
-			if(CFG_R_NEER(0) == 0 && CFG_R_FAR(0) == 0) RK_pulse = 0;//³¤°´
+			if(CFG_R_NEER(0) == 0 && CFG_R_FAR(0) == 0) RK_pulse = 0;//é•¿æŒ‰
 			else{
-				equal_r = ((uint16_t)CFG_R_NEER(0) << 1) + (((int8_t)(CFG_R_FAR(0) - CFG_R_NEER(0)) * (equal_r >> 3)) >> 8);//¼ÆËãËÙ¶È ½èÓÃequal_r´æ´¢
+				equal_r = ((uint16_t)CFG_R_NEER(0) << 1) + (((int8_t)(CFG_R_FAR(0) - CFG_R_NEER(0)) * (equal_r >> 3)) >> 8);//è®¡ç®—é€Ÿåº¦ å€Ÿç”¨equal_rå­˜å‚¨
 				
-				if(equal_r <= ABS(dx)) dx = equal_r;//¼õËÙÊ±Ö±½Ó¸³Öµ²»Ê¹ÓÃ¹ßĞÔ
-				else{//¼ÓËÙÊ±Ê¹ÓÃ¹ßĞÔ
-					equal_r = (equal_r - dx) / (CFG_R_PARA(0) + 1);//½èÓÃequal_r´æ´¢
-					if(equal_r == 0) dx += 1;//²»×ã1ÔòÎª1
+				if(equal_r <= ABS(dx)) dx = equal_r;//å‡é€Ÿæ—¶ç›´æ¥èµ‹å€¼ä¸ä½¿ç”¨æƒ¯æ€§
+				else{//åŠ é€Ÿæ—¶ä½¿ç”¨æƒ¯æ€§
+					equal_r = (equal_r - dx) / (CFG_R_PARA(0) + 1);//å€Ÿç”¨equal_rå­˜å‚¨
+					if(equal_r == 0) dx += 1;//ä¸è¶³1åˆ™ä¸º1
 					else dx += equal_r;
 					equal_r = dx;
 				}
@@ -568,38 +568,38 @@ void RkHandle(uint8_t clear)//Ò¡¸Ë´¦Àí
 				if(RK_pulse <= 0) RK_pulse = 1;
 			}
 			
-			//atan(5/12)=22.6¶È atan(3/7)=23.2¶È
-			if(y*7 > x*3 && y*7 > -x*3){//ÉÏ
-				KeyInsert(0xFF, CFG_R_KEY(0,1));//ÌîÈë¼üÖµ
+			//atan(5/12)=22.6åº¦ atan(3/7)=23.2åº¦
+			if(y*7 > x*3 && y*7 > -x*3){//ä¸Š
+				KeyInsert(0xFF, CFG_R_KEY(0,1));//å¡«å…¥é”®å€¼
 			}
-			else if(y*7 < x*3 && y*7 < -x*3){//ÏÂ
-				KeyInsert(0xFF, CFG_R_KEY(0,2));//ÌîÈë¼üÖµ
+			else if(y*7 < x*3 && y*7 < -x*3){//ä¸‹
+				KeyInsert(0xFF, CFG_R_KEY(0,2));//å¡«å…¥é”®å€¼
 			}
-			if(y*3 > x*7 && y*3 < -x*7){//×ó
-				KeyInsert(0xFF, CFG_R_KEY(0,3));//ÌîÈë¼üÖµ
+			if(y*3 > x*7 && y*3 < -x*7){//å·¦
+				KeyInsert(0xFF, CFG_R_KEY(0,3));//å¡«å…¥é”®å€¼
 			}
-			else if(y*3 < x*7 && y*3 > -x*7){//ÓÒ
-				KeyInsert(0xFF, CFG_R_KEY(0,4));//ÌîÈë¼üÖµ
+			else if(y*3 < x*7 && y*3 > -x*7){//å³
+				KeyInsert(0xFF, CFG_R_KEY(0,4));//å¡«å…¥é”®å€¼
 			}
 			break;
 		}
-		case 3:{//ËÙ¶ÈÊó±ê
-//			x = x > 0 ? MAX(0, x - (int16_t)CFG_R_DEAD(0) * 21) : MIN(0, x + (int16_t)CFG_R_DEAD(0) * 21);//Ó¦ÓÃËÀÇø
-//			y = y > 0 ? MAX(0, y - (int16_t)CFG_R_DEAD(0) * 21) : MIN(0, y + (int16_t)CFG_R_DEAD(0) * 21);//Ó¦ÓÃËÀÇø
+		case 3:{//é€Ÿåº¦é¼ æ ‡
+//			x = x > 0 ? MAX(0, x - (int16_t)CFG_R_DEAD(0) * 21) : MIN(0, x + (int16_t)CFG_R_DEAD(0) * 21);//åº”ç”¨æ­»åŒº
+//			y = y > 0 ? MAX(0, y - (int16_t)CFG_R_DEAD(0) * 21) : MIN(0, y + (int16_t)CFG_R_DEAD(0) * 21);//åº”ç”¨æ­»åŒº
 
-			x = ((int8_t)CFG_R_FAR(0) * (x >> 3)) >> 4;//¼ÆËãËÙ¶È ½èÓÃx´æ´¢
-			y = ((int8_t)CFG_R_FAR(0) * (y >> 3)) >> 4;//¼ÆËãËÙ¶È ½èÓÃy´æ´¢
+			x = ((int8_t)CFG_R_FAR(0) * (x >> 3)) >> 4;//è®¡ç®—é€Ÿåº¦ å€Ÿç”¨xå­˜å‚¨
+			y = ((int8_t)CFG_R_FAR(0) * (y >> 3)) >> 4;//è®¡ç®—é€Ÿåº¦ å€Ÿç”¨yå­˜å‚¨
 			//-1600~1600
-			if(ABS(x) <= ABS(dx)) dx = x;//¼õËÙÊ±Ö±½Ó¸³Öµ²»Ê¹ÓÃ¹ßĞÔ
-			else if(ABS(dx) > 800) dx = x;//¸ßËÙ½×¶Î²»Ê¹ÓÃ¹ßĞÔ
-			else if(ABS(dx) > CFG_R_NEER(0) * 10){//ÖĞËÙ½×¶ÎÊ¹ÓÃµÍ¹ßĞÔ
-				equal_r = (x - dx) / (CFG_R_PARA(0) + 1);//½èÓÃequal_r´æ´¢
-				if(equal_r == 0) dx += SIGN(x);//²»×ã1ÔòÎª1
+			if(ABS(x) <= ABS(dx)) dx = x;//å‡é€Ÿæ—¶ç›´æ¥èµ‹å€¼ä¸ä½¿ç”¨æƒ¯æ€§
+			else if(ABS(dx) > 800) dx = x;//é«˜é€Ÿé˜¶æ®µä¸ä½¿ç”¨æƒ¯æ€§
+			else if(ABS(dx) > CFG_R_NEER(0) * 10){//ä¸­é€Ÿé˜¶æ®µä½¿ç”¨ä½æƒ¯æ€§
+				equal_r = (x - dx) / (CFG_R_PARA(0) + 1);//å€Ÿç”¨equal_rå­˜å‚¨
+				if(equal_r == 0) dx += SIGN(x);//ä¸è¶³1åˆ™ä¸º1
 				else dx += equal_r;
 			}
-			else{//µÍËÙ½×¶ÎÊ¹ÓÃ¸ß¹ßĞÔ
-				equal_r = (x - dx) / (CFG_R_PARA(0) * 10 + 1);//½èÓÃequal_r´æ´¢
-				if(equal_r == 0) dx += SIGN(x);//²»×ã1ÔòÎª1
+			else{//ä½é€Ÿé˜¶æ®µä½¿ç”¨é«˜æƒ¯æ€§
+				equal_r = (x - dx) / (CFG_R_PARA(0) * 10 + 1);//å€Ÿç”¨equal_rå­˜å‚¨
+				if(equal_r == 0) dx += SIGN(x);//ä¸è¶³1åˆ™ä¸º1
 				else dx += equal_r;
 			}
 			if(ABS(y) <= ABS(dy)) dy = y;
@@ -615,43 +615,43 @@ void RkHandle(uint8_t clear)//Ò¡¸Ë´¦Àí
 				else dy += equal_r;
 			}
 
-			x_pic += dx;//ÔöÁ¿Ê½ ÒÔ¸ÄÉÆÓàÊıÉáÆúÎÊÌâ
+			x_pic += dx;//å¢é‡å¼ ä»¥æ”¹å–„ä½™æ•°èˆå¼ƒé—®é¢˜
 			y_pic += dy;
 
-			x_pic = LIMIT(x_pic, -127 << 6, 127 << 6);//ÏŞ·ù
+			x_pic = LIMIT(x_pic, -127 << 6, 127 << 6);//é™å¹…
 			y_pic = LIMIT(y_pic, -127 << 6, 127 << 6);
-			Mouse_data[2] = (int8_t)(x_pic >> 6);//±¨ÎÄÌîÈë
+			Mouse_data[2] = (int8_t)(x_pic >> 6);//æŠ¥æ–‡å¡«å…¥
 			Mouse_data[3] = -(int8_t)(y_pic >> 6);
-			x_pic -= (int8_t)Mouse_data[2] << 6;//¼õÈ¥ÒÑÌîÈëµÄ
+			x_pic -= (int8_t)Mouse_data[2] << 6;//å‡å»å·²å¡«å…¥çš„
 			y_pic += (int8_t)Mouse_data[3] << 6;
 			break;
 		}
-		case 4:{//¹â±êÎ»ÖÃ
-			equal_r = (x - x_pic) >> 2;//·À¶¶ÂË²¨ ½èÓÃequal_r´æ´¢
+		case 4:{//å…‰æ ‡ä½ç½®
+			equal_r = (x - x_pic) >> 2;//é˜²æŠ–æ»¤æ³¢ å€Ÿç”¨equal_rå­˜å‚¨
 			if(equal_r == 0) x_pic += SIGN(x);
 			else x_pic += equal_r;
 			equal_r = (y - y_pic) >> 2;
 			if(equal_r == 0) y_pic += SIGN(y);
 			else y_pic += equal_r;
 			
-			if(x > 0) dx = CFG_R_KEY(0,4);	//ÓÒ
-			else dx = CFG_R_KEY(0,3);		//×ó
-			if(y > 0) dy = CFG_R_KEY(0,1);	//ÉÏ
-			else dy = CFG_R_KEY(0,2);		//ÏÂ
+			if(x > 0) dx = CFG_R_KEY(0,4);	//å³
+			else dx = CFG_R_KEY(0,3);		//å·¦
+			if(y > 0) dy = CFG_R_KEY(0,1);	//ä¸Š
+			else dy = CFG_R_KEY(0,2);		//ä¸‹
 			
-			if(dx >= kv_orig_1 && dx <= kv_orig_0){//1~9ÒÔ¼°0
-				dx = (dx - kv_orig_1) * 2 + 2;//2~20 ¼ä¸ô2
+			if(dx >= kv_orig_1 && dx <= kv_orig_0){//1~9ä»¥åŠ0
+				dx = (dx - kv_orig_1) * 2 + 2;//2~20 é—´éš”2
 			}
 			else if(dx >= kv_num_1 && dx <= kv_num_0){//NUM1~NUM9
-				dx = (dx - kv_num_1) * 2 + 1;//1~19 ¼ä¸ô2
+				dx = (dx - kv_num_1) * 2 + 1;//1~19 é—´éš”2
 			}
 			else dx = 0;
 			
-			if(dy >= kv_orig_1 && dy <= kv_orig_0){//1~9ÒÔ¼°0
-				dy = (dy - kv_orig_1) * 2 + 2;//2~20 ¼ä¸ô2
+			if(dy >= kv_orig_1 && dy <= kv_orig_0){//1~9ä»¥åŠ0
+				dy = (dy - kv_orig_1) * 2 + 2;//2~20 é—´éš”2
 			}
 			else if(dy >= kv_num_1 && dy <= kv_num_0){//NUM1~NUM9
-				dy = (dy - kv_num_1) * 2 + 1;//1~19 ¼ä¸ô2
+				dy = (dy - kv_num_1) * 2 + 1;//1~19 é—´éš”2
 			}
 			else dy = 0;
 			
@@ -659,15 +659,15 @@ void RkHandle(uint8_t clear)//Ò¡¸Ë´¦Àí
 			y = LIMIT(y, -4095, 4095);
 			
 			//20*4095*50/125
-			dx = (int32_t)dx * x_pic * CFG_R_FAR(0) / 125;//¼ÆËãÆ«ÒÆÁ¿
+			dx = (int32_t)dx * x_pic * CFG_R_FAR(0) / 125;//è®¡ç®—åç§»é‡
 			dy = -(int32_t)dy * y_pic * CFG_R_FAR(0) / 125;
 			
-			x = CFG_R_PARA(0) * 32767L / 50;//¼ÆËãÖĞĞÄÎ»ÖÃ
+			x = CFG_R_PARA(0) * 32767L / 50;//è®¡ç®—ä¸­å¿ƒä½ç½®
 			y = CFG_R_NEER(0) * 32767L / 50;
 			
-			if(dx > 0 && (int32_t)x + dx > 32767) x = 32767;//·ÀÖ¹ÕıÒç³ö
-			else if(dx < 0 && (int32_t)x + dx < 0) x = 0;//·ÀÖ¹¸ºÒç³ö
-			else x += dx;//Ã»ÓĞÒç³ö
+			if(dx > 0 && (int32_t)x + dx > 32767) x = 32767;//é˜²æ­¢æ­£æº¢å‡º
+			else if(dx < 0 && (int32_t)x + dx < 0) x = 0;//é˜²æ­¢è´Ÿæº¢å‡º
+			else x += dx;//æ²¡æœ‰æº¢å‡º
 			
 			if(dy > 0 && (int32_t)y + dy > 32767) y = 32767;
 			else if(dy < 0 && (int32_t)y + dy < 0) y = 0;
@@ -678,10 +678,10 @@ void RkHandle(uint8_t clear)//Ò¡¸Ë´¦Àí
 			Point_data[5] = y & 0xFF;
 			Point_data[6] = (y >> 8) & 0xFF;
 			
-			Point_data[2] = 17;//Ìá¹©Ò»¸öºÍ°´¼ü²»Ò»ÑùµÄID
+			Point_data[2] = 17;//æä¾›ä¸€ä¸ªå’ŒæŒ‰é”®ä¸ä¸€æ ·çš„ID
 			
-			RK_pulse = !RK_pulse;//½èÓÃRK_pulse´æ´¢Ò»¸ö01½»ÌæµÄÁ¿
-			Mouse_data[2] = RK_pulse * 2 - 1;//±¨ÎÄÌîÈë ÓÃx¶¶¶¯À´Î¬³ÖÊó±ê¹â±êÏÔÊ¾
+			RK_pulse = !RK_pulse;//å€Ÿç”¨RK_pulseå­˜å‚¨ä¸€ä¸ª01äº¤æ›¿çš„é‡
+			Mouse_data[2] = RK_pulse * 2 - 1;//æŠ¥æ–‡å¡«å…¥ ç”¨xæŠ–åŠ¨æ¥ç»´æŒé¼ æ ‡å…‰æ ‡æ˜¾ç¤º
 			
 			break;
 		}
@@ -689,54 +689,54 @@ void RkHandle(uint8_t clear)//Ò¡¸Ë´¦Àí
 	}
 }
 
-//1:°´¼ü/¿ì½İ¼ü
-void EcHandle(uint8_t clear)//ĞıÅ¥´¦Àí
+//1:æŒ‰é”®/å¿«æ·é”®
+void EcHandle(uint8_t clear)//æ—‹é’®å¤„ç†
 {
-//	static uint32_t oldTime = 0;//¼ÇÂ¼Ê±¼ä
-//	static int TIM_old = 0;//±àÂëÆ÷¾É¼ÆÊı
-	static int8_t TIM_count[2] = {0,0};//±àÂëÆ÷¼ÆÊı
-	static int8_t EC_count[2] = {0,0};//Ö´ĞĞ¼ÆÊı
-	static uint8_t EC_pulse[2] = {0,0};//¼ä¸ô±êÖ¾
-	uint8_t EC_flag = 0;//Ö´ĞĞ±êÖ¾
+//	static uint32_t oldTime = 0;//è®°å½•æ—¶é—´
+//	static int TIM_old = 0;//ç¼–ç å™¨æ—§è®¡æ•°
+	static int8_t TIM_count[2] = {0,0};//ç¼–ç å™¨è®¡æ•°
+	static int8_t EC_count[2] = {0,0};//æ‰§è¡Œè®¡æ•°
+	static uint8_t EC_pulse[2] = {0,0};//é—´éš”æ ‡å¿—
+	uint8_t EC_flag = 0;//æ‰§è¡Œæ ‡å¿—
 	
 	uint8_t i;
 	
-	if(clear){//Çå³ı
+	if(clear){//æ¸…é™¤
 		TIM_count[0] = TIM_count[1] = EC_count[0] = EC_count[2] = 0;
 		EC_pulse[0] = EC_pulse[1] = EC_flag = 0;
 		return;
 	}
 
-	TIM_count[0] -= (CFG_E_DIR(0) * 2 - 1) * (int8_t)(EC1val)/**4*/;//±àÂëÆ÷¼ÆÊı¶ÁÈ¡
-	EC1val = 0;//±àÂëÆ÷ÇåÁã
-	TIM_count[1] -= (CFG_E_DIR(0) * 2 - 1) * (int8_t)(EC2val)/**4*/;//±àÂëÆ÷¼ÆÊı¶ÁÈ¡
-	EC2val = 0;//±àÂëÆ÷ÇåÁã
+	TIM_count[0] -= (CFG_E_DIR(0) * 2 - 1) * (int8_t)(EC1val)/**4*/;//ç¼–ç å™¨è®¡æ•°è¯»å–
+	EC1val = 0;//ç¼–ç å™¨æ¸…é›¶
+	TIM_count[1] -= (CFG_E_DIR(0) * 2 - 1) * (int8_t)(EC2val)/**4*/;//ç¼–ç å™¨è®¡æ•°è¯»å–
+	EC2val = 0;//ç¼–ç å™¨æ¸…é›¶
 	
 //	if(TIM_old != TIM_count){
 //		TIM_old = TIM_count;
-//		oldTime = Systime;//Èô¼ÆÊıÖµ²»Ò»ÖÂ²Å¸üĞÂÊ±¼ä
+//		oldTime = Systime;//è‹¥è®¡æ•°å€¼ä¸ä¸€è‡´æ‰æ›´æ–°æ—¶é—´
 //	}
-//	if(/*Systime - oldTime > 5000*/0){//Èô³¤Ê±¼ä±àÂëÆ÷ÎŞ¶¯×÷
+//	if(/*Systime - oldTime > 5000*/0){//è‹¥é•¿æ—¶é—´ç¼–ç å™¨æ— åŠ¨ä½œ
 //		TIM_old = TIM_count = EC_count = EC_flag = 0;
 //		oldTime = Systime;
 //	}
 	
-	for(i = 0; i < 2; i++){//´¦ÀíÃ¿¸öĞıÅ¥
+	for(i = 0; i < 2; i++){//å¤„ç†æ¯ä¸ªæ—‹é’®
 		if(TIM_count[i] > EC_count[i]) EC_flag = 1;
 		else if(TIM_count[i] < EC_count[i]) EC_flag = 2;
 		else EC_flag = 0;
 		
 		switch(CFGb_E_MODE(i)){
-			case 1:{//°´¼ü/¿ì½İ¼ü
+			case 1:{//æŒ‰é”®/å¿«æ·é”®
 				if(EC_flag){
-					if(EC_pulse[i]){//ÈôÉÏ´ÎÒÑ·¢ËÍÔò±¾´Î¼ä¸ô
-						EC_pulse[i] = 0;//Çå¿Õ±êÖ¾
-						EC_count[i] -= EC_flag * 2 - 3;//¼ÆÊı¸ú½ø
+					if(EC_pulse[i]){//è‹¥ä¸Šæ¬¡å·²å‘é€åˆ™æœ¬æ¬¡é—´éš”
+						EC_pulse[i] = 0;//æ¸…ç©ºæ ‡å¿—
+						EC_count[i] -= EC_flag * 2 - 3;//è®¡æ•°è·Ÿè¿›
 					}
 					else{
-						if(CFG_E_KEY(i, EC_flag)) KeyInsert(0xFF, CFG_E_KEY(i, EC_flag));//ÌîÈë¼üÖµ
-						KeyBrd_data[1] |= CFG_E_FUNC(i, EC_flag);//ÌîÈë¹¦ÄÜ¼ü
-						EC_pulse[i] = 1;//±¾´ÎÒÑ·¢ËÍÔòÏÂ´Î¼ä¸ô
+						if(CFG_E_KEY(i, EC_flag)) KeyInsert(0xFF, CFG_E_KEY(i, EC_flag));//å¡«å…¥é”®å€¼
+						KeyBrd_data[1] |= CFG_E_FUNC(i, EC_flag);//å¡«å…¥åŠŸèƒ½é”®
+						EC_pulse[i] = 1;//æœ¬æ¬¡å·²å‘é€åˆ™ä¸‹æ¬¡é—´éš”
 					}
 				}
 				break;

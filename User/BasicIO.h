@@ -12,16 +12,16 @@
 #include "RgbDrv.h"
 #include "ParaUse.h"
 
-#define KB_LEN		22//¼üÅÌ±¨ÎÄ³¤¶È
-#define KP_NUM		19//°´¼ü¸öÊı
+#define KB_LEN		22//é”®ç›˜æŠ¥æ–‡é•¿åº¦
+#define KP_NUM		19//æŒ‰é”®ä¸ªæ•°
 
-//XDATAµØÖ··ÖÅä
+//XDATAåœ°å€åˆ†é…
 #define XBASE_EP0_BUF		(XBASE_FLASH_BUF - 64*5)
 #define XBASE_EP2_BUF		(XBASE_EP0_BUF + 64*1)
 #define XBASE_EP1_BUF		(XBASE_EP0_BUF + 64*3)
 #define XBASE_FLASH_BUF		(1024+512)
 
-//IO¶¨Òå
+//IOå®šä¹‰
 #define KP_1	P1_3
 #define KP_2	P3_0
 #define KP_3	P3_3
@@ -50,42 +50,42 @@
 #define KP_E2B	P0_3
 #define KP_E2C	P5_7
 
-#define BUZZ_G		P2_5//·äÃùÆ÷Çı¶¯Õ¤¼«
-#define BUZZ_PWM	PWM_DATA0//·äÃùÆ÷Çı¶¯Õ¼¿Õ±È
+#define BUZZ_G		P2_5//èœ‚é¸£å™¨é©±åŠ¨æ …æ
+#define BUZZ_PWM	PWM_DATA0//èœ‚é¸£å™¨é©±åŠ¨å ç©ºæ¯”
 
 #define ANA_MID_0	Adc_Mid_Set[0]
 #define ANA_MID_1	Adc_Mid_Set[1]
 
-extern uint32_t Systime;//ÏµÍ³Ê±¼ä
+extern uint32_t Systime;//ç³»ç»Ÿæ—¶é—´
 
-extern UINT8C TURN_L90[16];//×óĞı°´¼üÓ³Éä¾ØÕó
-extern UINT8C TURN_R90[16];//ÓÒĞı°´¼üÓ³Éä¾ØÕó
-extern UINT16D TONE_TIMValue;//Éùµ÷¶¨Ê±Æ÷¼ÆÊıÖµ
-extern UINT16D buzzTimVol;//Éùµ÷¶¨Ê±Æ÷ÑÓÊ±Öµ
+extern UINT8C TURN_L90[16];//å·¦æ—‹æŒ‰é”®æ˜ å°„çŸ©é˜µ
+extern UINT8C TURN_R90[16];//å³æ—‹æŒ‰é”®æ˜ å°„çŸ©é˜µ
+extern UINT16D TONE_TIMValue;//å£°è°ƒå®šæ—¶å™¨è®¡æ•°å€¼
+extern UINT16D buzzTimVol;//å£°è°ƒå®šæ—¶å™¨å»¶æ—¶å€¼
 
 extern UINT8D EC1val, EC2val;
 extern bit EC1freq, EC2freq;
 
 extern uint16_t adcValue[];
 extern uint16_t Adc_Mid_Set[];
-extern UINT8D keyFltNum;//°´¼üÂË²¨²ÎÊı
+extern UINT8D keyFltNum;//æŒ‰é”®æ»¤æ³¢å‚æ•°
 
-extern uint8_t keyNow[KP_NUM];//°´¼üÓ³Éä½á¹û
-extern uint8_t keyOld[KP_NUM];//°´¼üÓ³Éä½á¹û¾ÉÖµ
+extern uint8_t keyNow[KP_NUM];//æŒ‰é”®æ˜ å°„ç»“æœ
+extern uint8_t keyOld[KP_NUM];//æŒ‰é”®æ˜ å°„ç»“æœæ—§å€¼
 //extern uint8_t keyFlt[KP_NUM];
 extern uint8_t debugBuf[];
 
 
-void ArrayInit(void);//Êı×é³õÊ¼»¯
-void AdcRead(void);//Ò¡¸Ë¶ÁÈ¡
-void KeyRead(void);//°´¼ü¶ÁÈ¡
-void KeyFilter(uint8_t ts);//°´¼üÂË²¨
+void ArrayInit(void);//æ•°ç»„åˆå§‹åŒ–
+void AdcRead(void);//æ‘‡æ†è¯»å–
+void KeyRead(void);//æŒ‰é”®è¯»å–
+void KeyFilter(uint8_t ts);//æŒ‰é”®æ»¤æ³¢
 
-void GetTime(void);//Ê±¼ä»ñÈ¡
+void GetTime(void);//æ—¶é—´è·å–
 
 void LL_test(void);
 
-void MultiFunc(void);//¹¦ÄÜ¼¯ºÏº¯Êı
+void MultiFunc(void);//åŠŸèƒ½é›†åˆå‡½æ•°
 
 
 #endif

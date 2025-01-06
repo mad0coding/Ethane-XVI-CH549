@@ -1,73 +1,73 @@
 
 #include "ParaConfig.h"
 
-UINT8X FlashBuf[512] _at_ XBASE_FLASH_BUF;//ÅäÖÃ»º´æÊı×é
+UINT8X FlashBuf[512] _at_ XBASE_FLASH_BUF;//é…ç½®ç¼“å­˜æ•°ç»„
 
-uint16_t keyAddr[CFG_NUM][16];//Ã¿×é16°´¼üµÄÊı¾İµØÖ·
-uint16_t keyWork[16];//16°´¼üµÄ¹¤×÷ÓÃÊı×é
-uint8_t keyFlag[16];//16°´¼üµÄ±ê¼ÇÓÃÊı×é
+uint16_t keyAddr[CFG_NUM][16];//æ¯ç»„16æŒ‰é”®çš„æ•°æ®åœ°å€
+uint16_t keyWork[16];//16æŒ‰é”®çš„å·¥ä½œç”¨æ•°ç»„
+uint8_t keyFlag[16];//16æŒ‰é”®çš„æ ‡è®°ç”¨æ•°ç»„
 
-uint8_t keyDir[CFG_NUM];//¼üÅÌ·½Ïò
+uint8_t keyDir[CFG_NUM];//é”®ç›˜æ–¹å‘
 
-uint8_t sysCs = 0;//×ÜÅäÖÃÑ¡Ôñ
+uint8_t sysCs = 0;//æ€»é…ç½®é€‰æ‹©
 
-PUINT8C DATA_CFG = DATA_CFG_BASE;//ÉÁ´æÇøÅäÖÃĞÅÏ¢Ö¸Õë
-//PUINT8C GLOB_CFG = DATA_GLOB_BASE;//ÉÁ´æÇøÈ«¾ÖĞÅÏ¢Ö¸Õë
+PUINT8C DATA_CFG = DATA_CFG_BASE;//é—ªå­˜åŒºé…ç½®ä¿¡æ¯æŒ‡é’ˆ
+//PUINT8C GLOB_CFG = DATA_GLOB_BASE;//é—ªå­˜åŒºå…¨å±€ä¿¡æ¯æŒ‡é’ˆ
 
-void AsyncHandle(uint8_t flag){//Òì²½´¦Àí
+void AsyncHandle(uint8_t flag){//å¼‚æ­¥å¤„ç†
 	uint8_t ret = 0;
-	if(flag >= ASYNC_FLAG_CFG && flag < ASYNC_FLAG_CFG + CFG_NUM){			//¼üÅÌÅäÖÃ´æ´¢
-		ret = ParaWrite((DATA_CFG_BASE - (flag - ASYNC_FLAG_CFG) * 512), FlashBuf, 8);//ÄæĞò
-		ParaUpdate(flag - ASYNC_FLAG_CFG);//¼üÅÌÅäÖÃ²ÎÊı¸üĞÂ
-		if(ret) DiagCountInc(DIAG_FMT_LOAD | DIAG_FMT_SAVE, DIAG_I_CFG + flag - ASYNC_FLAG_CFG);//Õï¶Ï¼ÆÊıÔö¼Ó
+	if(flag >= ASYNC_FLAG_CFG && flag < ASYNC_FLAG_CFG + CFG_NUM){			//é”®ç›˜é…ç½®å­˜å‚¨
+		ret = ParaWrite((DATA_CFG_BASE - (flag - ASYNC_FLAG_CFG) * 512), FlashBuf, 8);//é€†åº
+		ParaUpdate(flag - ASYNC_FLAG_CFG);//é”®ç›˜é…ç½®å‚æ•°æ›´æ–°
+		if(ret) DiagCountInc(DIAG_FMT_LOAD | DIAG_FMT_SAVE, DIAG_I_CFG + flag - ASYNC_FLAG_CFG);//è¯Šæ–­è®¡æ•°å¢åŠ 
 	}
-	else if(flag >= ASYNC_FLAG_LIGHT && flag < ASYNC_FLAG_LIGHT + CFG_NUM){	//µÆĞ§ÅäÖÃ´æ´¢
-		ret = ParaWrite((DATA_LIGHT_BASE + (flag - ASYNC_FLAG_LIGHT) * 256), FlashBuf, 4);//ÕıĞò
-		KeyRGB(1);//¼üÅÌRGB¿ØÖÆÇåÁã
-		if(ret) DiagCountInc(DIAG_FMT_LOAD | DIAG_FMT_SAVE, DIAG_I_LIGHT + flag - ASYNC_FLAG_LIGHT);//Õï¶Ï¼ÆÊıÔö¼Ó
+	else if(flag >= ASYNC_FLAG_LIGHT && flag < ASYNC_FLAG_LIGHT + CFG_NUM){	//ç¯æ•ˆé…ç½®å­˜å‚¨
+		ret = ParaWrite((DATA_LIGHT_BASE + (flag - ASYNC_FLAG_LIGHT) * 256), FlashBuf, 4);//æ­£åº
+		KeyRGB(1);//é”®ç›˜RGBæ§åˆ¶æ¸…é›¶
+		if(ret) DiagCountInc(DIAG_FMT_LOAD | DIAG_FMT_SAVE, DIAG_I_LIGHT + flag - ASYNC_FLAG_LIGHT);//è¯Šæ–­è®¡æ•°å¢åŠ 
 	}
-	else if(flag == ASYNC_FLAG_GLOB){		//È«¾Ö²ÎÊı´æ´¢
-		GlobalParaUpdate();//È«¾Ö²ÎÊı¸üĞÂ
+	else if(flag == ASYNC_FLAG_GLOB){		//å…¨å±€å‚æ•°å­˜å‚¨
+		GlobalParaUpdate();//å…¨å±€å‚æ•°æ›´æ–°
 		ret = ParaWrite(DATA_GLOB_BASE, FlashBuf, 1);
-		if(ret) DiagCountInc(DIAG_FMT_LOAD | DIAG_FMT_SAVE, DIAG_I_GLB);//Õï¶Ï¼ÆÊıÔö¼Ó
+		if(ret) DiagCountInc(DIAG_FMT_LOAD | DIAG_FMT_SAVE, DIAG_I_GLB);//è¯Šæ–­è®¡æ•°å¢åŠ 
 	}
-	else if(flag == ASYNC_FLAG_SRST){		//Èí¸´Î»
-		ClearKeyRGB();//Çå³ı¼üÅÌRGB
-		WsWrite16();//µÆĞ´Èë
-		mDelaymS(100);//ÑÓÊ±ÒÔÈÃUSB·¢ËÍÍê³É
-		IE = 0;//È«¾ÖÖĞ¶Ï¹Ø±Õ
-		CH549SoftReset();//Èí¸´Î»
+	else if(flag == ASYNC_FLAG_SRST){		//è½¯å¤ä½
+		ClearKeyRGB();//æ¸…é™¤é”®ç›˜RGB
+		WsWrite16();//ç¯å†™å…¥
+		mDelaymS(100);//å»¶æ—¶ä»¥è®©USBå‘é€å®Œæˆ
+		IE = 0;//å…¨å±€ä¸­æ–­å…³é—­
+		CH549SoftReset();//è½¯å¤ä½
 	}
-	else if(flag == ASYNC_FLAG_BOOT){		//BootÔ¤Ìø×ª
-		ClearKeyRGB();//Çå³ı¼üÅÌRGB
-		WsWrite16();//µÆĞ´Èë
-		mDelaymS(100);//ÑÓÊ±ÒÔÈÃUSB·¢ËÍÍê³É
-		IE = 0;//È«¾ÖÖĞ¶Ï¹Ø±Õ
-		USB_INT_FG = 0xFF;	//ÇåÖĞ¶Ï±êÖ¾
-		USB_CTRL = 0x06;	//¸´Î»USB¿ØÖÆ¼Ä´æÆ÷²¢ÀûÓÃÆä¸´Î»ÆäËû¼Ä´æÆ÷
+	else if(flag == ASYNC_FLAG_BOOT){		//Booté¢„è·³è½¬
+		ClearKeyRGB();//æ¸…é™¤é”®ç›˜RGB
+		WsWrite16();//ç¯å†™å…¥
+		mDelaymS(100);//å»¶æ—¶ä»¥è®©USBå‘é€å®Œæˆ
+		IE = 0;//å…¨å±€ä¸­æ–­å…³é—­
+		USB_INT_FG = 0xFF;	//æ¸…ä¸­æ–­æ ‡å¿—
+		USB_CTRL = 0x06;	//å¤ä½USBæ§åˆ¶å¯„å­˜å™¨å¹¶åˆ©ç”¨å…¶å¤ä½å…¶ä»–å¯„å­˜å™¨
 		
-		Flash_Op_Check_Byte1 = DEF_FLASH_OP_CHECK1;//±£»¤¼ì²é±êÖ¾ÖÃÎ»
+		Flash_Op_Check_Byte1 = DEF_FLASH_OP_CHECK1;//ä¿æŠ¤æ£€æŸ¥æ ‡å¿—ç½®ä½
 		Flash_Op_Check_Byte2 = DEF_FLASH_OP_CHECK2;
 		
-		memset(FlashBuf, 0, 64);//µÚÒ»ÉÈÇøÖÃ¿Õ ÒÔÔÚÏÂ´ÎÉÏµçÊ±ÄÜ½øBoot
-		FlashBuf[62] = 0x80; FlashBuf[63] = 0xFE;//Ê¹ÓÃSJMP»ã±àÖ¸ÁîÏòÇ°Ìø2×Ö½Ú ÊµÏÖwhile(1)ËÀÑ­»·
-		ret = ParaWrite(0, FlashBuf, 1);//²Á³ı²¢Ğ´ÈëµÚÒ»ÉÈÇø
+		memset(FlashBuf, 0, 64);//ç¬¬ä¸€æ‰‡åŒºç½®ç©º ä»¥åœ¨ä¸‹æ¬¡ä¸Šç”µæ—¶èƒ½è¿›Boot
+		FlashBuf[62] = 0x80; FlashBuf[63] = 0xFE;//ä½¿ç”¨SJMPæ±‡ç¼–æŒ‡ä»¤å‘å‰è·³2å­—èŠ‚ å®ç°while(1)æ­»å¾ªç¯
+		ret = ParaWrite(0, FlashBuf, 1);//æ“¦é™¤å¹¶å†™å…¥ç¬¬ä¸€æ‰‡åŒº
 
-		while(1){//ËÀÑ­»· BGRÑ­»·µãµÆÌáÊ¾
-			WDOG_COUNT = 0;//ÇåÁã¿´ÃÅ¹·¼ÆÊı
+		while(1){//æ­»å¾ªç¯ BGRå¾ªç¯ç‚¹ç¯æç¤º
+			WDOG_COUNT = 0;//æ¸…é›¶çœ‹é—¨ç‹—è®¡æ•°
 			PWM_R = 0; PWM_G = 0; PWM_B = 255;
 			mDelaymS(800);
-			WDOG_COUNT = 0;//ÇåÁã¿´ÃÅ¹·¼ÆÊı
+			WDOG_COUNT = 0;//æ¸…é›¶çœ‹é—¨ç‹—è®¡æ•°
 			PWM_R = 0; PWM_G = 255; PWM_B = 0;
 			mDelaymS(800);
-			WDOG_COUNT = 0;//ÇåÁã¿´ÃÅ¹·¼ÆÊı
+			WDOG_COUNT = 0;//æ¸…é›¶çœ‹é—¨ç‹—è®¡æ•°
 			PWM_R = 255; PWM_G = 0; PWM_B = 0;
 			mDelaymS(800);
 		}
 	}
 	
-	if(ret){//·¢Éú´æ´¢´íÎó
-		WDOG_COUNT = 0;//ÇåÁã¿´ÃÅ¹·¼ÆÊı
+	if(ret){//å‘ç”Ÿå­˜å‚¨é”™è¯¯
+		WDOG_COUNT = 0;//æ¸…é›¶çœ‹é—¨ç‹—è®¡æ•°
 		PWM_R = 255; PWM_G = 0; PWM_B = 0;
 		mDelaymS(150);
 		PWM_R = 0; PWM_G = 255; PWM_B = 0;
@@ -80,65 +80,65 @@ void AsyncHandle(uint8_t flag){//Òì²½´¦Àí
 		mDelaymS(150);
 		PWM_R = 0; PWM_G = 0; PWM_B = 255;
 		mDelaymS(150);
-		WDOG_COUNT = 0;//ÇåÁã¿´ÃÅ¹·¼ÆÊı
+		WDOG_COUNT = 0;//æ¸…é›¶çœ‹é—¨ç‹—è®¡æ•°
 	}
 }
 
-uint8_t ParaWrite(uint16_t addr, uint8_t *buf, uint8_t num){//²ÎÊıĞ´Èë
+uint8_t ParaWrite(uint16_t addr, uint8_t *buf, uint8_t num){//å‚æ•°å†™å…¥
 	uint16_t i;
 	
-	Flash_Op_Check_Byte1 = DEF_FLASH_OP_CHECK1;//±£»¤¼ì²é±êÖ¾ÖÃÎ»
+	Flash_Op_Check_Byte1 = DEF_FLASH_OP_CHECK1;//ä¿æŠ¤æ£€æŸ¥æ ‡å¿—ç½®ä½
 	Flash_Op_Check_Byte2 = DEF_FLASH_OP_CHECK2;
 	
 	for(i = 0; i < num; i++){
-		if(FlashErasePage(addr + i * 64)){//Èô²Á³ıÊ§°Ü
+		if(FlashErasePage(addr + i * 64)){//è‹¥æ“¦é™¤å¤±è´¥
 			mDelaymS(1);
-			FlashErasePage(addr + i * 64);//ÔÙ´Î²Á³ı
+			FlashErasePage(addr + i * 64);//å†æ¬¡æ“¦é™¤
 		}
-		if(FlashProgPage(addr + i * 64, buf + i * 64, 64)){//Èô±à³ÌÊ§°Ü
+		if(FlashProgPage(addr + i * 64, buf + i * 64, 64)){//è‹¥ç¼–ç¨‹å¤±è´¥
 			mDelaymS(1);
-			FlashProgPage(addr + i * 64, buf + i * 64, 64);//ÔÙ´Î±à³Ì
+			FlashProgPage(addr + i * 64, buf + i * 64, 64);//å†æ¬¡ç¼–ç¨‹
 		}
 	}
 	
-	Flash_Op_Check_Byte1 = 0;//±£»¤¼ì²é±êÖ¾¸´Î»
+	Flash_Op_Check_Byte1 = 0;//ä¿æŠ¤æ£€æŸ¥æ ‡å¿—å¤ä½
 	Flash_Op_Check_Byte2 = 0;
 	
-//	if(!KP_E1) buf[63]++;//Èô°´ÏÂĞıÅ¥1Ôò´íÎó×¢Èë ²âÊÔ´úÂë£¡£¡£¡£¡£¡£¡£¡£¡£¡£¡
+//	if(!KP_E1) buf[63]++;//è‹¥æŒ‰ä¸‹æ—‹é’®1åˆ™é”™è¯¯æ³¨å…¥ æµ‹è¯•ä»£ç ï¼ï¼ï¼ï¼ï¼ï¼ï¼ï¼ï¼ï¼
 	
-	for(i = 0; i < num * 64; i++){//Êı¾İÕıÈ·ĞÔ¼ìÑé
-		if(*(PUINT8C)(addr + i) != buf[i]) return 1;//Êı¾İ´íÎó
+	for(i = 0; i < num * 64; i++){//æ•°æ®æ­£ç¡®æ€§æ£€éªŒ
+		if(*(PUINT8C)(addr + i) != buf[i]) return 1;//æ•°æ®é”™è¯¯
 	}
 	return 0;
 }
 
-void ParaLoad(void){//²ÎÊı¶ÁÈ¡
+void ParaLoad(void){//å‚æ•°è¯»å–
 	uint8_t i;
-	GlobalParaLoad();//È«¾Ö²ÎÊı¶ÁÈ¡
-	for(i = CFG_NUM - 1; i != 255; i--) ParaUpdate(i);//µ¹Ğò×°ÔØÒÔÊµÏÖĞ¡ĞòºÅÓÅÏÈ
+	GlobalParaLoad();//å…¨å±€å‚æ•°è¯»å–
+	for(i = CFG_NUM - 1; i != 255; i--) ParaUpdate(i);//å€’åºè£…è½½ä»¥å®ç°å°åºå·ä¼˜å…ˆ
 	memset(keyWork, 0, sizeof(keyWork));
 	memset(keyFlag, 0, sizeof(keyFlag));
 }
 
-void ParaUpdate(uint8_t pos){//²ÎÊı¸üĞÂ
+void ParaUpdate(uint8_t pos){//å‚æ•°æ›´æ–°
 	uint16_t addr;
 	uint8_t i;
 	
-	if(pos < CFG_NUM) addr = DATA_CFG_BASE - pos * 512;//¼ÆËã±¾Ì×ÅäÖÃµÄÆğÊ¼µØÖ·
+	if(pos < CFG_NUM) addr = DATA_CFG_BASE - pos * 512;//è®¡ç®—æœ¬å¥—é…ç½®çš„èµ·å§‹åœ°å€
 	else return;
 	
-	keyDir[pos] = CFG_ACS(addr + (&CFG_KB_DIR - CFG_THIS));//¶ÁÈ¡¼üÅÌ·½Ïò
+	keyDir[pos] = CFG_ACS(addr + (&CFG_KB_DIR - CFG_THIS));//è¯»å–é”®ç›˜æ–¹å‘
 	
-	if(CFG_ACS(addr + (&CFG_ALL_PRI - CFG_THIS)) == 1){//Èô±¾ÅäÖÃÎªÓÅÏÈÅäÖÃ
-		sysCs = pos;//×ÜÑ¡ÔñÎª±¾ÅäÖÃ
-		DATA_CFG = (PUINT8C)addr;//Ö¸ÕëÖ¸Ïò±¾ÅäÖÃ
-		DATA_LIGHT = DATA_LIGHT_BASE + sysCs * 256;//ĞŞ¸ÄµÆĞ§ÅäÖÃÖ¸Õë Ë³Ğò
+	if(CFG_ACS(addr + (&CFG_ALL_PRI - CFG_THIS)) == 1){//è‹¥æœ¬é…ç½®ä¸ºä¼˜å…ˆé…ç½®
+		sysCs = pos;//æ€»é€‰æ‹©ä¸ºæœ¬é…ç½®
+		DATA_CFG = (PUINT8C)addr;//æŒ‡é’ˆæŒ‡å‘æœ¬é…ç½®
+		DATA_LIGHT = DATA_LIGHT_BASE + sysCs * 256;//ä¿®æ”¹ç¯æ•ˆé…ç½®æŒ‡é’ˆ é¡ºåº
 	}
 	
 	for(i = 0; i < 16; i++){
-		keyAddr[pos][i] = addr;//´æ´¢µØÖ·
-		if(CFG_K_ID(addr) != i + 1){//ÈôID²»¶Ô
-			keyAddr[pos][0] = 0;//ÖÃÁãÒÔ±ê¼ÇÎªÎŞĞ§
+		keyAddr[pos][i] = addr;//å­˜å‚¨åœ°å€
+		if(CFG_K_ID(addr) != i + 1){//è‹¥IDä¸å¯¹
+			keyAddr[pos][0] = 0;//ç½®é›¶ä»¥æ ‡è®°ä¸ºæ— æ•ˆ
 			break;
 		}
 		if(CFG_K_MODE(addr) == 0 || CFG_K_MODE(addr) == 8){
@@ -156,29 +156,29 @@ void ParaUpdate(uint8_t pos){//²ÎÊı¸üĞÂ
 		else if(CFG_K_MODE(addr) == 3){
 			addr += 3 + CFG_K_LEN(addr);
 		}
-		else{//Ä£Ê½²»¶Ô
-			keyAddr[pos][0] = 0;//ÖÃÁãÒÔ±ê¼ÇÎªÎŞĞ§
+		else{//æ¨¡å¼ä¸å¯¹
+			keyAddr[pos][0] = 0;//ç½®é›¶ä»¥æ ‡è®°ä¸ºæ— æ•ˆ
 			break;
 		}
 	}
 }
 
-void GlobalParaLoad(void){//È«¾Ö²ÎÊı¶ÁÈ¡
-	Adc_Mid_Set[0] = GLOB_ANA_MID1;//Ò¡¸ËÖĞÎ»
+void GlobalParaLoad(void){//å…¨å±€å‚æ•°è¯»å–
+	Adc_Mid_Set[0] = GLOB_ANA_MID1;//æ‘‡æ†ä¸­ä½
 	Adc_Mid_Set[1] = GLOB_ANA_MID2;
-	if(!Adc_Mid_Set[0] || Adc_Mid_Set[0] >= 4095) Adc_Mid_Set[0] = 2048;//·Ç·¨Êı¾İ¼ì²é
+	if(!Adc_Mid_Set[0] || Adc_Mid_Set[0] >= 4095) Adc_Mid_Set[0] = 2048;//éæ³•æ•°æ®æ£€æŸ¥
 	if(!Adc_Mid_Set[1] || Adc_Mid_Set[1] >= 4095) Adc_Mid_Set[1] = 2048;
-	keyFltNum = GLOB_KEY_FLT;//°´¼üÂË²¨²ÎÊı
-	EC1freq = GLOBb_EC_FREQ1;//ĞıÅ¥±¶Æµ²ÎÊı
+	keyFltNum = GLOB_KEY_FLT;//æŒ‰é”®æ»¤æ³¢å‚æ•°
+	EC1freq = GLOBb_EC_FREQ1;//æ—‹é’®å€é¢‘å‚æ•°
 	EC2freq = GLOBb_EC_FREQ2;
 }
 
-void GlobalParaUpdate(void){//È«¾Ö²ÎÊı¸üĞÂ
-	((uint16_t*)(FlashBuf))[0] = Adc_Mid_Set[0];//Ò¡¸ËÖĞÎ»
+void GlobalParaUpdate(void){//å…¨å±€å‚æ•°æ›´æ–°
+	((uint16_t*)(FlashBuf))[0] = Adc_Mid_Set[0];//æ‘‡æ†ä¸­ä½
 	((uint16_t*)(FlashBuf))[1] = Adc_Mid_Set[1];
-	FlashBuf[4] = keyFltNum;//°´¼üÂË²¨²ÎÊı
-	FlashBuf[5] = (((uint8_t)EC2freq) << 1) | ((uint8_t)EC1freq);//ĞıÅ¥±¶Æµ²ÎÊı
-//	ParaSave(100, 1);//²ÎÊı±£´æ
+	FlashBuf[4] = keyFltNum;//æŒ‰é”®æ»¤æ³¢å‚æ•°
+	FlashBuf[5] = (((uint8_t)EC2freq) << 1) | ((uint8_t)EC1freq);//æ—‹é’®å€é¢‘å‚æ•°
+//	ParaSave(100, 1);//å‚æ•°ä¿å­˜
 }
 
 
