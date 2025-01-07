@@ -339,7 +339,7 @@ extern uint8_t mode3_key;//模式3按键(1-16)
 
 extern uint32_t changeTime;//配置切换时间
 
-void SysRGB(){//系统RGB控制
+void SysRGB(void){//系统RGB控制
 	uint8_t i;
 	static uint8_t rgbWeight = 0;//系统RGB指示灯权重
 	uint8_t rgbOutput[3];//系统RGB指示灯输出
@@ -351,7 +351,7 @@ void SysRGB(){//系统RGB控制
 	rgbInput[4] = !!clickerNum;
 	rgbInput[5] = !!mode3_key;
 	
-	if(CFGb_RGB_T_ON && (Systime - changeTime) < RGB_DELAY[CFGb_RGB_T_ON]){//配置切换后在设定时间之内
+	if((CFGb_RGB_T_ON && (Systime - changeTime) < RGB_DELAY[CFGb_RGB_T_ON]) || !CFGb_RGB_T_OFF){//配置切换后在设定时间之内 或 不灭
 		rgbWeight = 255;
 	}
 	else if(CFGb_RGB_T_OFF){//超过设定时间 且 不是配置为不灭

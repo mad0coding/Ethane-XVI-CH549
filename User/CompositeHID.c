@@ -286,7 +286,7 @@ void Enp1IntIn(UINT8 *buf, UINT8 len){
 	memcpy(Ep1Buffer+MAX_PACKET_SIZE, buf, len);					//加载上传数据
     if(Ready && !Endp1Busy){						//USB就绪且端点1空闲
         UEP1_T_LEN = len;												//设置发送长度
-        UEP1_CTRL = UEP1_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;		//有数据时上传数据并应答ACK
+        UEP1_CTRL = UEP1_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;		//有数据时上传数据并应答ACK
         Endp1Busy = 1;
     }
 }
@@ -302,7 +302,7 @@ void Enp2IntIn(UINT8 *buf, UINT8 len){
 	memcpy(Ep2Buffer+MAX_PACKET_SIZE, buf, len);	//加载上传数据
     if(Ready && !Endp2Busy){						//USB就绪且端点2空闲
         UEP2_T_LEN = 64;												//设置发送长度 固定为64
-        UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;		//有数据时上传数据并应答ACK
+        UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;		//有数据时上传数据并应答ACK
         Endp2Busy = 1;
     }
 }
@@ -323,7 +323,7 @@ void DeviceInterrupt( void ) interrupt INT_NO_USB using 1				//USB中断服务�
             UEP2_T_LEN = 0;                                                     //预使用发送长度一定要清空
             UEP2_CTRL ^= bUEP_T_TOG;                                            //手动翻转同步标志位
             Endp2Busy = 0;
-            UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_NAK;           //默认应答NAK
+            UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_NAK;           //默认应答NAK
             break;
         case UIS_TOKEN_OUT | 2:							//端点2下传
             if(U_TOG_OK){														//不同步的数据包将丢弃
@@ -340,7 +340,7 @@ if(asyncFlag & 0x80){//若已经在接收状态 则接收数据包
 	memcpy(FlashBuf + ((UINT16X)count << 6), Buf, 64);//数据包拷贝
 	Buf[Offset+0] = 'R'; Buf[Offset+1] = 'D';//填入响应字节
 	Buf[Offset+2] = count++;//填入序号
-	UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
+	UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
 	if(count >= packs){//全部数据包接收完毕
 		count = 0;//防止越界
 		asyncFlag &= ~0x80;//正在接收标志位清除
@@ -357,7 +357,7 @@ else{//若未在接收状态 则监听各种命令
 			asyncFlag = Buf[3] - '1' + ASYNC_FLAG_LIGHT;//确定灯效存储位置
 		}
 		Buf[Offset+0] = 'R'; Buf[Offset+1] = Buf[1]; Buf[Offset+2] = Buf[2];//填入响应字节
-		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
+		UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
 		count = 0;//计数置零
 		asyncFlag |= 0x80;//正在接收标志位置位
 	}
@@ -366,7 +366,7 @@ else{//若未在接收状态 则监听各种命令
 		Buf[Offset+2] = keyFltNum;//把旧参数上报
 		keyFltNum = Buf[3];//修改参数
 		Buf[Offset+3] = keyFltNum;//把新参数环回
-		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
+		UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
 		asyncFlag = ASYNC_FLAG_GLOB;//异步标志置位
 	}
 	else if(Buf[0] == 'C' && Buf[1] == 'R' && Buf[2] == 'K'){//摇杆校正命令
@@ -381,7 +381,7 @@ else{//若未在接收状态 则监听各种命令
 		Buf[Offset+7] = Adc_Mid_Set[0] & 0xFF;
 		Buf[Offset+8] = Adc_Mid_Set[1] >> 8;
 		Buf[Offset+9] = Adc_Mid_Set[1] & 0xFF;
-		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
+		UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
 		asyncFlag = ASYNC_FLAG_GLOB;//异步标志置位
 	}
 	else if(Buf[0] == 'C' && Buf[1] == 'E' && Buf[2] == 'C'){//修改旋钮倍频命令
@@ -392,31 +392,31 @@ else{//若未在接收状态 则监听各种命令
 		EC2freq = Buf[4];
 		Buf[Offset+4] = EC1freq;//把新参数的采纳值环回
 		Buf[Offset+5] = EC2freq;
-		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
+		UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
 		asyncFlag = ASYNC_FLAG_GLOB;//异步标志置位
 	}
 	else if(Buf[0] == 'C' && Buf[1] == 'E' && Buf[2] == 'F'){//修改旋钮滤波参数命令(暂未实现)
 		Buf[Offset+0] = Buf[1]; Buf[Offset+1] = Buf[2];//填入响应字节
 		//TimFilterValue = Buf[3];//更新旋钮滤波参数
-		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
+		UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
 		//asyncFlag = ASYNC_FLAG_GLOB;//异步标志置位
 	}
 	else if(Buf[0] == 'B' && Buf[1] == 'R' && Buf[2] == 'S' && Buf[3] == 'T'){//软复位命令
 		Buf[Offset+0] = 'R'; Buf[Offset+1] = Buf[1]; Buf[Offset+2] = Buf[2]; Buf[Offset+3] = Buf[3];//填入响应字节
 		memset(&Buf[Offset+4], ' ', 64 - 4);//后面全置为空格
-		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
+		UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
 		asyncFlag = ASYNC_FLAG_SRST;//异步标志置位
 	}
 	else if(Buf[0] == 'B' && Buf[1] == 'B' && Buf[2] == 'O' && Buf[3] == 'T'){//Boot预跳转命令
 		Buf[Offset+0] = 'R'; Buf[Offset+1] = Buf[1]; Buf[Offset+2] = Buf[2]; Buf[Offset+3] = Buf[3];//填入响应字节
 		memset(&Buf[Offset+4], ' ', 64 - 4);//后面全置为空格
-		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
+		UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
 		asyncFlag = ASYNC_FLAG_BOOT;//异步标志置位
 	}
 	else if(Buf[0] == 'B' && Buf[1] == 'F' && Buf[2] == 'W' && Buf[3] == 'V'){//固件版本读取命令
 		Buf[Offset+0] = 'R'; Buf[Offset+1] = Buf[1]; Buf[Offset+2] = Buf[2]; Buf[Offset+3] = Buf[3];//填入响应字节
 		memcpy(&Buf[Offset+4], FIRMWARE_VERSION, 4);//填入固件版本
-		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
+		UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
 	}
 	else if(Buf[0] == 'B' && Buf[1] == 'U' && Buf[2] == 'I' && Buf[3] == 'D'){//序列号读取命令
 		Buf[Offset+0] = 'R'; Buf[Offset+1] = Buf[1]; Buf[Offset+2] = Buf[2]; Buf[Offset+3] = Buf[3];//填入响应字节
@@ -430,17 +430,21 @@ else{//若未在接收状态 则监听各种命令
 		for(index = 0; index < 6; index++){//12个16进制的一位数转为6个字节
 			Buf[Offset+4+index] = (Buf[Offset+4+index*2] << 4) | Buf[Offset+5+index*2];
 		}
-		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
+		UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
 	}
 	else if(Buf[0] == 'B' && Buf[1] == 'G' && Buf[2] == 'P' && Buf[3] == 'M'){//参数读取命令
 		Buf[Offset+0] = 'R'; Buf[Offset+1] = Buf[1]; Buf[Offset+2] = Buf[2]; Buf[Offset+3] = Buf[3];//填入响应字节
 		memcpy(&Buf[Offset+4], (PUINT8C)DATA_GLOB_BASE, 56);//全局参数读取
-		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
+		UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
 	}
 	else if(Buf[0] == 'B' && Buf[1] == 'D' && Buf[2] == 'G' && Buf[3] == 'C'){//诊断数据读取命令
 		Buf[Offset+0] = 'R'; Buf[Offset+1] = Buf[1]; Buf[Offset+2] = Buf[2]; Buf[Offset+3] = Buf[3];//填入响应字节
 		DiagGet(&Buf[Offset+4], 56);//诊断数据获取
-		UEP2_CTRL = UEP2_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
+		UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
+	}
+	else{//非法命令
+		Buf[Offset+0] = 'R'; Buf[Offset+1] = 'I'; Buf[Offset+2] = 'N'; Buf[Offset+3] = 'V';//填入响应字节
+		UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
 	}
 }
 /**************************************************以上CustomHID通信部分独立缩进**************************************************/
@@ -450,7 +454,7 @@ else{//若未在接收状态 则监听各种命令
             UEP1_T_LEN = 0;														//预使用发送长度一定要清空
             UEP1_CTRL ^= bUEP_T_TOG;											//手动翻转
             Endp1Busy = 0;
-            UEP1_CTRL = UEP1_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_NAK;			//默认应答NAK
+            UEP1_CTRL = UEP1_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_NAK;			//默认应答NAK
             break;
 		case UIS_TOKEN_OUT | 1:							//端点1下传
 			len = USB_RX_LEN;		//接收数据长度，数据从Ep1Buffer首地址开始存放
@@ -463,7 +467,7 @@ else{//若未在接收状态 则监听各种命令
 				//bitCAPS 0x0102 0x0100
 				//bitSCROLL 0x0104 0x0100
 			}
-            UEP1_CTRL = UEP1_CTRL & ~ MASK_UEP_T_RES | UEP_T_RES_NAK;           //默认应答NAK
+            UEP1_CTRL = UEP1_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_NAK;           //默认应答NAK
 			break;
         case UIS_TOKEN_SETUP | 0:						//SETUP事务
             UEP0_CTRL = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_ACK | UEP_T_RES_ACK;	//预置NAK,防止stall之后不及时清除响应方式
