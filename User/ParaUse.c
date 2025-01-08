@@ -6,9 +6,9 @@ extern uint8_t KeyBrd_data[];//键盘报文
 extern uint8_t Mouse_data[];//鼠标报文
 extern uint8_t Point_data[];//指针报文
 extern uint8_t Vol_data[];//音量报文
-uint8_t KeyBrd_data_old[KB_LEN];//上次键盘报文
-uint8_t Mouse_data_old = 0;//上次鼠标报文
-uint8_t Vol_data_old = 0;//上次音量报文
+static uint8_t KeyBrd_data_old[KB_LEN];//上次键盘报文
+static uint8_t Mouse_data_old = 0;//上次鼠标报文
+static uint8_t Vol_data_old = 0;//上次音量报文
 extern uint8_t KeyBrd_if_send;//键盘报文是否发送
 extern uint8_t Vol_if_send;//音量报文是否发送
 extern uint8_t Point_if_send;//指针报文是否发送
@@ -20,14 +20,14 @@ uint32_t changeTime = -10000*0;//配置切换时间
 
 //******************************数据相关******************************//
 uint8_t mode3_key = 0;//模式3按键(1-16)
-uint16_t mode3_i = 0;//模式3源数据下标(访问mode3_data)
-uint16_t mode3_loop_count = 0;//模式3循环计数
-uint8_t mode3_loop_flag = 0;//模式3循环操作标志
-uint8_t mode3_pulse = 0;//模式3间隔
-uint8_t mode3_delaying = 0;//模式3是否延时中
+static uint16_t mode3_i = 0;//模式3源数据下标(访问mode3_data)
+static uint16_t mode3_loop_count = 0;//模式3循环计数
+static uint8_t mode3_loop_flag = 0;//模式3循环操作标志 bit7:是否结束 bit2:当前有释放沿 bit1~0:未晚于第一释放沿
+static uint8_t mode3_pulse = 0;//模式3间隔
+static uint8_t mode3_delaying = 0;//模式3是否延时中
 //********************************************************************//
-uint8_t switch_i = 0xFF, switch_count = 0;//切换键选择和计数
-uint8_t switch_key = 0, switch_func = 0;//切换键缓存
+static uint8_t switch_i = 0xFF, switch_count = 0;//切换键选择和计数
+static uint8_t switch_key = 0, switch_func = 0;//切换键缓存
 
 
 uint8_t FillReport(void)//报文填写
@@ -35,7 +35,6 @@ uint8_t FillReport(void)//报文填写
 	static uint32_t oldTime = 0;//记录时间
 	uint8_t mode1_num = 0, mode2_num = 0, mode7_num = 0;
 	uint8_t i = 0;//公共用
-//	struct config_key *fill_key = cfg_key[sysCs];
 	
 	uint16_t x, y;
 	uint8_t turn_old, turn_dif;
@@ -61,7 +60,10 @@ uint8_t FillReport(void)//报文填写
 	
 	//****************************************键盘按键处理****************************************//
 	if(mode3_key){//若处于mode3未完成状态
-		if(keyOld[mode3_key - 1] && !keyNow[mode3_key - 1] && mode3_loop_flag < 2) mode3_loop_flag++;//释放沿计数
+		if(keyOld[mode3_key - 1] && !keyNow[mode3_key - 1]){
+			if(mode3_loop_flag & 0x03) mode3_loop_flag--;//记录第一释放沿
+			mode3_loop_flag |= 0x04;//记录包括第一释放沿的一般释放沿
+		}
 		mode3_pulse = !mode3_pulse;//间隔标志先翻转
 		if(mode3_pulse) Mode3Handle();//若翻转后要间隔也即翻转前不用间隔则执行处理
 	}
@@ -99,7 +101,7 @@ uint8_t FillReport(void)//报文填写
 						mode3_key = i + 1;//记录mode3按键(要+1)
 						mode3_i = keyAddr[sysCs][i] + 3;//读取起始下标
 						mode3_loop_count = 0;//模式3循环计数清零
-						mode3_loop_flag = 0;//模式3循环操作标志清零
+						mode3_loop_flag = 0x02;//模式3循环操作标志复位
 						mode3_pulse = 1;//插入间隔
 						Mode3Handle();
 					}
@@ -318,10 +320,6 @@ void Mode3Handle(void)//mode3处理(按键组处理)
 	uint16_t x, y;
 	uint16_t end_i;
 	uint8_t check_i;
-//	uint8_t mode3_key = 0;//模式3按键(1-16)
-//	uint16_t mode3_i = 0;//模式3源数据下标(访问mode3_data)
-//	uint16_t mode3_loop_count = 0xFFFF;//模式3循环计数
-//	uint8_t mode3_loop_flag = 0;//模式3循环操作标志
 	
 	if(oldTime > Systime) setTime = 0;//若系统时间重置则终止延时
 	oldTime = Systime;//记录时间更新
@@ -356,13 +354,15 @@ void Mode3Handle(void)//mode3处理(按键组处理)
 			}
 			mode3_loop_count++;//循环计数递增
 			x = ((uint16_t)CFG_ACS(mode3_i + 2) << 8) | CFG_ACS(mode3_i + 3);//借用x存储循环次数
-			if(CFG_ACS(mode3_i + 1) && mode3_loop_flag == 2 || !CFG_ACS(mode3_i + 1) && mode3_loop_flag
-				|| x && mode3_loop_count >= x){//若下降沿次数达标或计数到位
-				mode3_loop_flag = 3;//置为结束标志
+			if(CFG_ACS(mode3_i + 1) && (mode3_loop_flag & 0x04) && !(mode3_loop_flag & 0x03) //自动 操作退出
+				|| !CFG_ACS(mode3_i + 1) && (mode3_loop_flag & 0x04) //非自动 操作退出
+				|| x && mode3_loop_count >= x){//有限循环 且 计数到位
+				mode3_loop_flag |= 0x80;//置为结束标志
 			}
-			if(mode3_loop_flag == 3){//结束循环
+			if(mode3_loop_flag & 0x80){//结束循环
 				mode3_i += 3;//下标跳过循环单元
-				mode3_loop_flag = mode3_loop_count = 0;//操作标志和计数都清零
+				mode3_loop_flag &= ~0x84;//结束标志和一般释放沿标志复位
+				mode3_loop_count = 0;//计数清零
 				loopStart = 0xFFFF;//循环起始地址复位
 			}
 			else{//继续循环
