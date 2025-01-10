@@ -491,19 +491,22 @@ void RkHandle(uint8_t clear)//摇杆处理
 	x = (CFGb_R_DIRx(0)*2 - 1);//决定方向
 	y = (CFGb_R_DIRy(0)*2 - 1);
 	
+	adcValue[0] = LIMIT(adcValue[0], ANA_MIN(0), ANA_MAX(0));//钳位
+	adcValue[1] = LIMIT(adcValue[1], ANA_MIN(1), ANA_MAX(1));
+	
 	if(CFGb_R_DIRr(0)){//若转90度
-		if(adcValue[0] < ANA_MID_0) x *= ((int16_t)adcValue[0] - (int16_t)ANA_MID_0) * 4096L / ANA_MID_0;
-		else x *= ((int16_t)adcValue[0] - (int16_t)ANA_MID_0) * 4096L / (4095 - ANA_MID_0);//放大到正负4096
+		if(adcValue[0] < ANA_MID(0)) x *= ((int16_t)adcValue[0] - (int16_t)ANA_MID(0)) * 4096L / ANA_DOWN(0);
+		else x *= ((int16_t)adcValue[0] - (int16_t)ANA_MID(0)) * 4096L / ANA_UP(0);//放大到正负4096
 		
-		if(adcValue[1] < ANA_MID_1) y *= ((int16_t)adcValue[1] - (int16_t)ANA_MID_1) * 4096L / ANA_MID_1;
-		else y *= ((int16_t)adcValue[1] - (int16_t)ANA_MID_1) * 4096L / (4095 - ANA_MID_1);
+		if(adcValue[1] < ANA_MID(1)) y *= ((int16_t)adcValue[1] - (int16_t)ANA_MID(1)) * 4096L / ANA_DOWN(1);
+		else y *= ((int16_t)adcValue[1] - (int16_t)ANA_MID(1)) * 4096L / ANA_UP(1);
 	}
 	else{
-		if(adcValue[0] < ANA_MID_0) y *= ((int16_t)adcValue[0] - (int16_t)ANA_MID_0) * 4096L / ANA_MID_0;//向上为正
-		else y *= ((int16_t)adcValue[0] - (int16_t)ANA_MID_0) * 4096L / (4095 - ANA_MID_0);//放大到正负4096
+		if(adcValue[0] < ANA_MID(0)) y *= ((int16_t)adcValue[0] - (int16_t)ANA_MID(0)) * 4096L / ANA_DOWN(0);//向上为正
+		else y *= ((int16_t)adcValue[0] - (int16_t)ANA_MID(0)) * 4096L / ANA_UP(0);//放大到正负4096
 		
-		if(adcValue[1] < ANA_MID_1) x *= -((int16_t)adcValue[1] - (int16_t)ANA_MID_1) * 4096L / ANA_MID_1;//向右为正
-		else x *= -((int16_t)adcValue[1] - (int16_t)ANA_MID_1) * 4096L / (4095 - ANA_MID_1);
+		if(adcValue[1] < ANA_MID(1)) x *= -((int16_t)adcValue[1] - (int16_t)ANA_MID(1)) * 4096L / ANA_DOWN(1);//向右为正
+		else x *= -((int16_t)adcValue[1] - (int16_t)ANA_MID(1)) * 4096L / ANA_UP(1);
 	}
 	
 	equal_r = MAX(ABS(x), ABS(y)) - (uint16_t)CFG_R_DEAD(0) * 21;//计算等效半径并减去死区

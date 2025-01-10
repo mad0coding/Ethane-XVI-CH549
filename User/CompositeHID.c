@@ -370,20 +370,39 @@ else{//若未在接收状态 则监听各种命令
 		UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
 		asyncFlag = ASYNC_FLAG_GLOB;//异步标志置位
 	}
-	else if(Buf[0] == 'C' && Buf[1] == 'R' && Buf[2] == 'K' && Buf[3] == 'M'){//摇杆校正命令
+	else if(Buf[0] == 'C' && Buf[1] == 'R' && Buf[2] == 'K' && Buf[3] == 'M'){//摇杆中位校正命令
 		Buf[Offset+0] = 'R'; Buf[Offset+1] = Buf[1]; Buf[Offset+2] = Buf[2]; Buf[Offset+3] = Buf[3];//填入响应字节
-		Buf[Offset+4] = Adc_Mid_Set[0] >> 8;//填入旧中位值
-		Buf[Offset+5] = Adc_Mid_Set[0] & 0xFF;
-		Buf[Offset+6] = Adc_Mid_Set[1] >> 8;
-		Buf[Offset+7] = Adc_Mid_Set[1] & 0xFF;
-		Adc_Mid_Set[0] = LIMIT(adcValue[0], 1, 4094);//将当前摇杆采样值限幅后作为摇杆中位值
-		Adc_Mid_Set[1] = LIMIT(adcValue[1], 1, 4094);
-		Buf[Offset+8] = Adc_Mid_Set[0] >> 8;//填入新中位值
-		Buf[Offset+9] = Adc_Mid_Set[0] & 0xFF;
-		Buf[Offset+10] = Adc_Mid_Set[1] >> 8;
-		Buf[Offset+11] = Adc_Mid_Set[1] & 0xFF;
+		*(PUINT16X)&Buf[Offset+4] = ANA_MID(0);//填入旧中位值
+		*(PUINT16X)&Buf[Offset+6] = ANA_MID(1);
+		ANA_MID(0) = LIMIT(adcValue[0], ANA_MIN(0) + 1, ANA_MAX(0) - 1);//将当前摇杆采样值钳位后作为摇杆中位值
+		ANA_MID(1) = LIMIT(adcValue[1], ANA_MIN(1) + 1, ANA_MAX(1) - 1);
+		*(PUINT16X)&Buf[Offset+8] = ANA_MID(0);//填入新中位值
+		*(PUINT16X)&Buf[Offset+10] = ANA_MID(1);
 		UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
 		asyncFlag = ASYNC_FLAG_GLOB;//异步标志置位
+	}
+	else if(Buf[0] == 'C' && Buf[1] == 'R' && Buf[2] == 'K' && Buf[3] == 'Z'){//摇杆范围设置命令
+		Buf[Offset+0] = 'R'; Buf[Offset+1] = Buf[1]; Buf[Offset+2] = Buf[2]; Buf[Offset+3] = Buf[3];//填入响应字节
+		*(PUINT16X)&Buf[Offset+4] = ANA_MIN(0);//填入旧范围值
+		*(PUINT16X)&Buf[Offset+6] = ANA_MAX(0);
+		*(PUINT16X)&Buf[Offset+8] = ANA_MIN(1);
+		*(PUINT16X)&Buf[Offset+10] = ANA_MAX(1);
+		if(*(PUINT16X)&Buf[4] < ANA_MID(0) && *(PUINT16X)&Buf[6] > ANA_MID(0) 
+		&& *(PUINT16X)&Buf[8] < ANA_MID(1) && *(PUINT16X)&Buf[10] > ANA_MID(1)){//接受
+			ANA_MIN(0) = *(PUINT16X)&Buf[4];//接收新范围值
+			ANA_MAX(0) = *(PUINT16X)&Buf[6];
+			ANA_MIN(1) = *(PUINT16X)&Buf[8];
+			ANA_MAX(1) = *(PUINT16X)&Buf[10];
+			*(PUINT16X)&Buf[Offset+12] = ANA_MIN(0);//填入新范围值
+			*(PUINT16X)&Buf[Offset+14] = ANA_MAX(0);
+			*(PUINT16X)&Buf[Offset+16] = ANA_MIN(1);
+			*(PUINT16X)&Buf[Offset+18] = ANA_MAX(1);
+			asyncFlag = ASYNC_FLAG_GLOB;//异步标志置位
+		}
+		else{//不接受
+			*(PUINT16X)&Buf[Offset+12] = 0xFFFF;//填入拒绝标志值
+		}
+		UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
 	}
 	else if(Buf[0] == 'C' && Buf[1] == 'E' && Buf[2] == 'C' && Buf[3] == 'D'){//修改旋钮倍频命令
 		Buf[Offset+0] = 'R'; Buf[Offset+1] = Buf[1]; Buf[Offset+2] = Buf[2]; Buf[Offset+3] = Buf[3];//填入响应字节
@@ -429,6 +448,16 @@ else{//若未在接收状态 则监听各种命令
 		}
 		for(index = 0; index < 6; index++){//12个16进制的一位数转为6个字节
 			Buf[Offset+4+index] = (Buf[Offset+4+index*2] << 4) | Buf[Offset+5+index*2];
+		}
+		UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
+	}
+	else if(Buf[0] == 'B' && Buf[1] == 'I' && Buf[2] == 'P' && Buf[3] == 'T'){//输入读取命令
+		Buf[Offset+0] = 'R'; Buf[Offset+1] = Buf[1]; Buf[Offset+2] = Buf[2]; Buf[Offset+3] = Buf[3];//填入响应字节
+		*(PUINT16X)&Buf[Offset+4] = adcValue[0];//摇杆值
+		*(PUINT16X)&Buf[Offset+6] = adcValue[1];
+		*(PUINT32X)&Buf[Offset+8] = 0;
+		for(index = 0; index < KP_NUM; index++){//按键值
+			*(PUINT32X)&Buf[Offset+8] |= (uint32_t)keyNow[index] << index;
 		}
 		UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
 	}

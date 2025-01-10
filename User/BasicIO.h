@@ -53,8 +53,12 @@
 #define BUZZ_G		P2_5//蜂鸣器驱动栅极
 #define BUZZ_PWM	PWM_DATA0//蜂鸣器驱动占空比
 
-#define ANA_MID_0	Adc_Mid_Set[0]
-#define ANA_MID_1	Adc_Mid_Set[1]
+
+#define ANA_MID(i)		Adc_Set_Mid[0 + (i)]
+#define ANA_UP(i)		Adc_Set_Mid[2 + (i)]
+#define ANA_DOWN(i)		Adc_Set_Mid[4 + (i)]
+#define ANA_MAX(i)		Adc_Set_Mid[6 + (i)]
+#define ANA_MIN(i)		Adc_Set_Mid[8 + (i)]
 
 extern uint32_t Systime;//系统时间
 
@@ -67,7 +71,7 @@ extern UINT8D EC1val, EC2val;
 extern bit EC1freq, EC2freq;
 
 extern uint16_t adcValue[];
-extern uint16_t Adc_Mid_Set[];
+extern uint16_t Adc_Set_Mid[];
 extern UINT8D keyFltNum;//按键滤波参数
 
 extern uint8_t keyNow[KP_NUM];//按键映射结果

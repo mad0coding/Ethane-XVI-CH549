@@ -164,20 +164,40 @@ void ParaUpdate(uint8_t pos){//参数更新
 }
 
 void GlobalParaLoad(void){//全局参数读取
-	Adc_Mid_Set[0] = GLOB_ANA_MID1;//摇杆中位
-	Adc_Mid_Set[1] = GLOB_ANA_MID2;
-	if(!Adc_Mid_Set[0] || Adc_Mid_Set[0] >= 4095) Adc_Mid_Set[0] = 2048;//非法数据检查
-	if(!Adc_Mid_Set[1] || Adc_Mid_Set[1] >= 4095) Adc_Mid_Set[1] = 2048;
-	keyFltNum = GLOB_KEY_FLT;//按键滤波参数
+	uint8_t i;
+	for(i = 0; i < 2; i++){//摇杆校正数据
+		ANA_MIN(i) = GLOB_ANA_MIN(i);//摇杆下限
+		ANA_MAX(i) = GLOB_ANA_MAX(i);//摇杆上限
+		ANA_MID(i) = GLOB_ANA_MID(i);//摇杆中位
+		//非法数据检查
+		if(ANA_MIN(i) >= 4095) ANA_MIN(i) = 0;//MIN本身非法
+		if(!ANA_MAX(i) || ANA_MAX(i) > 4095) ANA_MAX(i) = 4095;//MAX本身非法
+		if(ANA_MIN(i) >= ANA_MAX(i)){ ANA_MIN(i) = 0; ANA_MAX(i) = 4095; }//MIN MAX关系非法
+		if(!ANA_MID(i) || ANA_MID(i) >= 4095) ANA_MID(i) = 2048;//MID本身非法
+		if(ANA_MID(i) <= ANA_MIN(i) || ANA_MID(i) >= ANA_MAX(i)){//MIN MID MAX关系非法
+			ANA_MIN(i) = 0; ANA_MID(i) = 2048; ANA_MAX(i) = 4095;
+		}
+		ANA_DOWN(i) = ANA_MID(i) - ANA_MIN(i);//下半范围
+		ANA_UP(i) = ANA_MAX(i) - ANA_MID(i);//上半范围
+	}
+	keyFltNum = GLOB_KEY_FLT;//按键消抖参数
 	EC1freq = GLOBb_EC_FREQ1;//旋钮倍频参数
 	EC2freq = GLOBb_EC_FREQ2;
 }
 
 void GlobalParaUpdate(void){//全局参数更新
-	((uint16_t*)(FlashBuf))[0] = Adc_Mid_Set[0];//摇杆中位
-	((uint16_t*)(FlashBuf))[1] = Adc_Mid_Set[1];
-	FlashBuf[4] = keyFltNum;//按键滤波参数
-	FlashBuf[5] = (((uint8_t)EC2freq) << 1) | ((uint8_t)EC1freq);//旋钮倍频参数
+	uint8_t i;
+	memset(FlashBuf, 0, 64);
+	for(i = 0; i < 2; i++){//摇杆校正数据
+		((uint16_t*)(FlashBuf))[0 + i] = ANA_MIN(i);//摇杆下限
+		((uint16_t*)(FlashBuf))[2 + i] = ANA_MAX(i);//摇杆上限
+		((uint16_t*)(FlashBuf))[4 + i] = ANA_MID(i);//摇杆中位
+		//以下两个不会保存 但需要在这里更新一下
+		ANA_DOWN(i) = ANA_MID(i) - ANA_MIN(i);//下半范围
+		ANA_UP(i) = ANA_MAX(i) - ANA_MID(i);//上半范围
+	}
+	FlashBuf[16] = keyFltNum;//按键消抖参数
+	FlashBuf[20] = (((uint8_t)EC2freq) << 1) | ((uint8_t)EC1freq);//旋钮倍频参数
 //	ParaSave(100, 1);//参数保存
 }
 

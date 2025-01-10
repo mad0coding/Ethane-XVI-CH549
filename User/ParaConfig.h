@@ -91,10 +91,11 @@
 
 //全局配置
 #define GLOB_THIS		((PUINT8C)DATA_GLOB_BASE)//全局配置起始
-#define GLOB_ANA_MID1		(*((PUINT16C)(GLOB_THIS + 0)))//摇杆中位
-#define GLOB_ANA_MID2		(*((PUINT16C)(GLOB_THIS + 2)))//摇杆中位
-#define GLOB_KEY_FLT		(*(GLOB_THIS + 4))//按键滤波值
-#define GLOB_EC_FREQ		(*(GLOB_THIS + 5))//旋钮倍频
+#define GLOB_ANA_MIN(i)		(*((PUINT16C)(GLOB_THIS + 0 + 2*i)))//摇杆下限
+#define GLOB_ANA_MAX(i)		(*((PUINT16C)(GLOB_THIS + 4 + 2*i)))//摇杆上限
+#define GLOB_ANA_MID(i)		(*((PUINT16C)(GLOB_THIS + 8 + 2*i)))//摇杆中位
+#define GLOB_KEY_FLT		(*(GLOB_THIS + 16))//按键滤波值
+#define GLOB_EC_FREQ		(*(GLOB_THIS + 20))//旋钮倍频
 //全局配置比特
 #define GLOBb_EC_FREQ1		((GLOB_EC_FREQ >> 0) & 1)//一号旋钮倍频
 #define GLOBb_EC_FREQ2		((GLOB_EC_FREQ >> 1) & 1)//二号旋钮倍频
