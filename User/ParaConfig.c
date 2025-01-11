@@ -141,19 +141,19 @@ void ParaUpdate(uint8_t pos){//参数更新
 			keyAddr[pos][0] = 0;//置零以标记为无效
 			break;
 		}
-		if(CFG_K_MODE(addr) == 0 || CFG_K_MODE(addr) == 8){
+		if(CFG_K_MODE(addr) == m0_none || CFG_K_MODE(addr) == m8_buzz){
 			addr += 2;
 		}
-		else if(CFG_K_MODE(addr) == 1){
+		else if(CFG_K_MODE(addr) == m1_button){
 			addr += 3;
 		}
-		else if(CFG_K_MODE(addr) == 2 || CFG_K_MODE(addr) == 6){
+		else if(CFG_K_MODE(addr) == m2_shortcut || CFG_K_MODE(addr) == m6_change){
 			addr += 4;
 		}
-		else if(CFG_K_MODE(addr) == 4 || CFG_K_MODE(addr) == 5 || CFG_K_MODE(addr) == 7){
+		else if(CFG_K_MODE(addr) == m4_move || CFG_K_MODE(addr) == m5_press || CFG_K_MODE(addr) == m7_clicker){
 			addr += 6;
 		}
-		else if(CFG_K_MODE(addr) == 3){
+		else if(CFG_K_MODE(addr) == m3_group){
 			addr += 3 + CFG_K_LEN(addr);
 		}
 		else{//模式不对

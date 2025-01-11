@@ -70,9 +70,9 @@ uint8_t FillReport(void)//报文填写
 	else{//空闲状态
 		for(i = 0; i < 16; i++){//统计按下的各模式数量
 			if(keyNow[i/*+1*/]){
-				if(CFG_K_MODE(keyAddr[sysCs][i]) == 1 && i != switch_i) mode1_num++;
-				else if(CFG_K_MODE(keyAddr[sysCs][i]) == 2 && i != switch_i) mode2_num++;
-				else if(CFG_K_MODE(keyAddr[sysCs][i]) == 7 && i != switch_i) mode7_num++;
+				if(CFG_K_MODE(keyAddr[sysCs][i]) == m1_button && i != switch_i) mode1_num++;
+				else if(CFG_K_MODE(keyAddr[sysCs][i]) == m2_shortcut && i != switch_i) mode2_num++;
+				else if(CFG_K_MODE(keyAddr[sysCs][i]) == m7_clicker && i != switch_i) mode7_num++;
 			}
 		}
 		for(i = 0; i < 16; i++){//对于16个按键
@@ -89,14 +89,14 @@ uint8_t FillReport(void)//报文填写
 				continue;//屏蔽临时切换键
 			}
 			if(keyNow[i]){//若按下
-				if(CFG_K_MODE(keyAddr[sysCs][i]) == 1){//模式1:单键
+				if(CFG_K_MODE(keyAddr[sysCs][i]) == m1_button){//模式1:单键
 					KeyInsert(i + 3,CFG_K_KEY(keyAddr[sysCs][i]));//填入键值
 				}
-				else if(CFG_K_MODE(keyAddr[sysCs][i]) == 2){//模式2:快捷键
+				else if(CFG_K_MODE(keyAddr[sysCs][i]) == m2_shortcut){//模式2:快捷键
 					KeyInsert(i + 3,CFG_K_KEY(keyAddr[sysCs][i]));//填入键值
 					KeyBrd_data[1] |= CFG_K_FUNC(keyAddr[sysCs][i]);//填入功能键
 				}
-				else if(CFG_K_MODE(keyAddr[sysCs][i]) == 3){//模式3:按键组
+				else if(CFG_K_MODE(keyAddr[sysCs][i]) == m3_group){//模式3:按键组
 					if(mode1_num == 0 && mode2_num == 0 && mode7_num == 0 && !keyOld[i]){//不存在1,2,7模式按键且按下沿
 						mode3_key = i + 1;//记录mode3按键(要+1)
 						mode3_i = keyAddr[sysCs][i] + 3;//读取起始下标
@@ -106,7 +106,7 @@ uint8_t FillReport(void)//报文填写
 						Mode3Handle();
 					}
 				}
-				else if(CFG_K_MODE(keyAddr[sysCs][i]) == 4 || CFG_K_MODE(keyAddr[sysCs][i]) == 5){//模式4:光标移位,模式5:光标点击
+				else if(CFG_K_MODE(keyAddr[sysCs][i]) == m4_move || CFG_K_MODE(keyAddr[sysCs][i]) == m5_press){//模式4:光标移位,模式5:光标点击
 					if(!keyOld[i]) keyFlag[i] = 2;//待按下态
 					
 					x = CFG_K_X(keyAddr[sysCs][i]) * 32768 / CFG_SCN_W;
@@ -115,13 +115,13 @@ uint8_t FillReport(void)//报文填写
 					Point_data[4] = (x >> 8) & 0xFF;
 					Point_data[5] = y & 0xFF;
 					Point_data[6] = (y >> 8) & 0xFF;
-					if(CFG_K_MODE(keyAddr[sysCs][i]) == 5){
+					if(CFG_K_MODE(keyAddr[sysCs][i]) == m5_press){
 						Point_data[1] |= 0x01;
 					}
 					
 					Point_data[2] = i;
 				}
-				else if(CFG_K_MODE(keyAddr[sysCs][i]) == 6){//模式6:切换键
+				else if(CFG_K_MODE(keyAddr[sysCs][i]) == m6_change){//模式6:切换键
 					if((CFG_K_FUNC(keyAddr[sysCs][i]) & 0x80) && switch_i == 0xFF && !keyOld[i]){//若为临时切换且为独有且按下沿
 						switch_key = CFG_K_KEY(keyAddr[sysCs][i]);//缓存键值
 						switch_func = sysCs + 1;//缓存旧键盘选择
@@ -135,7 +135,7 @@ uint8_t FillReport(void)//报文填写
 						break;//跳出本次循环
 					}
 				}
-				else if(CFG_K_MODE(keyAddr[sysCs][i]) == 7){//模式7:按键连点
+				else if(CFG_K_MODE(keyAddr[sysCs][i]) == m7_clicker){//模式7:按键连点
 					if(!keyOld[i] && !(CFG_K_FUNC(keyAddr[sysCs][i]) & 0x01)){//若为按下沿且非自动连点
 						keyFlag[i] |= 0x02;//启动连点
 						keyWork[i] = 0;//计时器清零
@@ -143,32 +143,32 @@ uint8_t FillReport(void)//报文填写
 				}
 			}
 			else if(keyOld[i]){//若刚抬起(释放沿)
-				if(CFG_K_MODE(keyAddr[sysCs][i]) == 5){//模式5:光标点击
+				if(CFG_K_MODE(keyAddr[sysCs][i]) == m5_press){//模式5:光标点击
 					if(keyOld[i]){//释放沿
 						keyFlag[i] = 1;//待抬起态
 					}
 				}
-				else if(CFG_K_MODE(keyAddr[sysCs][i]) == 6){//模式6:切换键
+				else if(CFG_K_MODE(keyAddr[sysCs][i]) == m6_change){//模式6:切换键
 					if(!(CFG_K_FUNC(keyAddr[sysCs][i]) & 0x80)){//若为非临时切换
 						switch_i = 0xFF;//直接复位临时切换键标志
 						CsChange(CFG_K_FUNC(keyAddr[sysCs][i]));//切换
 					}
 				}
-				else if(CFG_K_MODE(keyAddr[sysCs][i]) == 7){//模式7:按键连点
+				else if(CFG_K_MODE(keyAddr[sysCs][i]) == m7_clicker){//模式7:按键连点
 					if((CFG_K_FUNC(keyAddr[sysCs][i]) & 0x01) && !(keyFlag[i] & 0x02)){//自动连点且当前未在连点
 						keyFlag[i] |= 0x02;//启动连点
 						keyWork[i] = 0;//计时器清零
 					}
 					else keyFlag[i] &= ~0x02;//停止连点
 				}
-				else if(CFG_K_MODE(keyAddr[sysCs][i]) == 8){//模式8:蜂鸣器
+				else if(CFG_K_MODE(keyAddr[sysCs][i]) == m8_buzz){//模式8:蜂鸣器
 					return 1;
 				}
 			}
 		}//处理完16个按键的主要内容
 		
 		for(i = 0; i < 16; i++){//对于16个按键的触摸
-			if(CFG_K_MODE(keyAddr[sysCs][i]) == 4 || CFG_K_MODE(keyAddr[sysCs][i]) == 5){//模式4:光标移位,模式5:光标点击
+			if(CFG_K_MODE(keyAddr[sysCs][i]) == m4_move || CFG_K_MODE(keyAddr[sysCs][i]) == m5_press){//模式4:光标移位,模式5:光标点击
 				if(CFG_K_FUNC(keyAddr[sysCs][i]) == 1 || CFG_K_FUNC(keyAddr[sysCs][i]) == 2){
 					x = CFG_K_X(keyAddr[sysCs][i]) * 32768 / CFG_SCN_W;
 					y = CFG_K_Y(keyAddr[sysCs][i]) * 32768 / CFG_SCN_H;
@@ -180,7 +180,7 @@ uint8_t FillReport(void)//报文填写
 					Point_data[2] = i;
 					
 					if(CFG_K_FUNC(keyAddr[sysCs][i]) == 2){
-						if(CFG_K_MODE(keyAddr[sysCs][i]) == 5) Point_data[1] |= 0x01;
+						if(CFG_K_MODE(keyAddr[sysCs][i]) == m5_press) Point_data[1] |= 0x01;
 						else Point_data[1] &= ~0x01;
 						keyFlag[i] = 3;
 					}
@@ -195,7 +195,7 @@ uint8_t FillReport(void)//报文填写
 		
 		/*int8_t */auto_num = 0;//正在执行自动连点的按键数量
 		for(i = 0; i < 16; i++){//对于16个按键的连点
-			if(CFG_K_MODE(keyAddr[sysCs][i]) == 7){//模式7:按键连点
+			if(CFG_K_MODE(keyAddr[sysCs][i]) == m7_clicker){//模式7:按键连点
 				if(oldTime > Systime){//若系统时间重置
 					keyWork[i] = 0;//清空设定时间
 					keyFlag[i] &= ~0x04;//复位点击标志
@@ -386,7 +386,7 @@ void Mode3Handle(void)//mode3处理(按键组处理)
 			if(++mode3_i == end_i) mode3_key = 0;//当读完数据
 			break;//独占本次报文
 		}
-		else if(CFG_ACS(mode3_i) == kv_point){//若有光标移位
+		else if(CFG_ACS(mode3_i) == kv_move || CFG_ACS(mode3_i) == kv_press){//若有光标移位
 			if(report_i > 3 || Mouse_data[1] != 0) break;//若本次报文已有内容则退出等下一次
 			x = (CFG_ACS(mode3_i + 1) << 8) | CFG_ACS(mode3_i + 2);
 			y = (CFG_ACS(mode3_i + 3) << 8) | CFG_ACS(mode3_i + 4);
@@ -396,7 +396,7 @@ void Mode3Handle(void)//mode3处理(按键组处理)
 			Point_data[4] = (x >> 8) & 0xFF;
 			Point_data[5] = y & 0xFF;
 			Point_data[6] = (y >> 8) & 0xFF;
-			if(1){
+			if(CFG_ACS(mode3_i) == kv_press){
 				Point_data[1] |= 0x01;//光标点击
 			}
 			mode3_i += 4;

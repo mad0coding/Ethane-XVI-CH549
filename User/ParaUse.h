@@ -9,6 +9,18 @@
 #include "BasicIO.h"
 #include "ParaConfig.h"
 
+
+#define m0_none			0
+#define m1_button		1
+#define m2_shortcut		2
+#define m3_group		3
+#define m4_move			4
+#define m5_press		5
+#define m6_change		6
+#define m7_clicker		7
+#define m8_buzz			8
+
+
 #define kv_orig_1		30
 #define kv_orig_2		31
 #define kv_orig_3		32
@@ -35,8 +47,8 @@
 
 #define kv_report		234
 #define kv_loop			235
-
-#define kv_point		237
+#define kv_move			236
+#define kv_press		237
 #define kv_vol_next		238
 #define kv_vol_prev		239
 #define kv_wheel_up		240
