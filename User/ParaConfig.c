@@ -17,12 +17,12 @@ PUINT8C DATA_CFG = DATA_CFG_BASE;//闪存区配置信息指针
 void AsyncHandle(uint8_t flag){//异步处理
 	uint8_t ret = 0;
 	if(flag >= ASYNC_FLAG_CFG && flag < ASYNC_FLAG_CFG + CFG_NUM){			//键盘配置存储
-		ret = ParaWrite((DATA_CFG_BASE - (flag - ASYNC_FLAG_CFG) * 512), FlashBuf, 8);//逆序
+		ret = ParaWrite(CFG_ADDR_CSC(flag - ASYNC_FLAG_CFG), FlashBuf, 8);
 		ParaUpdate(flag - ASYNC_FLAG_CFG);//键盘配置参数更新
 		if(ret) DiagCountInc(DIAG_FMT_LOAD | DIAG_FMT_SAVE, DIAG_I_CFG + flag - ASYNC_FLAG_CFG);//诊断计数增加
 	}
 	else if(flag >= ASYNC_FLAG_LIGHT && flag < ASYNC_FLAG_LIGHT + CFG_NUM){	//灯效配置存储
-		ret = ParaWrite((DATA_LIGHT_BASE + (flag - ASYNC_FLAG_LIGHT) * 256), FlashBuf, 4);//正序
+		ret = ParaWrite(LIGHT_ADDR_CSC(flag - ASYNC_FLAG_LIGHT), FlashBuf, 4);
 		KeyRGB(1);//键盘RGB控制清零
 		if(ret) DiagCountInc(DIAG_FMT_LOAD | DIAG_FMT_SAVE, DIAG_I_LIGHT + flag - ASYNC_FLAG_LIGHT);//诊断计数增加
 	}
@@ -64,6 +64,12 @@ void AsyncHandle(uint8_t flag){//异步处理
 			PWM_R = 255; PWM_G = 0; PWM_B = 0;
 			mDelaymS(800);
 		}
+	}
+	else if(flag == ASYNC_FLAG_CSC){//配置切换
+		sysCs = FlashBuf[0];//更新选择
+		CFG_DATA_CSC(sysCs);//更新配置数据选择
+		LIGHT_DATA_CSC(sysCs);//更新灯效数据选择
+		KeyRGB(1);//键盘RGB控制清零
 	}
 	
 	if(ret){//发生存储错误
@@ -131,8 +137,9 @@ void ParaUpdate(uint8_t pos){//参数更新
 	
 	if(CFG_ACS(addr + (&CFG_ALL_PRI - CFG_THIS)) == 1){//若本配置为优先配置
 		sysCs = pos;//总选择为本配置
-		DATA_CFG = (PUINT8C)addr;//指针指向本配置
-		DATA_LIGHT = DATA_LIGHT_BASE + sysCs * 256;//修改灯效配置指针 顺序
+		CFG_DATA_CSC(sysCs);//更新配置数据选择
+		LIGHT_DATA_CSC(sysCs);//更新灯效数据选择
+		KeyRGB(1);//键盘RGB控制清零
 	}
 	
 	for(i = 0; i < 16; i++){

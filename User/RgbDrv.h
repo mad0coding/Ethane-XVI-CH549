@@ -18,6 +18,10 @@
 #define COLOR_ANGLE		167//色环的1/6
 #define LIGHT_LIST_MAX	9//列表上限
 
+
+#define LIGHT_ADDR_CSC(i)	(DATA_LIGHT_BASE + (i) * 256)//灯效数据地址 正序
+#define LIGHT_DATA_CSC(i)	(DATA_LIGHT = LIGHT_ADDR_CSC(i))//灯效数据选择
+
 #define LIGHT_THIS		(DATA_LIGHT)
 
 //#define LIGHT_ACS(a)		(*((PUINT8C)(a) + 0))

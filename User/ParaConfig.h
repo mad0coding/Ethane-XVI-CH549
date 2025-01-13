@@ -15,7 +15,7 @@
 #define ASYNC_FLAG_GLOB		50
 #define ASYNC_FLAG_SRST		100
 #define ASYNC_FLAG_BOOT		101
-
+#define ASYNC_FLAG_CSC		102
 
 //靠前60k(0x0000~0xEFFF)为CodeFlash 寿命10k次
 //靠后1k(0xF000~0xF3FF)为DataFlash 寿命约能100k次
@@ -31,6 +31,9 @@
 //目前全部存储数据使用7k空间,剩余代码空间为54k
 
 #define CFG_NUM		8	//配置个数
+
+#define CFG_ADDR_CSC(i)		(DATA_CFG_BASE - (i) * 512)//配置数据地址 逆序
+#define CFG_DATA_CSC(i)		(DATA_CFG = CFG_ADDR_CSC(i))//配置数据选择
 
 //键盘配置
 #define CFG_THIS		(DATA_CFG)//键盘配置起始

@@ -269,10 +269,10 @@ void CsChange(uint8_t change)//切换
 	change &= 0x0F;//取低4位
 	if(change == 0 || change > CFG_NUM) return;
 	sysCs = change - 1;
-	DATA_CFG = DATA_CFG_BASE - sysCs * 512;//修改键盘配置指针 逆序
+	CFG_DATA_CSC(sysCs);//更新配置数据选择
 	
 	KeyRGB(1);//键盘RGB控制清零
-	if(LIGHT_MONO != 3) DATA_LIGHT = DATA_LIGHT_BASE + sysCs * 256;//若不是灯效不切换则修改灯效配置指针 正序
+	if(LIGHT_MONO != 3) LIGHT_DATA_CSC(sysCs);//若不是灯效不切换则更新灯效数据选择
 	
 	changeTime = Systime;
 	

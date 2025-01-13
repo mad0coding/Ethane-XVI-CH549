@@ -409,14 +409,6 @@ else{//若未在接收状态 则监听各种命令
 	else if(Buf[0] == 'C' && Buf[1] == 'E' && Buf[2] == 'C' && Buf[3] == 'F'){//修改旋钮滤波参数命令(暂未实现)
 		//TimFilterValue = Buf[4];//更新旋钮滤波参数
 	}
-	else if(Buf[0] == 'B' && Buf[1] == 'R' && Buf[2] == 'S' && Buf[3] == 'T'){//软复位命令
-		memset(&Buf[Offset+4], ' ', 64 - 4);//后面全置为空格
-		asyncFlag = ASYNC_FLAG_SRST;//异步标志置位
-	}
-	else if(Buf[0] == 'B' && Buf[1] == 'B' && Buf[2] == 'O' && Buf[3] == 'T'){//Boot预跳转命令
-		memset(&Buf[Offset+4], ' ', 64 - 4);//后面全置为空格
-		asyncFlag = ASYNC_FLAG_BOOT;//异步标志置位
-	}
 	else if(Buf[0] == 'B' && Buf[1] == 'F' && Buf[2] == 'W' && Buf[3] == 'V'){//固件版本读取命令
 		memcpy(&Buf[Offset+4], FIRMWARE_VERSION, 4);//填入固件版本
 	}
@@ -445,6 +437,24 @@ else{//若未在接收状态 则监听各种命令
 	}
 	else if(Buf[0] == 'B' && Buf[1] == 'D' && Buf[2] == 'G' && Buf[3] == 'C'){//诊断数据读取命令
 		DiagGet(&Buf[Offset+4], 56);//诊断数据获取
+	}
+	else if(Buf[0] == 'B' && Buf[1] == 'R' && Buf[2] == 'S' && Buf[3] == 'T'){//软复位命令
+		memset(&Buf[Offset+4], ' ', 64 - 4);//后面全置为空格
+		asyncFlag = ASYNC_FLAG_SRST;//异步标志置位
+	}
+	else if(Buf[0] == 'B' && Buf[1] == 'B' && Buf[2] == 'O' && Buf[3] == 'T'){//Boot预跳转命令
+		memset(&Buf[Offset+4], ' ', 64 - 4);//后面全置为空格
+		asyncFlag = ASYNC_FLAG_BOOT;//异步标志置位
+	}
+	else if(Buf[0] == 'B' && Buf[1] == 'C' && Buf[2] == 'S' && Buf[3] == 'C'){//配置切换命令
+		memset(&Buf[Offset+4], ' ', 64 - 4);//后面全置为空格
+		Buf[Offset+4] = sysCs + '1';//把旧选择上报
+		if(Buf[4] >= '1' && Buf[4] <= '0' + CFG_NUM){//新选择合法
+			Buf[Offset+5] = Buf[4];//把新选择环回
+			FlashBuf[0] = Buf[4] - '1';//用FlashBuf暂存新选择
+			asyncFlag = ASYNC_FLAG_CSC;//异步标志置位
+		}
+		else Buf[Offset+5] = 0xFF;//填入拒绝标志
 	}
 	else{//非法命令
 		Buf[Offset+0] = 'R'; Buf[Offset+1] = 'I'; Buf[Offset+2] = 'N'; Buf[Offset+3] = 'V';//非法命令响应字节
