@@ -16,6 +16,7 @@
 #define PWM_B		PWM_DATA4
 
 #define COLOR_ANGLE		167//色环的1/6
+#define LIGHT_LIST_MAX	9//列表上限
 
 #define LIGHT_THIS		(DATA_LIGHT)
 
@@ -27,6 +28,8 @@
 #define LIGHT_T2(n)			(*(LIGHT_THIS + (n) + 7*16))//按键抬起灯延迟
 #define LIGHT_SHLD(n)		(*(LIGHT_THIS + (n) + 8*16))//按键屏蔽剩余
 #define LIGHT_IDX(n)		(*(LIGHT_THIS + (n) + 9*16))//按键自定义下标
+#define LIGHT_LIST(n)		(*(LIGHT_THIS + 232 + (n)))//列表
+#define LIGHT_COUNT			(*(LIGHT_THIS + 243))//列表计数
 #define LIGHT_MONO			(*(LIGHT_THIS + 244))//配置独占
 #define LIGHT_DIR			(*(LIGHT_THIS + 245))//动作方向设置
 #define LIGHT_WAVE			(*(LIGHT_THIS + 246))//动作模式设置

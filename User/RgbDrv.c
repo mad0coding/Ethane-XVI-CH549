@@ -115,7 +115,7 @@ void KeyRGB(uint8_t clear){//键盘RGB控制
 	static uint16_t dTime = 0;//间隔时间记录
 	static uint8_t taskTick = 0;//0~3bit:0为启动沿,1为动作期,2为结束沿,3为间隔期;bit7:呼吸模式用
 	static uint8_t eTime = 0, INXi = 0, fracSHLD = 0;//时间记录,自定义下标,屏蔽效果比例
-	static uint8_t lightMode = 0;
+	static uint8_t listMode = -1, lightMode = 0;//在列表选中的模式, 真正的模式
 	uint8_t /*lightMode = 0, */ifINX = 0, leftSHLD = 255;//模式,是否有自定义标记,屏蔽剩余
 	UINT8D i, j;//按键循环变量,RGB循环变量
 	int16_t tool16 = 0;//工具变量
@@ -144,22 +144,45 @@ void KeyRGB(uint8_t clear){//键盘RGB控制
 		//lightMode = (lightMode + 1) % 32;
 		if(LIGHT_WAVE == 0){//呼吸
 			lightMode = 200;
-		}else if(LIGHT_WAVE <= 4){//波动,行列,蛇行,涡旋
-			lightMode = (LIGHT_WAVE - 1) * 8 + LIGHT_DIR;
-		}else if(LIGHT_WAVE == 5){//自定义
-			lightMode = 100;
-			memcpy(inXi, &LIGHT_IDX(0), 16);
-		}else if(LIGHT_WAVE == 6){//循环1
-			lightMode = (lightMode + 1) % 32;
-		}else if(LIGHT_WAVE == 7){//循环2
-			lightMode += 8;
-			if(lightMode >= 39) lightMode = 0;
-			else if(lightMode >= 32) lightMode -= 31;
-		}else if(LIGHT_WAVE == 8){//随机
-			do{ j = (rand() ^ TL0) % /*26*/32; }while(lightMode == j);//借用j存储掺入时间的随机数,直到与现在不同
-			lightMode = j;
 		}
-		//if(lightMode >= 32) lightMode = 200;
+		else if(LIGHT_WAVE <= 4){//波动,行列,蛇行,涡旋
+			lightMode = (LIGHT_WAVE - 1) * 8 + LIGHT_DIR;
+		}
+		else if(LIGHT_WAVE == 5){//自定义
+			lightMode = 100;
+		}
+		else{//循环 或 随机
+			for(i = j = 0; i < (LIGHT_COUNT + 1) && i < LIGHT_LIST_MAX; i++){//借用j统计列表总个数
+				if(LIGHT_LIST(i) && LIGHT_LIST(i) <= 4) j += 8;
+				else j++;
+			}
+			if(LIGHT_WAVE == 6){//循环
+				if(++listMode >= j) listMode = 0;//自增或转一圈回来
+			}
+			else{//随机
+				do{ i = (rand() ^ TL0) % j; }while(i == listMode && j > 1);//借用i存储掺入时间的随机数 直到与现在不同
+				listMode = i;
+			}
+			
+			for(i = j = 0; i <= (LIGHT_COUNT + 1) && i <= LIGHT_LIST_MAX; i++){//在列表查找
+				if(j > listMode){
+					if(LIGHT_LIST(i - 1) && LIGHT_LIST(i - 1) <= 4) j = listMode + 8 - j;//借用j记录方向
+					i = LIGHT_LIST(i - 1);//记录类型
+					break;
+				}
+				if(LIGHT_LIST(i) && LIGHT_LIST(i) <= 4) j += 8;
+				else j++;
+			}
+			if(i == 0){//呼吸
+				lightMode = 200;
+			}
+			else if(i <= 4){//波动,行列,蛇行,涡旋
+				lightMode = (i - 1) * 8 + j;
+			}
+			else{//自定义
+				lightMode = 100;
+			}
+		}
 	}
 	if((taskTick & 0x0F) == 1 && (uint16_t)((uint16_t)Systime - dTime) > LIGHT_D1WAVE && lightMode != 200){//若为动作期且动作时间已到且非呼吸模式
 		dTime = Systime;//记录新动作起始时间
@@ -167,6 +190,7 @@ void KeyRGB(uint8_t clear){//键盘RGB控制
 	}
 	
 	if(lightMode < 32) memcpy(inXi, INX_TABLE + 16*lightMode, 16);//32种预置灯效
+	else if(lightMode == 100) memcpy(inXi, &LIGHT_IDX(0), 16);//自定义
 	
 	memcpy(FrameRaw, &LIGHT_UP(0), 16*3);//将上配色载入原始帧缓存
 	

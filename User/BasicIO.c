@@ -229,17 +229,9 @@ uint16_t sCount = 0, fCount = 0;
 void LL_test(void){
 	static uint16_t i;
 	i++;
-	if(adcValue[0] > ANA_MAX(0)) ANA_MAX(0) = adcValue[0];
-	if(adcValue[0] < ANA_MIN(0)) ANA_MIN(0) = adcValue[0];
-	if(adcValue[1] > ANA_MAX(1)) ANA_MAX(1) = adcValue[1];
-	if(adcValue[1] < ANA_MIN(1)) ANA_MIN(1) = adcValue[1];
 	if(Systime - oldTime >= 1000){//端点2打印输出
 		oldTime += 1000;
 		memset(debugBuf, ' '*0, 64);
-		*((uint16_t*)debugBuf + 0) = ANA_MAX(0);
-		*((uint16_t*)debugBuf + 1) = ANA_MIN(0);
-		*((uint16_t*)debugBuf + 2) = ANA_MAX(1);
-		*((uint16_t*)debugBuf + 3) = ANA_MIN(1);
 //		sprintf(debugBuf, "%d	%d	%u\n", sCount, fCount, (uint16_t)Systime);
 		
 		Enp2IntIn(debugBuf, 64);
