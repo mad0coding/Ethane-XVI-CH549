@@ -112,7 +112,8 @@ void ClearKeyRGB(void){//清除键盘RGB
 }
 
 void KeyRGB(uint8_t clear){//键盘RGB控制
-	static uint16_t dTime = 0;//间隔时间记录
+	static uint32_t dTime = 0, leaveTime = -65535;//时间记录 离开时间
+	static uint16_t randTime = 0;//间隔随机时间
 	static uint8_t taskTick = 0;//0~3bit:0为启动沿,1为动作期,2为结束沿,3为间隔期;bit7:呼吸模式用
 	static uint8_t eTime = 0, INXi = 0, fracSHLD = 0;//时间记录,自定义下标,屏蔽效果比例
 	static uint8_t listMode = -1, lightMode = 0;//在列表选中的模式, 真正的模式
@@ -128,20 +129,30 @@ void KeyRGB(uint8_t clear){//键盘RGB控制
 	
 	if((uint8_t)((uint8_t)Systime - eTime) < 20) return;//以20ms周期处理灯效
 	eTime += 20;//时间跟进
+
+	if(LIGHT_T_WAIT){//若启用等待时间
+		for(i = 0; i < 16; i++){//检查是否有按键
+			if(keyNow[i]){//若有按下
+				leaveTime = Systime;//不断更新离开时间
+				break;
+			}
+		}
+	}
 	
 	if((taskTick & 0x0F) == 2){//若为结束沿
 		taskTick = 3;//进入间隔期
 		dTime = Systime;//记录间隔期起始时间
 		INXi = 255;
 	}
-	if((taskTick & 0x0F) == 3 && (uint16_t)((uint16_t)Systime - dTime) > LIGHT_D2WAVE){//若为间隔期且间隔时间已到
+	if((taskTick & 0x0F) == 3 && (uint32_t)(Systime - dTime) > (LIGHT_T_GAP + (uint32_t)randTime)//若为间隔期 且 间隔时间已到
+		&& (!LIGHT_T_WAIT || (uint32_t)(Systime - leaveTime) > LIGHT_T_WAIT)){//且 无等待或等待时间已到
+		randTime = LIGHT_T_RAND ? ((rand() ^ (TL0 << 8)) % LIGHT_T_RAND) : 0;//更新间隔随机时间
 		taskTick = 0;//进入启动沿
 	}
 	if((taskTick & 0x0F) == 0){//若为启动沿
 		taskTick = 1;//进入动作期
 		dTime = Systime;//记录动作期起始时间
 		INXi = 0;
-		//lightMode = (lightMode + 1) % 32;
 		if(LIGHT_WAVE == 0){//呼吸
 			lightMode = 200;
 		}
@@ -184,7 +195,7 @@ void KeyRGB(uint8_t clear){//键盘RGB控制
 			}
 		}
 	}
-	if((taskTick & 0x0F) == 1 && (uint16_t)((uint16_t)Systime - dTime) > LIGHT_D1WAVE && lightMode != 200){//若为动作期且动作时间已到且非呼吸模式
+	if((taskTick & 0x0F) == 1 && (uint16_t)((uint16_t)Systime - dTime) > LIGHT_T_ACT && lightMode != 200){//若为动作期且动作时间已到且非呼吸模式
 		dTime = Systime;//记录新动作起始时间
 		INXi++;
 	}
@@ -203,14 +214,14 @@ void KeyRGB(uint8_t clear){//键盘RGB控制
 		}
 		
 		//主效果
-		if(lightMode == 200 && LIGHT_D1WAVE){//若为动作期且为呼吸模式
-			v = ((uint16_t)((uint16_t)Systime - dTime) / (MAX(LIGHT_D1WAVE,1000) / 1000)) % (COLOR_ANGLE * 6);//用动作时间控制呼吸周期
+		if(lightMode == 200 && LIGHT_T_ACT){//若为动作期且为呼吸模式
+			v = ((uint16_t)((uint16_t)Systime - dTime) / (MAX(LIGHT_T_ACT,1000) / 1000)) % (COLOR_ANGLE * 6);//用动作时间控制呼吸周期
 			if(v >= COLOR_ANGLE * 3){//下降段
 				v = COLOR_ANGLE * 6 - 1 - v;//0~500
-				tool16 = LIGHT_T2WAVE;//用灭延迟字节来选择下降段曲线
+				tool16 = LIGHT_G_OFF;//用灭延迟字节来选择下降段曲线
 				taskTick |= 0x80;//置位最高位
 			}else{//上升段
-				tool16 = LIGHT_T1WAVE;//用亮延迟字节来选择上升段曲线
+				tool16 = LIGHT_G_ON;//用亮延迟字节来选择上升段曲线
 				if(taskTick == 0x81){//若为动作期并第二次进入上升段则代表一次循环已完
 					if(i == 16 - 1) taskTick = 2;//清除最高位并进入结束沿(必须在最后一键处理)
 					v = 0;//清零亮度
@@ -236,7 +247,7 @@ void KeyRGB(uint8_t clear){//键盘RGB控制
 //				if((255 - fracM[i]) && tool16 == 0) tool16 = 1;
 //				fracM[i] += tool16;
 				
-				tool16 = 31 - LIGHT_T1WAVE;
+				tool16 = 31 - LIGHT_G_ON;
 				if(tool16 > 10) tool16 = (tool16 - 10) * 10 + 10;
 				if(255 - fracM[i] > tool16) fracM[i] += tool16;//亮延迟
 				else fracM[i] = 255;
@@ -244,11 +255,11 @@ void KeyRGB(uint8_t clear){//键盘RGB控制
 					FrameRaw[3*i+j] = (uint16_t)FrameRaw[3*i+j] * ON_CURVE[fracM[i]] / 255;
 				}
 			}else{//下降段
-//				tool16 = (fracSHLD - leftSHLD) / (LIGHT_T2SYS + 1);//屏蔽灭延迟
+//				tool16 = (fracSHLD - leftSHLD) / (LIGHT_M_OFF + 1);//屏蔽灭延迟
 //				if(tool16 == 0) tool16 = 1;
 //				fracSHLD -= tool16;
 				
-				tool16 = fracM[i] / (LIGHT_T2WAVE + 1);//灭延迟
+				tool16 = fracM[i] / (LIGHT_G_OFF + 1);//灭延迟
 				if(fracM[i] && tool16 == 0) tool16 = 1;
 				fracM[i] -= tool16;
 				for(j = 0; j < 3; j++){//加入降主效果
@@ -276,19 +287,22 @@ void KeyRGB(uint8_t clear){//键盘RGB控制
 		}
 	}//16键处理结束
 	
-	if(ifINX == 0 && (taskTick & 0x0F) == 1) taskTick = 2;//无匹配且为动作期则进入结束沿
+	if(ifINX == 0 && (taskTick & 0x0F) == 1//无匹配且为动作期
+		|| LIGHT_T_WAIT && leaveTime == Systime){//或 启用等待时间且当前有按键
+		taskTick = 2;//进入结束沿
+	}
 	
 	//计算全局屏蔽效果供下一次使用
 	if(leftSHLD > fracSHLD){//若屏蔽剩余值大于当前屏蔽比例
-//		tool16 = (255 - fracSHLD) / 31;//(LIGHT_T1SYS + 1);
+//		tool16 = (255 - fracSHLD) / 31;//(LIGHT_M_ON + 1);
 //		if((255 - fracSHLD) && tool16 == 0) tool16 = 1;
 //		fracSHLD += tool16;
-		tool16 = 31 - LIGHT_T1SYS;
+		tool16 = 31 - LIGHT_M_ON;
 		if(tool16 > 10) tool16 = (tool16 - 10) * 10 + 10;
 		if(leftSHLD - fracSHLD > tool16) fracSHLD += tool16;//5;//屏蔽亮延迟
 		else fracSHLD = leftSHLD;
 	}else if(leftSHLD < fracSHLD){//若屏蔽剩余值小于当前屏蔽比例
-		tool16 = (fracSHLD - leftSHLD) / (LIGHT_T2SYS + 1);//屏蔽灭延迟
+		tool16 = (fracSHLD - leftSHLD) / (LIGHT_M_OFF + 1);//屏蔽灭延迟
 		if(tool16 == 0) tool16 = 1;
 		fracSHLD -= tool16;
 	}

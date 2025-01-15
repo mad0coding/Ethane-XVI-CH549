@@ -32,18 +32,20 @@
 #define LIGHT_T2(n)			(*(LIGHT_THIS + (n) + 7*16))//按键抬起灯延迟
 #define LIGHT_SHLD(n)		(*(LIGHT_THIS + (n) + 8*16))//按键屏蔽剩余
 #define LIGHT_IDX(n)		(*(LIGHT_THIS + (n) + 9*16))//按键自定义下标
-#define LIGHT_LIST(n)		(*(LIGHT_THIS + 232 + (n)))//列表
-#define LIGHT_COUNT			(*(LIGHT_THIS + 243))//列表计数
-#define LIGHT_MONO			(*(LIGHT_THIS + 244))//配置独占
-#define LIGHT_DIR			(*(LIGHT_THIS + 245))//动作方向设置
-#define LIGHT_WAVE			(*(LIGHT_THIS + 246))//动作模式设置
-#define LIGHT_COLORFUL		(*(LIGHT_THIS + 247))//变色周期(s)
-#define LIGHT_D1WAVE		(*((PUINT16C)(LIGHT_THIS + 248)))//动作时间(ms)
-#define LIGHT_D2WAVE		(*((PUINT16C)(LIGHT_THIS + 250)))//间隔时间(ms)
-#define LIGHT_T1WAVE		(*(LIGHT_THIS + 252))//亮延迟
-#define LIGHT_T2WAVE		(*(LIGHT_THIS + 253))//灭延迟
-#define LIGHT_T1SYS			(*(LIGHT_THIS + 254))//屏蔽亮延迟
-#define LIGHT_T2SYS			(*(LIGHT_THIS + 255))//屏蔽灭延迟
+#define LIGHT_LIST(n)		(*(LIGHT_THIS + 224 + (n)))//列表
+#define LIGHT_COUNT			(*(LIGHT_THIS + 235))//列表计数
+#define LIGHT_MONO			(*(LIGHT_THIS + 240))//配置独占
+#define LIGHT_DIR			(*(LIGHT_THIS + 241))//动作方向设置
+#define LIGHT_WAVE			(*(LIGHT_THIS + 242))//动作模式设置
+#define LIGHT_COLORFUL		(*(LIGHT_THIS + 243))//变色周期(s)
+#define LIGHT_T_WAIT		(*((PUINT16C)(LIGHT_THIS + 244)))//等待时间(ms)
+#define LIGHT_T_ACT			(*((PUINT16C)(LIGHT_THIS + 246)))//动作时间(ms)
+#define LIGHT_T_GAP			(*((PUINT16C)(LIGHT_THIS + 248)))//间隔时间(ms)
+#define LIGHT_T_RAND		(*((PUINT16C)(LIGHT_THIS + 250)))//间隔随机时间(ms)
+#define LIGHT_G_ON			(*(LIGHT_THIS + 252))//亮渐变
+#define LIGHT_G_OFF			(*(LIGHT_THIS + 253))//灭渐变
+#define LIGHT_M_ON			(*(LIGHT_THIS + 254))//屏蔽亮渐变
+#define LIGHT_M_OFF			(*(LIGHT_THIS + 255))//屏蔽灭渐变
 
 
 extern PUINT8C DATA_LIGHT;//闪存区灯效信息指针
