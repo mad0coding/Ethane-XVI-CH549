@@ -23,7 +23,7 @@ uint8_t mode3_key = 0;//模式3按键(1-16)
 static uint16_t mode3_i = 0;//模式3源数据下标(访问mode3_data)
 static uint16_t mode3_loop_count = 0;//模式3循环计数
 static uint8_t mode3_loop_flag = 0;//模式3循环操作标志 bit7:是否结束 bit2:当前有释放沿 bit1~0:未晚于第一释放沿
-static uint8_t mode3_pulse = 0;//模式3间隔
+static uint8_t mode3_gap = 0;//模式3间隔标志
 static uint8_t mode3_delaying = 0;//模式3是否延时中
 //********************************************************************//
 static uint8_t switch_i = 0xFF, switch_count = 0;//切换键选择和计数
@@ -60,12 +60,12 @@ uint8_t FillReport(void)//报文填写
 	
 	//****************************************键盘按键处理****************************************//
 	if(mode3_key){//若处于mode3未完成状态
-		if(keyOld[mode3_key - 1] && !keyNow[mode3_key - 1]){
+		if(keyOld[mode3_key - 1] && !keyNow[mode3_key - 1]){//若按键组按键释放沿
 			if(mode3_loop_flag & 0x03) mode3_loop_flag--;//记录第一释放沿
 			mode3_loop_flag |= 0x04;//记录包括第一释放沿的一般释放沿
 		}
-		mode3_pulse = !mode3_pulse;//间隔标志先翻转
-		if(mode3_pulse) Mode3Handle();//若翻转后要间隔也即翻转前不用间隔则执行处理
+		mode3_gap = !mode3_gap;//间隔标志先翻转
+		if(mode3_gap) Mode3Handle();//若翻转后要间隔也即翻转前不用间隔则执行处理
 	}
 	else{//空闲状态
 		for(i = 0; i < 16; i++){//统计按下的各模式数量
@@ -102,7 +102,7 @@ uint8_t FillReport(void)//报文填写
 						mode3_i = keyAddr[sysCs][i] + 3;//读取起始下标
 						mode3_loop_count = 0;//模式3循环计数清零
 						mode3_loop_flag = 0x02;//模式3循环操作标志复位
-						mode3_pulse = 1;//插入间隔
+						mode3_gap = 1;//插入间隔
 						Mode3Handle();
 					}
 				}
@@ -315,6 +315,7 @@ void Mode3Handle(void)//mode3处理(按键组处理)
 {
 	static uint32_t setTime = 0, oldTime = 0;//设定时间及记录时间
 	static uint16_t loopStart = 0xFFFF;//循环起始地址
+//	static uint8_t reportCtrlState = 0;//报文控制状态记录 bit7代表是否是新的 其余复制报文控制字节
 	uint8_t report_i = 3;//报文写入位置
 	
 	uint16_t x, y;
@@ -325,7 +326,7 @@ void Mode3Handle(void)//mode3处理(按键组处理)
 	oldTime = Systime;//记录时间更新
 	if(setTime > Systime){//延时未结束
 		mode3_delaying = 1;//延时标志置位
-		mode3_pulse = 0;//清零暂停标志
+		mode3_gap = 0;//清零间隔标志
 		return;//退出等待
 	}
 	mode3_delaying = 0;//延时标志清零
@@ -333,18 +334,25 @@ void Mode3Handle(void)//mode3处理(按键组处理)
 	end_i = 0;//结束位置
 	if(mode3_key) end_i = keyAddr[sysCs][mode3_key - 1] + 3 + CFG_K_LEN(keyAddr[sysCs][mode3_key - 1]);
 	
-	for(;report_i < KB_LEN;){//当报文未填满
+	for(; report_i < KB_LEN; mode3_i++){//当报文未填满
 		if(mode3_i >= end_i){//当读完数据
 			mode3_key = 0;
 			break;
 		}
 		if(CFG_ACS(mode3_i) == kv_report){//报文控制
-			mode3_pulse = CFG_ACS(mode3_i + 1) & 0x01;//清零或置位暂停标志
-			if(CFG_ACS(mode3_i + 1) & 0x02){//作为报文中止
+			mode3_gap = CFG_ACS(mode3_i + 1) & 0x01;//清零或置位间隔标志
+			if(CFG_ACS(mode3_i + 1) & 0x02){//有End则作为报文中止
 				mode3_i += 2;
 				break;//独占本次报文
 			}
 			else mode3_i++;
+//			reportCtrlState = 0x80 | CFG_ACS(mode3_i + 1);//记录报文控制字节
+//			mode3_gap = reportCtrlState & 0x01;//NoGap或Gap 清零或置位间隔标志
+//			if(reportCtrlState & 0x02){//有End则作为报文中止
+//				mode3_i += 2;
+//				break;//独占本次报文
+//			}
+//			else mode3_i++;
 		}
 		else if(CFG_ACS(mode3_i) == kv_loop){//若有循环
 			if(CFG_ACS(mode3_i + 1) == 0x02){//若为起始符
@@ -374,9 +382,15 @@ void Mode3Handle(void)//mode3处理(按键组处理)
 		else if(CFG_ACS(mode3_i) == kv_delay){//若有延时
 			uint16_t delayTime = (CFG_ACS(mode3_i + 1) << 8) | CFG_ACS(mode3_i + 2);
 			setTime = Systime + delayTime;
-//			mode3_pulse = 0;//清零暂停标志
-			mode3_i += 2;
-			if(++mode3_i == end_i) mode3_key = 0;//当读完数据
+//			if(reportCtrlState & 0x80){//若之前有报文控制
+//				reportCtrlState &= ~0x80;//清除标志
+//				if(!(reportCtrlState & 0x01)){//若有记录NoGap
+//					mode3_delaying = 1;//延时标志置位
+//					mode3_gap = 0;//清零间隔标志
+//				}
+//			}
+			mode3_i += 2+1;
+//			if(++mode3_i == end_i) mode3_key = 0;//当读完数据
 			break;//独占本次报文
 		}
 		else if(CFG_ACS(mode3_i) == kv_shortcut){//若有快捷键
@@ -386,7 +400,7 @@ void Mode3Handle(void)//mode3处理(按键组处理)
 			if(++mode3_i == end_i) mode3_key = 0;//当读完数据
 			break;//独占本次报文
 		}
-		else if(CFG_ACS(mode3_i) == kv_move || CFG_ACS(mode3_i) == kv_press){//若有光标移位
+		else if(CFG_ACS(mode3_i) == kv_move || CFG_ACS(mode3_i) == kv_press){//若有光标移位或点击
 			if(report_i > 3 || Mouse_data[1] != 0) break;//若本次报文已有内容则退出等下一次
 			x = (CFG_ACS(mode3_i + 1) << 8) | CFG_ACS(mode3_i + 2);
 			y = (CFG_ACS(mode3_i + 3) << 8) | CFG_ACS(mode3_i + 4);
@@ -440,11 +454,7 @@ void Mode3Handle(void)//mode3处理(按键组处理)
 			}
 			else break;//因前面已有shift而无法填入
 		}
-		mode3_i++;
-//		if(mode3_i >= end_i){//当读完数据
-//			mode3_key = 0;
-//			break;
-//		}
+//		mode3_i++;
 	}
 }
 
