@@ -271,8 +271,10 @@ void CsChange(uint8_t change)//切换
 	sysCs = change - 1;
 	CFG_DATA_CSC(sysCs);//更新配置数据选择
 	
-	KeyRGB(1);//键盘RGB控制清零
-	if(LIGHT_MONO != 3) LIGHT_DATA_CSC(sysCs);//若不是灯效不切换则更新灯效数据选择
+	if(!LIGHT_MONO){//若为非独占即不是不切换
+		KeyRGB(1);//键盘RGB控制清零
+		LIGHT_DATA_CSC(sysCs);//若不是灯效不切换则更新灯效数据选择
+	}
 	
 	changeTime = Systime;
 	
@@ -346,13 +348,6 @@ void Mode3Handle(void)//mode3处理(按键组处理)
 				break;//独占本次报文
 			}
 			else mode3_i++;
-//			reportCtrlState = 0x80 | CFG_ACS(mode3_i + 1);//记录报文控制字节
-//			mode3_gap = reportCtrlState & 0x01;//NoGap或Gap 清零或置位间隔标志
-//			if(reportCtrlState & 0x02){//有End则作为报文中止
-//				mode3_i += 2;
-//				break;//独占本次报文
-//			}
-//			else mode3_i++;
 		}
 		else if(CFG_ACS(mode3_i) == kv_loop){//若有循环
 			if(CFG_ACS(mode3_i + 1) == 0x02){//若为起始符
@@ -382,15 +377,7 @@ void Mode3Handle(void)//mode3处理(按键组处理)
 		else if(CFG_ACS(mode3_i) == kv_delay){//若有延时
 			uint16_t delayTime = (CFG_ACS(mode3_i + 1) << 8) | CFG_ACS(mode3_i + 2);
 			setTime = Systime + delayTime;
-//			if(reportCtrlState & 0x80){//若之前有报文控制
-//				reportCtrlState &= ~0x80;//清除标志
-//				if(!(reportCtrlState & 0x01)){//若有记录NoGap
-//					mode3_delaying = 1;//延时标志置位
-//					mode3_gap = 0;//清零间隔标志
-//				}
-//			}
-			mode3_i += 2+1;
-//			if(++mode3_i == end_i) mode3_key = 0;//当读完数据
+			mode3_i += 3;
 			break;//独占本次报文
 		}
 		else if(CFG_ACS(mode3_i) == kv_shortcut){//若有快捷键

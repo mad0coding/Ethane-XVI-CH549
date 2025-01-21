@@ -28,8 +28,8 @@
 
 #define LIGHT_UP(n)			(*(LIGHT_THIS + (n) + 0))//按键上配色
 #define LIGHT_DOWN(n)		(*(LIGHT_THIS + (n) + 3*16))//按键下配色
-#define LIGHT_T1(n)			(*(LIGHT_THIS + (n) + 6*16))//按键按下灯延迟
-#define LIGHT_T2(n)			(*(LIGHT_THIS + (n) + 7*16))//按键抬起灯延迟
+#define LIGHT_T1(n)			(*(LIGHT_THIS + (n) + 6*16))//按键按下灯渐变
+#define LIGHT_T2(n)			(*(LIGHT_THIS + (n) + 7*16))//按键抬起灯渐变
 #define LIGHT_SHLD(n)		(*(LIGHT_THIS + (n) + 8*16))//按键屏蔽剩余
 #define LIGHT_IDX(n)		(*(LIGHT_THIS + (n) + 9*16))//按键自定义下标
 #define LIGHT_LIST(n)		(*(LIGHT_THIS + 224 + (n)))//列表
