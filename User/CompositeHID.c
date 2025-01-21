@@ -456,6 +456,9 @@ else{//若未在接收状态 则监听各种命令
 		}
 		else Buf[Offset+5] = 0xFF;//填入拒绝标志
 	}
+	else if(Buf[0] == 'B' && Buf[1] == 'B' && Buf[2] == 'U' && Buf[3] == 'Z'){//蜂鸣器模式命令
+		asyncFlag = ASYNC_FLAG_BUZZ;//异步标志置位
+	}
 	else{//非法命令
 		Buf[Offset+0] = 'R'; Buf[Offset+1] = 'I'; Buf[Offset+2] = 'N'; Buf[Offset+3] = 'V';//非法命令响应字节
 	}

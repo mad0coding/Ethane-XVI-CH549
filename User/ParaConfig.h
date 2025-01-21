@@ -16,6 +16,7 @@
 #define ASYNC_FLAG_SRST		100
 #define ASYNC_FLAG_BOOT		101
 #define ASYNC_FLAG_CSC		102
+#define ASYNC_FLAG_BUZZ		103
 
 //靠前60k(0x0000~0xEFFF)为CodeFlash 寿命10k次
 //靠后1k(0xF000~0xF3FF)为DataFlash 寿命约能100k次

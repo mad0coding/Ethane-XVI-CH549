@@ -87,6 +87,8 @@ void KeyFilter(uint8_t ts);//按键滤波
 
 void GetTime(void);//时间获取
 
+void buzzHandle(void);//蜂鸣器处理
+	
 void LL_test(void);
 
 void MultiFunc(void);//功能集合函数
