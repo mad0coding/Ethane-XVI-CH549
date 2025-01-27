@@ -28,17 +28,18 @@
 
 #define LIGHT_UP(n)			(*(LIGHT_THIS + (n) + 0))//按键上配色
 #define LIGHT_DOWN(n)		(*(LIGHT_THIS + (n) + 3*16))//按键下配色
-#define LIGHT_T1(n)			(*(LIGHT_THIS + (n) + 6*16))//按键按下灯渐变
-#define LIGHT_T2(n)			(*(LIGHT_THIS + (n) + 7*16))//按键抬起灯渐变
+#define LIGHT_T_D(n)		(*(LIGHT_THIS + (n) + 6*16))//按键按下灯渐变
+#define LIGHT_T_U(n)		(*(LIGHT_THIS + (n) + 7*16))//按键抬起灯渐变
 #define LIGHT_SHLD(n)		(*(LIGHT_THIS + (n) + 8*16))//按键屏蔽剩余
 #define LIGHT_IDX(n)		(*(LIGHT_THIS + (n) + 9*16))//按键自定义下标
 #define LIGHT_LIST(n)		(*(LIGHT_THIS + 224 + (n)))//列表
 #define LIGHT_COUNT			(*(LIGHT_THIS + 235))//列表计数
-#define LIGHT_MONO			(*(LIGHT_THIS + 240))//配置独占
-#define LIGHT_DIR			(*(LIGHT_THIS + 241))//动作方向设置
-#define LIGHT_WAVE			(*(LIGHT_THIS + 242))//动作模式设置
-#define LIGHT_COLORFUL		(*(LIGHT_THIS + 243))//变色周期(s)
-#define LIGHT_T_WAIT		(*((PUINT16C)(LIGHT_THIS + 244)))//等待时间(ms)
+#define LIGHT_MONO			(*(LIGHT_THIS + 238))//配置独占
+#define LIGHT_DIR			(*(LIGHT_THIS + 240))//动作方向设置
+#define LIGHT_WAVE			(*(LIGHT_THIS + 241))//动作模式设置
+#define LIGHT_COLOR_S		(*(LIGHT_THIS + 242))//变色设置
+#define LIGHT_COLOR_T		(*(LIGHT_THIS + 243))//变色周期(s)
+#define LIGHT_T_WAIT		(*((PUINT16C)(LIGHT_THIS + 244)))//等待时间(10ms)
 #define LIGHT_T_ACT			(*((PUINT16C)(LIGHT_THIS + 246)))//动作时间(ms)
 #define LIGHT_T_GAP			(*((PUINT16C)(LIGHT_THIS + 248)))//间隔时间(ms)
 #define LIGHT_T_RAND		(*((PUINT16C)(LIGHT_THIS + 250)))//间隔随机时间(ms)

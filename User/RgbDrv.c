@@ -121,6 +121,7 @@ void KeyRGB(uint8_t clear){//键盘RGB控制
 	UINT8D i, j;//按键循环变量,RGB循环变量
 	int16_t tool16 = 0;//工具变量
 	uint16_t h, s, v;//HSV色值
+	uint8_t r, g, b;//RGB色值
 	
 	if(clear){
 		dTime = Systime;//重置时间记录
@@ -209,9 +210,9 @@ void KeyRGB(uint8_t clear){//键盘RGB控制
 	memcpy(FrameRaw, &LIGHT_UP(0), 16*3);//将上配色载入原始帧缓存
 	
 	for(i = 0; i < 16; i++){//16键处理开始
-		if(LIGHT_COLORFUL){//若启用色彩变化
+		if(LIGHT_COLOR_T && (LIGHT_COLOR_S & 0x01)){//若启用上配色色彩变化
 			Rgb2Hsv(FrameRaw[3*i+0], FrameRaw[3*i+1], FrameRaw[3*i+2], &h, &s, &v);
-			h += (Systime / LIGHT_COLORFUL) % (COLOR_ANGLE * 6);//加入色环变化
+			h += (Systime / LIGHT_COLOR_T) % (COLOR_ANGLE * 6);//加入色环变化
 			if(h >= COLOR_ANGLE * 6) h -= COLOR_ANGLE * 6;//防止越界
 			Hsv2Rgb(h, s, v, &FrameRaw[3*i+0], &FrameRaw[3*i+1], &FrameRaw[3*i+2]);
 		}
@@ -273,20 +274,33 @@ void KeyRGB(uint8_t clear){//键盘RGB控制
 		
 		//计算屏蔽效果,获取屏蔽需求,计算按键效果
 		if(keyNow[i]){//若按下
-			tool16 = (255 - fracUD[i]) / (LIGHT_T1(i) + 1);//31
+			tool16 = (255 - fracUD[i]) / (LIGHT_T_D(i) + 1);//31
 			if((255 - fracUD[i]) && tool16 == 0) tool16 = 1;
 			fracUD[i] += tool16;
 			if(leftSHLD > LIGHT_SHLD(i)/*i*16*/) leftSHLD = LIGHT_SHLD(i)/*i*16*/;//若按下且需压低屏蔽
 		}else{//若抬起
-			tool16 = fracUD[i] / (LIGHT_T2(i) + 1);//31
+			tool16 = fracUD[i] / (LIGHT_T_U(i) + 1);//31
 			if(fracUD[i] && tool16 == 0) tool16 = 1;
 			fracUD[i] -= tool16;
 			for(j = 0; j < 3; j++){//加入屏蔽效果
 				FrameRaw[3*i+j] = FrameRaw[3*i+j] * fracSHLD / 255;
 			}
 		}
-		for(j = 0; j < 3; j++){//加入按动效果
-			FrameRaw[3*i+j] += ((int16_t)LIGHT_DOWN(3*i+j) - FrameRaw[3*i+j]) * fracUD[i] / 255;
+
+		//加入按动效果
+		if(LIGHT_COLOR_T && (LIGHT_COLOR_S & 0x02)){//若启用下配色色彩变化
+			Rgb2Hsv(LIGHT_DOWN(3*i+0), LIGHT_DOWN(3*i+1), LIGHT_DOWN(3*i+2), &h, &s, &v);
+			h += (Systime / LIGHT_COLOR_T) % (COLOR_ANGLE * 6);//加入色环变化
+			if(h >= COLOR_ANGLE * 6) h -= COLOR_ANGLE * 6;//防止越界
+			Hsv2Rgb(h, s, v, &r, &g, &b);
+			FrameRaw[3*i+0] += ((int16_t)r - FrameRaw[3*i+0]) * fracUD[i] / 255;
+			FrameRaw[3*i+1] += ((int16_t)g - FrameRaw[3*i+1]) * fracUD[i] / 255;
+			FrameRaw[3*i+2] += ((int16_t)b - FrameRaw[3*i+2]) * fracUD[i] / 255;
+		}
+		else{
+			FrameRaw[3*i+0] += ((int16_t)LIGHT_DOWN(3*i+0) - FrameRaw[3*i+0]) * fracUD[i] / 255;
+			FrameRaw[3*i+1] += ((int16_t)LIGHT_DOWN(3*i+1) - FrameRaw[3*i+1]) * fracUD[i] / 255;
+			FrameRaw[3*i+2] += ((int16_t)LIGHT_DOWN(3*i+2) - FrameRaw[3*i+2]) * fracUD[i] / 255;
 		}
 	}//16键处理结束
 	
