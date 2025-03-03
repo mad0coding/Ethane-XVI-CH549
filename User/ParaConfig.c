@@ -74,7 +74,7 @@ void AsyncHandle(uint8_t flag){//异步处理
 	else if(ASYNC_FLAG_BUZZ){//蜂鸣器模式
 		ClearKeyRGB();//清除键盘RGB
 		WsWrite16();//灯写入
-		buzzHandle();//蜂鸣器处理
+		BuzzHandle();//蜂鸣器处理
 	}
 	
 	if(ret){//发生存储错误

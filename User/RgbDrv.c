@@ -119,7 +119,7 @@ void KeyRGB(uint8_t clear){//键盘RGB控制
 	static uint8_t listMode = -1, lightMode = 0;//在列表选中的模式, 真正的模式
 	uint8_t /*lightMode = 0, */ifINX = 0, leftSHLD = 255;//模式,是否有自定义标记,屏蔽剩余
 	UINT8D i, j;//按键循环变量,RGB循环变量
-	int16_t tool16 = 0;//工具变量
+	INT16D tool16 = 0;//工具变量
 	uint16_t h, s, v;//HSV色值
 	uint8_t r, g, b;//RGB色值
 	
@@ -340,29 +340,29 @@ void KeyRGB(uint8_t clear){//键盘RGB控制
 	}
 }
 
-void WsWrite16(void){//写入16个灯
+void WsWrite16(void){ // 写入16个灯
 	UINT8D i, iBit;
-	EA = 0;//关中断
+	EA = 0; // 关中断
 	for(i = 0; i < 16*3; i++){//GRB
 		for(iBit = 7; iBit < 8; iBit--){
-			if((FrameBuf[i] >> iBit) & 0x01){//1码
-				WS_DOUT = 1;//P2 |= 0x80;
-				_nop_();_nop_();_nop_();_nop_();_nop_();_nop_();_nop_();_nop_();_nop_();_nop_();
-				WS_DOUT = 0;//P2 &= ~0x80;
-			}else{//0码
+			if((FrameBuf[i] >> iBit) & 0x01){ // 1码
+				WS_DOUT = 1; // P2 |= 0x80;
+				WS_NOP_BIT1; // 延时
+				WS_DOUT = 0; // P2 &= ~0x80;
+			}else{ // 0码
 				WS_DOUT = 1;
-				_nop_();
+				WS_NOP_BIT0; // 延时
 				WS_DOUT = 0;
 			}
 		}
 	}
-	EA = 1;//开中断
+	EA = 1; // 开中断
 }
 
 //H:0~COLOR_ANGLE*6,S:0~100(已用delta代替),V:0~255
 void Rgb2Hsv(uint8_t vR, uint8_t vG, uint8_t vB, uint16_t* pH, uint16_t* pS, uint16_t* pV){//RGB转HSV
-    uint8_t max = MAX(MAX(vR,vG),vB), min = MIN(MIN(vR,vG),vB);
-    uint8_t delta = max - min;
+    UINT8D max = MAX(MAX(vR,vG),vB), min = MIN(MIN(vR,vG),vB);
+    UINT8D delta = max - min;
     if(delta == 0) *pH = 0;
     else if(max == vR) *pH = ((int16_t)vG-vB)*COLOR_ANGLE/delta;
     else if(max == vG) *pH = ((int16_t)vB-vR)*COLOR_ANGLE/delta + COLOR_ANGLE*2;
@@ -373,11 +373,11 @@ void Rgb2Hsv(uint8_t vR, uint8_t vG, uint8_t vB, uint16_t* pH, uint16_t* pS, uin
     *pV = max;
 }
 void Hsv2Rgb(uint16_t vH, uint16_t vS, uint16_t vV, uint8_t* pR, uint8_t* pG, uint8_t* pB){//HSV转RGB
-	uint8_t hi = (uint16_t)(vH / COLOR_ANGLE) % 6;
-    uint16_t f = vH - hi * COLOR_ANGLE;
-    uint8_t p = vV - vS;
-    uint8_t q = vV - (uint16_t)vS * f / COLOR_ANGLE;
-    uint8_t t = vV - (uint16_t)vS * (COLOR_ANGLE - f) / COLOR_ANGLE;
+	UINT8D hi = (uint16_t)(vH / COLOR_ANGLE) % 6;
+    UINT16D f = vH - hi * COLOR_ANGLE;
+    UINT8D p = vV - vS;
+    UINT8D q = vV - (uint16_t)vS * f / COLOR_ANGLE;
+    UINT8D t = vV - (uint16_t)vS * (COLOR_ANGLE - f) / COLOR_ANGLE;
     if(hi == 0)     {*pR = vV;   *pG = t;    *pB = p;}
     else if(hi == 1){*pR = q;    *pG = vV;   *pB = p;}
     else if(hi == 2){*pR = p;    *pG = vV;   *pB = t;}

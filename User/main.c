@@ -16,7 +16,7 @@
 
 #pragma  NOAREGS
 
-UINT8C FIRMWARE_VERSION[4] = {1,0,1,34};//固件版本
+UINT8C FIRMWARE_VERSION[4] = {1,0,1,35};//固件版本
 
 uint8_t asyncFlag = 0;//异步操作标志
 
@@ -150,14 +150,6 @@ void main()
 		}
     }
 }
-
-//GetTime		14/2=7us
-//WS_Write_16	2142/2=1071us
-//keyRead		21/2=10.5us
-//KeyFilter(1)	70/2=35us
-//KeyFilter(2)	157/2=78.5us
-
-
 
 
 

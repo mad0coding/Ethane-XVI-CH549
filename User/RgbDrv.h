@@ -9,6 +9,9 @@
 #include "BasicIO.h"
 #include "ParaUse.h"
 
+// NOP延时
+#define WS_NOP_BIT0		_nop_();
+#define WS_NOP_BIT1		_nop_();_nop_();_nop_();_nop_();_nop_();_nop_();_nop_();_nop_();_nop_();_nop_();
 
 #define WS_DOUT		P2_7
 #define PWM_R		PWM_DATA5

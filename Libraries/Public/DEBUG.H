@@ -66,6 +66,15 @@
 #define int16_t		short
 #define int32_t		long
 
+#ifndef INT8D
+typedef char  data             INT8D;
+#endif
+#ifndef INT16D
+typedef short data             INT16D;
+#endif
+#ifndef INT32D
+typedef long  data             INT32D;
+#endif
 #ifndef UINT8P
 typedef unsigned char  pdata            UINT8P;
 #endif

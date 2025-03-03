@@ -148,7 +148,7 @@ static UINT8C TONE_KEY[] = {29,31,33,35,255,24,26,28, 17,19,21,23,255,12,14,16,}
 
 UINT16D buzzTimVol = 10, TONE_TIMValue = 10000;//声调定时器计数值,延时值
 
-void buzzHandle(void){//蜂鸣器处理
+void BuzzHandle(void){//蜂鸣器处理
 	uint8_t i;//循环变量
 	uint8_t count = 0, effective = 0xFF;//按下按键计数,有效按键
 	uint8_t buzzTone = 0xFF, buzzToneOld = 0xFF;//音符
@@ -223,42 +223,49 @@ void buzzHandle(void){//蜂鸣器处理
 	asyncFlag = 0;//清除标志 防止蜂鸣器模式期间意外打入异步需求
 }
 
-//uint8_t keyOldTest[] = {1,1,1};
-uint32_t oldTime = 0;
-uint16_t sCount = 0, fCount = 0;
+//时间监测结果	单位0.5us
+//GetTime()		13~14
+//AdcRead()		13~14
+//keyRead()		23~24
+//KeyFilter(1)	69~70
+//KeyFilter(2)	156~161
+//KeyTurn()		133~134
+//WsWrite16()	2142~2462(全0~全255)
+//FillReport()	909~991~1700(空~常态~全按)
+//SysRGB()		96~112~140(空~常态~切换)
+//KeyRGB(0)		1880~2308~3756~5426~10586(空~定色~流水~呼吸~变色)
+//UINT16D tickStart = 0, tickEnd = 0, tickDif = 0; // 时间监测
 
-void LL_test(void){
-	static uint16_t i;
-	i++;
-	if(Systime - oldTime >= 1000){//端点2打印输出
-		oldTime += 1000;
-		memset(debugBuf, ' '*0, 64);
-//		sprintf(debugBuf, "%d	%d	%u\n", sCount, fCount, (uint16_t)Systime);
+static void PrintTest(void){ // 打印输出
+	static uint32_t printTime = 0;
+	if(Systime - printTime >= 1000){ // 周期1000ms
+		printTime += 1000;
+		memset(debugBuf, ' ', 64);
 		
-		Enp2IntIn(debugBuf, 64);
+//		sprintf(debugBuf, "%u", tickDif); // 时间监测打印
+		
+		Enp2IntIn(debugBuf, 64); // 端点2打印输出
 	}
-
 //	mDelaymS(10);
 }
 
-void MultiFunc(void){//功能集合函数
-//	LL_test();//测试代码
-	KeyTurn();//按键旋转映射
+void MultiFunc(void){ // 功能集合函数
+//	PrintTest(); // 测试代码
+	KeyTurn(); // 按键旋转映射
 	
-	if(FillReport() == 1){//报文填写 若返回蜂鸣器模式
-		ClearKeyRGB();//清除键盘RGB
-		WsWrite16();//灯写入
-		buzzHandle();//蜂鸣器处理
+	if(FillReport() == 1){ // 报文填写 若返回蜂鸣器模式
+		ClearKeyRGB(); // 清除键盘RGB
+		WsWrite16(); // 灯写入
+		BuzzHandle(); // 蜂鸣器处理
 	}
 	
-	SysRGB();//系统RGB控制
-	KeyRGB(0);//键盘RGB控制
+	SysRGB(); // 系统RGB控制
+	KeyRGB(0); // 键盘RGB控制
 //	if(WakeUpEnFlag & 1) PWM_R = 100;
 //	else PWM_R = 0;
 //	if(WakeUpEnFlag & 2) PWM_G = 100;
 //	else PWM_G = 0;
 }
-
 
 
 

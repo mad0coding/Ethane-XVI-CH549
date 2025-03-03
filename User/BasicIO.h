@@ -60,6 +60,13 @@
 #define ANA_MAX(i)		Adc_Set_Mid[6 + (i)]
 #define ANA_MIN(i)		Adc_Set_Mid[8 + (i)]
 
+//时间监测 测试代码
+#define TICK_SOURSE			((TH0 << 8) | TL0)
+#define TICK_START(t)		do{ tickStart = (t); }while(0)
+#define TICK_END(t)			do{ tickEnd = (t); tickDif = tickEnd - tickStart; }while(0)
+#define TICK_END_TH(t, th)	do{ tickEnd = (t) - tickStart; if(tickEnd > th) tickDif = tickEnd; }while(0)
+extern UINT16D tickStart, tickEnd, tickDif;
+
 extern uint32_t Systime;//系统时间
 
 extern UINT8C TURN_L90[16];//左旋按键映射矩阵
@@ -87,9 +94,7 @@ void KeyFilter(uint8_t ts);//按键滤波
 
 void GetTime(void);//时间获取
 
-void buzzHandle(void);//蜂鸣器处理
-	
-void LL_test(void);
+void BuzzHandle(void);//蜂鸣器处理
 
 void MultiFunc(void);//功能集合函数
 
