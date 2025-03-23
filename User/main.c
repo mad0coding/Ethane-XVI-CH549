@@ -16,7 +16,7 @@
 
 #pragma  NOAREGS
 
-UINT8C FIRMWARE_VERSION[4] = {1,0,1,35};//固件版本
+UINT8C FIRMWARE_VERSION[4] = {1,0,1,36};//固件版本
 
 uint8_t asyncFlag = 0;//异步操作标志
 
@@ -81,6 +81,11 @@ void main()
 	
 	INTX |= bIX3 | bIT3;	//INT3选择高电平和边沿触发(即上升沿触发)
 	IE_INT3 = 1;			//允许INT3中断
+	
+	PWM0OutPolarLowAct();				//PWM0反极性
+	SetPWMClkDiv(32);					//设置频率
+	PWM_SEL_CHANNEL(PWM_CH0, Enable);	//PWM0输出使能
+	BUZZ_PWM = 0;						//占空比为0
 	
 	mTimer0Clk12DivFsys();			//T0定时器时钟设置 FREQ_SYS/12
     mTimer_x_ModInit(0, 1);			//T0定时器模式设置 模式1 16位定时器

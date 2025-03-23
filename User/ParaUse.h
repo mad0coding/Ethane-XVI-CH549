@@ -19,6 +19,7 @@
 #define m6_change		6
 #define m7_clicker		7
 #define m8_buzz			8
+#define m9_morse		9
 
 
 #define kv_orig_1		30
@@ -82,7 +83,7 @@ void Mode3Handle(void);//mode3处理
 void RkEcKeyHandle(void);//摇杆旋钮按键处理
 void RkHandle(uint8_t clear);//摇杆处理
 void EcHandle(uint8_t clear);//旋钮处理
-
+void MorseHandle(void); // 摩尔斯码处理
 
 //void Default_para(void);//载入默认参数
 

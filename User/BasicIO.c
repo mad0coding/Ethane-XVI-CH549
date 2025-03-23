@@ -154,8 +154,6 @@ void BuzzHandle(void){//蜂鸣器处理
 	uint8_t buzzTone = 0xFF, buzzToneOld = 0xFF;//音符
 	int8_t buzzVol = 1;//音量
 	
-	PWM0OutPolarLowAct();//PWM0反极性
-	
 	while((!keyOld[18] || keyNow[18]) && (!keyOld[17] || keyNow[17]) && (!keyOld[16] || keyNow[16])){//摇杆或旋钮的释放沿退出
 		WDOG_COUNT = 0;//清零看门狗计数
 		KeyRead();//读取按键
@@ -217,13 +215,30 @@ void BuzzHandle(void){//蜂鸣器处理
 		}
 		buzzToneOld = buzzTone;//记录音符
 	}
-	ET0 = BUZZ_PWM = 0;//关定时器中断及清零PWM占空比
-	PWM_SEL_CHANNEL(PWM_CH0, Disable);//PWM0输出失能
-	SetPWMClkDiv(32);//恢复原PWM时钟分频
-	asyncFlag = 0;//清除标志 防止蜂鸣器模式期间意外打入异步需求
+	ET0 = BUZZ_PWM = 0; // 关定时器中断及清零PWM占空比
+	PWM_SEL_CHANNEL(PWM_CH0, Enable); // PWM0输出使能 供摩尔斯码使用
+	SetPWMClkDiv(32); // 恢复原PWM时钟分频
+	asyncFlag = 0; // 清除标志 防止蜂鸣器模式期间意外打入异步需求
 }
 
-//时间监测结果	单位0.5us
+extern uint8_t morse_key;
+extern uint8_t morse_vol;
+
+static void MorseBuzz(void){ // 摩尔斯码蜂鸣器控制
+	if(morse_key & 0x02){ // 划
+		SetPWMClkDiv(FREQ_SYS / 256 / 781);
+		BUZZ_PWM = morse_vol;
+	}
+	else if(morse_key & 0x05){ // 点 按
+		SetPWMClkDiv(FREQ_SYS / 256 / 700);
+		BUZZ_PWM = morse_vol;
+	}
+	else BUZZ_PWM = 0;
+	
+	morse_key = 0;//测试代码！！！！
+}
+
+//时间监测结果	单位0.5us	版本V1.0.1.35
 //GetTime()		13~14
 //AdcRead()		13~14
 //keyRead()		23~24
@@ -258,6 +273,7 @@ void MultiFunc(void){ // 功能集合函数
 		WsWrite16(); // 灯写入
 		BuzzHandle(); // 蜂鸣器处理
 	}
+	MorseBuzz(); // 摩斯码蜂鸣器控制
 	
 	SysRGB(); // 系统RGB控制
 	KeyRGB(0); // 键盘RGB控制

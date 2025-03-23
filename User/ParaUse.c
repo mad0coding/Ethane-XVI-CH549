@@ -15,6 +15,13 @@ extern uint8_t Point_if_send;//指针报文是否发送
 extern uint8_t Mouse_if_send;//鼠标报文是否发送
 //********************************************************************//
 
+//******************************摩尔斯码******************************//
+uint8_t morse_key = 0; // bit0~2:点/划/按state bit4~bit7:点/划/按/松edge
+uint8_t morse_vol = 0; // 音量
+uint8_t morse_gap = 40; // 间隔时间 单位10ms
+uint8_t morse_long = 15; // 长按时间 单位10ms
+//********************************************************************//
+
 uint8_t clickerNum = 0;//自动连点数
 uint32_t changeTime = -10000*0;//配置切换时间
 
@@ -141,6 +148,14 @@ uint8_t FillReport(void)//报文填写
 						keyWork[i] = 0;//计时器清零
 					}
 				}
+				else if(CFG_K_MODE(keyAddr[sysCs][i]) == m9_morse){ // 模式9:摩尔斯码
+					morse_key |= 1 << CFGb_K_MKEY(keyAddr[sysCs][i]); // 记录按键状态
+//					KeyInsert(i + 3, 44);//填入键值 测试代码！！！
+					if(!keyOld[i]){ // 按下沿
+						morse_vol = CFGb_K_MVOL(keyAddr[sysCs][i]); // 记录音量
+						morse_key |= 1 << (4 + CFGb_K_MKEY(keyAddr[sysCs][i])); // 记录按下沿
+					}
+				}
 			}
 			else if(keyOld[i]){//若刚抬起(释放沿)
 				if(CFG_K_MODE(keyAddr[sysCs][i]) == m5_press){//模式5:光标点击
@@ -163,6 +178,13 @@ uint8_t FillReport(void)//报文填写
 				}
 				else if(CFG_K_MODE(keyAddr[sysCs][i]) == m8_buzz){//模式8:蜂鸣器
 					return 1;
+				}
+				else if(CFG_K_MODE(keyAddr[sysCs][i]) == m9_morse){ // 模式9:摩尔斯码
+					if(CFGb_K_MKEY(keyAddr[sysCs][i]) > 1){ // 单键
+						morse_key |= 0x80; // 记录释放沿
+						morse_long = CFG_K_MTLONG(keyAddr[sysCs][i]); // 记录tLong
+					}
+					morse_gap = CFG_K_MTGAP(keyAddr[sysCs][i]); // 记录tGap
 				}
 			}
 		}//处理完16个按键的主要内容
@@ -223,6 +245,8 @@ uint8_t FillReport(void)//报文填写
 		clickerNum = auto_num;//自动连点数更新
 	}
 	//********************************************************************************************//
+	
+	MorseHandle(); // 摩尔斯码处理
 	
 	//***********************************摇杆旋钮处理***********************************//
 	RkHandle(0);//摇杆处理
@@ -749,7 +773,72 @@ void EcHandle(uint8_t clear)//旋钮处理
 	}
 }
 
+#define MORSE_COUNT_MAX		7 // 摩尔斯码最大位数
 
+UINT8C MORSE_TABLE[] = { // 摩尔斯码表(转USB键值)
+	// 26字母 A~Z
+	0x02, 8,	0x03, 23,	0x04, 12,	0x05, 4,	0x06, 17,	0x07, 16,	0x08, 22,
+	0x09, 24,	0x0A, 21,	0x0B, 26,	0x0C, 7,	0x0D, 14,	0x0E, 10,	0x0F, 18,
+	0x10, 11,	0x11, 25,	0x12, 9,	0x14, 15,	0x16, 19,	0x17, 13,	0x18, 5,
+	0x19, 27,	0x1A, 6,	0x1B, 28,	0x1C, 29,	0x1D, 20,
+	// 10数字 5~1,6~9,0
+	0x20, 34,	0x21, 33,	0x23, 32,	0x27, 31,	0x2F, 30,
+	0x30, 35,	0x38, 36,	0x3C, 37,	0x3E, 38,	0x3F, 39,
+	// 标准符号 = / . ' - ; ,
+	0x31, 46,	0x32, 56,	0x55, 55,	0x5E, 52,	0x61, 45,	0x6A, 51,	0x73, 54,
+};
+
+UINT8C MORSE_TABLE_S[] = { // 摩尔斯码表(带Shift)
+	// 标准符号 & + ( ? _ " @ ! ) : $
+	0x28, 36,	0x2A, 46,	0x36, 38,	0x4C, 56,	0x4D, 45,	0x52, 52,	0x5A, 31,	0x6B, 30,	0x6D, 39,	0x78, 51,	0x89, 33,
+};
+
+static void MorseOutput(uint8_t mCode){ // 输出
+	uint8_t i;
+	for(i = 0; i < sizeof(MORSE_TABLE); i += 2){
+		if(mCode == MORSE_TABLE[i]) KeyInsert(0xFF, MORSE_TABLE[i + 1]);
+	}
+	for(i = 0; i < sizeof(MORSE_TABLE_S); i += 2){
+		if(mCode == MORSE_TABLE_S[i]){
+			KeyInsert(0xFF, MORSE_TABLE_S[i + 1]);
+			KeyInsert(0xFF, kv_shift);
+		}
+	}
+}
+
+static void MorseInput(uint8_t input){ // 输入
+	static uint8_t morseCount = 0;
+	static uint8_t morseCode = 0x01; // 起始位
+	if(input <= 1){ // bit0或bit1
+		morseCode = (morseCode << 1) | input; // 从左往右
+		if(++morseCount < MORSE_COUNT_MAX) return;
+	}
+	// 中止
+	morseCount = 0;
+	if(morseCode != 0x01){
+		MorseOutput(morseCode); // 输出
+		morseCode = 0x01;
+	}
+}
+
+void MorseHandle(void){ // 摩尔斯码处理
+	static uint32_t morseTime = 0; // 任何动作时刻
+	static uint32_t pressTime = 0; // 按下时刻
+	if(Systime - morseTime > morse_gap * 10){ // 超过间隔时间
+		morseTime = Systime;
+		MorseInput(0xFF); // 输入中止
+	}
+	if(morse_key & 0xF7) morseTime = Systime; // 任何动作都更新时间
+	else return;
+	if(morse_key & 0x10) MorseInput(0); // 直接输入点
+	if(morse_key & 0x20) MorseInput(1); // 直接输入划
+	if(morse_key & 0x40) pressTime = Systime; // 记录按下时刻
+	if(morse_key & 0x80){ // 松开
+		if(Systime - pressTime < morse_long * 10) MorseInput(0); // 判断为点
+		else MorseInput(1); // 判断为划
+	}
+	morse_key &= ~0xF0; // 复位边沿标志
+}
 
 
 

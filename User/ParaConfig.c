@@ -162,6 +162,9 @@ void ParaUpdate(uint8_t pos){//参数更新
 		else if(CFG_K_MODE(addr) == m2_shortcut || CFG_K_MODE(addr) == m6_change){
 			addr += 4;
 		}
+		else if(CFG_K_MODE(addr) == m9_morse){
+			addr += 5;
+		}
 		else if(CFG_K_MODE(addr) == m4_move || CFG_K_MODE(addr) == m5_press || CFG_K_MODE(addr) == m7_clicker){
 			addr += 6;
 		}

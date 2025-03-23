@@ -43,8 +43,11 @@
 #define CFG_K_MODE(a)		(*((PUINT8C)(a) + 1))//按键模式
 #define CFG_K_KEY(a)		(*((PUINT8C)(a) + 2))//按键键值
 #define CFG_K_LEN(a)		(*((PUINT8C)(a) + 2))//按键组模式时按键长度
+#define CFG_K_MORSE(a)		(*((PUINT8C)(a) + 2))//摩尔斯码设置
+#define CFG_K_MTGAP(a)		(*((PUINT8C)(a) + 3))//摩尔斯码tGap
 #define CFG_K_FUNC(a)		(*((PUINT8C)(a) + 3))//按键功能键
 #define CFG_K_M3DT(a)		(*((PUINT8C)(a) + 3))//按键组模式时数据起始
+#define CFG_K_MTLONG(a)		(*((PUINT8C)(a) + 4))//摩尔斯码tLong
 #define CFG_K_X(a)			(*((PUINT16C)((a) + 2)))//光标模式时X值
 #define CFG_K_Y(a)			(*((PUINT16C)((a) + 4)))//光标模式时Y值
 #define CFG_K_T(a)			(*((PUINT16C)((a) + 4)))//连点模式时周期
@@ -78,6 +81,9 @@
 #define CFG_ALL_PRI			(*(CFG_THIS + 511))//总优先级
 
 //键盘配置比特
+#define CFGb_K_MKEY(a)		(CFG_K_MORSE(a) & 0x03)//摩尔斯码按键
+#define CFGb_K_MVOL(a)		(CFG_K_MORSE(a) >> 4)//摩尔斯码音量
+
 #define CFGb_R_DIRx(i)		((CFG_R_DIR(i) >> 0) & 1)//摇杆X反向
 #define CFGb_R_DIRy(i)		((CFG_R_DIR(i) >> 1) & 1)//摇杆Y反向
 #define CFGb_R_DIRr(i)		((CFG_R_DIR(i) >> 2) & 1)//摇杆90度转向
