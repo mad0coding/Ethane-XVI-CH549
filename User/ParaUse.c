@@ -150,7 +150,6 @@ uint8_t FillReport(void)//报文填写
 				}
 				else if(CFG_K_MODE(keyAddr[sysCs][i]) == m9_morse){ // 模式9:摩尔斯码
 					morse_key |= 1 << CFGb_K_MKEY(keyAddr[sysCs][i]); // 记录按键状态
-//					KeyInsert(i + 3, 44);//填入键值 测试代码！！！
 					if(!keyOld[i]){ // 按下沿
 						morse_vol = CFGb_K_MVOL(keyAddr[sysCs][i]); // 记录音量
 						morse_key |= 1 << (4 + CFGb_K_MKEY(keyAddr[sysCs][i])); // 记录按下沿
@@ -786,19 +785,24 @@ UINT8C MORSE_TABLE[] = { // 摩尔斯码表(转USB键值)
 	0x30, 35,	0x38, 36,	0x3C, 37,	0x3E, 38,	0x3F, 39,
 	// 标准符号 = / . ' - ; ,
 	0x31, 46,	0x32, 56,	0x55, 55,	0x5E, 52,	0x61, 45,	0x6A, 51,	0x73, 54,
+	// 非标按键 退格 Esc Tab 回车 空格 大写锁定 Delete
+	0x40, 42,	0x13, 41,	0x15, 43,	0x1E, 40,	0x1F, 44,	0x26, 57,	0x2D, 76,
+	// 非标符号 \ [ ] ↓ ← ↑ →
+	0x33, 49,	0x34, 47,	0x35, 48,	0x24, 81,	0x37, 80,	0x3B, 82,	0x3D, 79,
 };
-
 UINT8C MORSE_TABLE_S[] = { // 摩尔斯码表(带Shift)
 	// 标准符号 & + ( ? _ " @ ! ) : $
 	0x28, 36,	0x2A, 46,	0x36, 38,	0x4C, 56,	0x4D, 45,	0x52, 52,	0x5A, 31,	0x6B, 30,	0x6D, 39,	0x78, 51,	0x89, 33,
+	// 非标符号 * # < > ^ % Shift
+	0x22, 37,	0x25, 32,	0x29, 54,	0x2B, 55,	0x2C, 35,	0x2E, 34,	0x39, 0,
 };
 
 static void MorseOutput(uint8_t mCode){ // 输出
 	uint8_t i;
-	for(i = 0; i < sizeof(MORSE_TABLE); i += 2){
+	for(i = 0; i < sizeof(MORSE_TABLE); i += 2){ // 查表
 		if(mCode == MORSE_TABLE[i]) KeyInsert(0xFF, MORSE_TABLE[i + 1]);
 	}
-	for(i = 0; i < sizeof(MORSE_TABLE_S); i += 2){
+	for(i = 0; i < sizeof(MORSE_TABLE_S); i += 2){ // 查带Shift的表
 		if(mCode == MORSE_TABLE_S[i]){
 			KeyInsert(0xFF, MORSE_TABLE_S[i + 1]);
 			KeyInsert(0xFF, kv_shift);

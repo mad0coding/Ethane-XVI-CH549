@@ -235,7 +235,7 @@ static void MorseBuzz(void){ // 摩尔斯码蜂鸣器控制
 	}
 	else BUZZ_PWM = 0;
 	
-	morse_key = 0;//测试代码！！！！
+	morse_key = 0; // 清除按键记录
 }
 
 //时间监测结果	单位0.5us	版本V1.0.1.35
