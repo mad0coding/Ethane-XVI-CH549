@@ -77,7 +77,7 @@
 
 uint8_t FillReport(void);//报文填写
 
-void CsChange(uint8_t change);//切换
+void CsChange(uint8_t change, uint8_t ifTmp);//切换
 void KeyInsert(uint8_t r_i, uint8_t key_v);//单键填入
 void Mode3Handle(void);//mode3处理
 void RkEcKeyHandle(void);//摇杆旋钮按键处理

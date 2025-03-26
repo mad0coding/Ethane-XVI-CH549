@@ -89,7 +89,7 @@ uint8_t FillReport(void)//报文填写
 					if(switch_count > 10){
 						switch_count = 0;//计数清零
 						KeyInsert(i + 3,switch_key);//填入键值
-						CsChange(switch_func);//切换回来
+						CsChange(switch_func, 2);//切换回来
 						switch_i = 0xFF;//复位
 					}
 				}
@@ -133,7 +133,7 @@ uint8_t FillReport(void)//报文填写
 						switch_key = CFG_K_KEY(keyAddr[sysCs][i]);//缓存键值
 						switch_func = sysCs + 1;//缓存旧键盘选择
 						turn_old = keyDir[sysCs];//旧键盘方向
-						CsChange(CFG_K_FUNC(keyAddr[sysCs][i]));//切换
+						CsChange(CFG_K_FUNC(keyAddr[sysCs][i]), 1);//临时切换
 						turn_dif = (keyDir[sysCs] + 4 - turn_old) % 4;//相对旧键盘方向
 						if(turn_dif == 0) switch_i = i;
 						else if(turn_dif == 1) switch_i = TURN_L90[i];
@@ -165,7 +165,7 @@ uint8_t FillReport(void)//报文填写
 				else if(CFG_K_MODE(keyAddr[sysCs][i]) == m6_change){//模式6:切换键
 					if(!(CFG_K_FUNC(keyAddr[sysCs][i]) & 0x80)){//若为非临时切换
 						switch_i = 0xFF;//直接复位临时切换键标志
-						CsChange(CFG_K_FUNC(keyAddr[sysCs][i]));//切换
+						CsChange(CFG_K_FUNC(keyAddr[sysCs][i]), 0);//切换
 					}
 				}
 				else if(CFG_K_MODE(keyAddr[sysCs][i]) == m7_clicker){//模式7:按键连点
@@ -287,14 +287,14 @@ uint8_t FillReport(void)//报文填写
 	return 0;
 }
 
-void CsChange(uint8_t change)//切换
+void CsChange(uint8_t change, uint8_t ifTmp)//切换
 {
 	change &= 0x0F;//取低4位
 	if(change == 0 || change > CFG_NUM) return;
 	sysCs = change - 1;
 	CFG_DATA_CSC(sysCs);//更新配置数据选择
 	
-	if(!LIGHT_MONO){//若为非独占即不是不切换
+	if(!LIGHT_MONO || (LIGHT_MONO == 2 && !ifTmp)){ // 若为切换 或 临时保持且当前为非临时切换
 		KeyRGB(1);//键盘RGB控制清零
 		LIGHT_DATA_CSC(sysCs);//若不是灯效不切换则更新灯效数据选择
 	}
@@ -488,7 +488,7 @@ void RkEcKeyHandle(void)//摇杆旋钮按键处理
 		else if(keyOld[i + 16]){//若为释放沿
 			if(keyM[i] == 2){//永久切换键
 				switch_i = 0xFF;//直接复位临时切换键标志
-				CsChange(keyV[i] - kv_orig_1 + 1);//切换 该函数内有参数检查 此处USB键值从数字键1的键值开始有效
+				CsChange(keyV[i] - kv_orig_1 + 1, 0);//切换 该函数内有参数检查 此处USB键值从数字键1的键值开始有效
 			}
 		}
 	}
