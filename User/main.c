@@ -1,8 +1,8 @@
 /*******************************************************************************
 * File Name          : main.c
 * Author             : Light&Electricity
-* Version            : V1.0
-* Date               : 2024/12/03
+* Version            : V1.1
+* Date               : 2025/4/10
 * Description        : Ethane-XVI
 ********************************************************************************/
 #include "CH549.H"
@@ -16,7 +16,7 @@
 
 #pragma  NOAREGS
 
-UINT8C FIRMWARE_VERSION[4] = {1,1,0,0};//固件版本
+UINT8C FIRMWARE_VERSION[4] = {1,1,0,1};//固件版本
 
 uint8_t asyncFlag = 0;//异步操作标志
 
@@ -26,6 +26,7 @@ uint8_t KeyBrd_if_send = 0;//键盘报文是否发送
 uint8_t Mouse_if_send = 0;//鼠标报文是否发送
 uint8_t Point_if_send = 0;//指针报文是否发送
 uint8_t Vol_if_send = 0;//媒体报文是否发送
+uint8_t Dial_if_send = 0;//轮盘报文是否发送
 
 uint8_t KeyBrd_data[KB_LEN] = {1,0,0,0};//编号1,功能键,保留0,其他按键
 //功能键:bit7-bit0分别为为右win alt shift ctrl,左win alt shift ctrl
@@ -38,6 +39,9 @@ uint8_t Point_data[7] = {3,0x10,1,0,0,0,0};//编号3,功能键,id,x_L,x_H,y_L,y_
 
 uint8_t Vol_data[2] = {4,0};//编号4,功能键
 //功能键:bit0音量加,bit1音量减,bit2静音,bit3播放暂停
+
+uint8_t Dial_data[3] = {5,0,0};//编号5,功能键+dial_L,dial_H
+//功能键:bit0按键,bit1~7为轮盘低7bit
 
 
 void main()
@@ -121,10 +125,11 @@ void main()
 			continue;
 		}
 		
-		if(All_if_send == 0){//若总发送标志已清空
-			MultiFunc();//处理各种功能
+		if(All_if_send == 0){ // 若总发送标志已清空
+			MultiFunc(); // 处理各种功能
 			
-			All_if_send = KeyBrd_if_send | (Mouse_if_send << 1) | (Point_if_send << 2) | (Vol_if_send << 3);//生成总发送标志
+			All_if_send = KeyBrd_if_send | (Mouse_if_send << 1) | (Point_if_send << 2) | (Vol_if_send << 3) 
+						| (Dial_if_send << 4); // 生成总发送标志
 		}
 		
 		if((uint8_t)((uint8_t)Systime - reportSendTime) < 8) continue;	//延时未到则跳过发送
@@ -139,19 +144,23 @@ void main()
 		
 		if(All_if_send & 0x01){		//键盘
 			All_if_send &= ~0x01;	//清除bit0
-			Enp1IntIn(KeyBrd_data,sizeof(KeyBrd_data));
+			Enp1IntIn(KeyBrd_data, sizeof(KeyBrd_data));
 		}
 		else if(All_if_send & 0x02){//鼠标
 			All_if_send &= ~0x02;	//清除bit1
-			Enp1IntIn(Mouse_data,sizeof(Mouse_data));
+			Enp1IntIn(Mouse_data, sizeof(Mouse_data));
 		}
 		else if(All_if_send & 0x04){//指针
 			All_if_send &= ~0x04;	//清除bit2
-			Enp1IntIn(Point_data,sizeof(Point_data));
+			Enp1IntIn(Point_data, sizeof(Point_data));
 		}
 		else if(All_if_send & 0x08){//媒体
 			All_if_send &= ~0x08;	//清除bit3
-			Enp1IntIn(Vol_data,sizeof(Vol_data));
+			Enp1IntIn(Vol_data, sizeof(Vol_data));
+		}
+		else if(All_if_send & 0x10){//轮盘
+			All_if_send &= ~0x10;	//清除bit4
+			Enp1IntIn(Dial_data, sizeof(Dial_data));
 		}
     }
 }

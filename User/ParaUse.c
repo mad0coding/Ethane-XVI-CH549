@@ -6,13 +6,16 @@ extern uint8_t KeyBrd_data[];//键盘报文
 extern uint8_t Mouse_data[];//鼠标报文
 extern uint8_t Point_data[];//指针报文
 extern uint8_t Vol_data[];//音量报文
+extern uint8_t Dial_data[];//轮盘报文
 static uint8_t KeyBrd_data_old[KB_LEN];//上次键盘报文
 static uint8_t Mouse_data_old = 0;//上次鼠标报文
 static uint8_t Vol_data_old = 0;//上次音量报文
+static uint8_t Dial_data_old = 0;//上次轮盘报文
 extern uint8_t KeyBrd_if_send;//键盘报文是否发送
 extern uint8_t Vol_if_send;//音量报文是否发送
 extern uint8_t Point_if_send;//指针报文是否发送
 extern uint8_t Mouse_if_send;//鼠标报文是否发送
+extern uint8_t Dial_if_send;//轮盘报文是否发送
 //********************************************************************//
 
 //******************************摩尔斯码******************************//
@@ -48,19 +51,22 @@ uint8_t FillReport(void)//报文填写
 	int8_t auto_num;
 	
 	//***********************************各报文及发送标志初始化***********************************//
-	KeyBrd_if_send = Mouse_if_send = Point_if_send = Vol_if_send = 0;//发送标志置零
+	KeyBrd_if_send = Mouse_if_send = Point_if_send = Vol_if_send = 0; // 发送标志置零
 	
-	memcpy(KeyBrd_data_old + 1, KeyBrd_data + 1, KB_LEN - 1);//记录上一次报文
-	memset(KeyBrd_data + 1, 0, KB_LEN - 1);//清除所有键
+	memcpy(KeyBrd_data_old + 1, KeyBrd_data + 1, KB_LEN - 1); // 记录上一次报文
+	memset(KeyBrd_data + 1, 0, KB_LEN - 1); // 清除所有键
 
-	Mouse_data_old = Mouse_data[1];//记录上一次报文
-	memset(Mouse_data + 1, 0, 4);//清除鼠标报文
+	Mouse_data_old = Mouse_data[1]; // 记录上一次报文
+	memset(Mouse_data + 1, 0, 4); // 清除鼠标报文
 
 	Point_data[1] = 0x10;
-	memset(Point_data + 3, 0xFF, 4);//清除指针报文
+	memset(Point_data + 3, 0xFF, 4); // 清除指针报文
 
-	Vol_data_old = Vol_data[1];//记录上一次报文
-	Vol_data[1] = 0;//清除音量报文
+	Vol_data_old = Vol_data[1]; // 记录上一次报文
+	Vol_data[1] = 0; // 清除音量报文
+	
+	Dial_data_old = Dial_data[1] & 0x01; // 记录上一次报文
+	Dial_data[1] = Dial_data[2] = 0; // 清除轮盘报文
 	//********************************************************************************************//
 	
 	if(keyAddr[sysCs][0] == 0) return 0xFF;//若本配置数据错误则退出
@@ -98,6 +104,7 @@ uint8_t FillReport(void)//报文填写
 			if(keyNow[i]){//若按下
 				if(CFG_K_MODE(keyAddr[sysCs][i]) == m1_button){//模式1:单键
 					KeyInsert(i + 3,CFG_K_KEY(keyAddr[sysCs][i]));//填入键值
+					//if(CFG_K_KEY(keyAddr[sysCs][i]) == 0) Dial_data[1] = 1;//测试代码！！！！
 				}
 				else if(CFG_K_MODE(keyAddr[sysCs][i]) == m2_shortcut){//模式2:快捷键
 					KeyInsert(i + 3,CFG_K_KEY(keyAddr[sysCs][i]));//填入键值
@@ -255,24 +262,25 @@ uint8_t FillReport(void)//报文填写
 	
 	//***********************************判断各报文是否要发送***********************************//
 	for(i = 1; i < KB_LEN; i++){
-		if(KeyBrd_data_old[i] != KeyBrd_data[i]){//键盘报文与上一次不同则发送
+		if(KeyBrd_data_old[i] != KeyBrd_data[i]){ // 键盘报文与上一次不同则发送
 			KeyBrd_if_send = 1;	break;
 		}
 	}
-	if(Mouse_data[1] != Mouse_data_old) Mouse_if_send = 1;//鼠标按键与上次不同则发送
+	if(Mouse_data[1] != Mouse_data_old) Mouse_if_send = 1; // 鼠标按键与上次不同则发送
 	else{
 		for(i = 2; i < 5; i++){
-			if(Mouse_data[i] != 0){//鼠标存在移动或滚动则发送
+			if(Mouse_data[i] != 0){ // 鼠标存在移动或滚动则发送
 				Mouse_if_send = 1;	break;
 			}
 		}
 	}
 	for(i = 3; i < 7; i++){
-		if(Point_data[i] != 0xFF){//触摸存在有效坐标则发送
+		if(Point_data[i] != 0xFF){ // 触摸存在有效坐标则发送
 			Point_if_send = 1;	break;
 		}
 	}
-	if(Vol_data[1] != Vol_data_old) Vol_if_send = 1;//媒体报文与上次不同则发送
+	if(Vol_data[1] != Vol_data_old) Vol_if_send = 1; // 媒体报文与上次不同则发送
+	if(Dial_data[1] != Dial_data_old || Dial_data[2]) Dial_if_send = 1; // 轮盘报文按键与上次不同或有拨动则发送
 	//******************************************************************************************//
 	
 	if(switch_i != 0xFF 
@@ -483,6 +491,9 @@ void RkEcKeyHandle(void)//摇杆旋钮按键处理
 			if(keyM[i] == 1){//按键/快捷键
 				if(keyV[i]) KeyInsert(0xFF, keyV[i]);//填入键值
 				KeyBrd_data[1] |= keyF[i];//填入功能键
+			}
+			else if(keyM[i] == 3){ // Dial
+				Dial_data[1] |= 0x01; // 按下
 			}
 		}
 		else if(keyOld[i + 16]){//若为释放沿
@@ -712,7 +723,7 @@ void RkHandle(uint8_t clear)//摇杆处理
 	}
 }
 
-//1:按键/快捷键
+//1:按键/快捷键 2:Dial
 void EcHandle(uint8_t clear)//旋钮处理
 {
 //	static uint32_t oldTime = 0;//记录时间
@@ -721,6 +732,7 @@ void EcHandle(uint8_t clear)//旋钮处理
 	static int8_t EC_count[2] = {0,0};//执行计数
 	static uint8_t EC_pulse[2] = {0,0};//间隔标志
 	uint8_t EC_flag = 0;//执行标志
+	int16_t tool16 = 0; // 工具变量
 	
 	uint8_t i;
 	
@@ -760,6 +772,29 @@ void EcHandle(uint8_t clear)//旋钮处理
 						if(CFG_E_KEY(i, EC_flag)) KeyInsert(0xFF, CFG_E_KEY(i, EC_flag));//填入键值
 						KeyBrd_data[1] |= CFG_E_FUNC(i, EC_flag);//填入功能键
 						EC_pulse[i] = 1;//本次已发送则下次间隔
+					}
+				}
+				break;
+			}
+			case 2:{ // Dial
+				if(EC_flag){
+					if(EC_pulse[i]){//若上次已发送则本次间隔
+						EC_pulse[i] = 0;//清空标志
+						EC_count[i] -= EC_flag * 2 - 3;//计数跟进
+					}
+					else{
+						if(CFG_E_KEY(i, 1) >= kv_orig_1 && CFG_E_KEY(i, 1) <= kv_orig_0
+						&& CFG_E_KEY(i, 2) >= kv_orig_1 && CFG_E_KEY(i, 2) <= kv_orig_0){ // 1~9以及0
+							// 转角 = 左旋键数字*10 + 右旋键数字 + 1
+							tool16 = (CFG_E_KEY(i, 1) + 1 - kv_orig_1) % 10 * 10 + (CFG_E_KEY(i, 2) + 1 - kv_orig_1) % 10 + 1;
+							tool16 *= (EC_flag * 2 - 3) * 10; // 乘以方向和分辨率
+						}
+						else tool16 = (EC_flag * 2 - 3) * 10 * 10; // 默认10度
+
+						Dial_data[1] |= tool16 << 1;
+						Dial_data[2] = tool16 >> 7;
+						
+						EC_pulse[i] = 1; // 本次已发送则下次间隔
 					}
 				}
 				break;

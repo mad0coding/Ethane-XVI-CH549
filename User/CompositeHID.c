@@ -54,7 +54,7 @@ static UINT8C MyManuInfo[] = {36,0x03,
 UINT8X MySrNumInfo[26];//序列号字符串 初始化时加载
 
 /*HID类报文描述符*/
-static UINT8C KeyRepDesc[] = {//HID报文描述符
+static UINT8C KeyRepDesc[/*285*/] = {//HID报文描述符
 	//键盘
     0x05, 0x01,					//	USAGE_PAGE (Generic Desktop)
     0x09, 0x06,					//	USAGE (Keyboard)
@@ -183,6 +183,35 @@ static UINT8C KeyRepDesc[] = {//HID报文描述符
 	0x81,0x01,					//			INPUT (Cnst,Ary,Abs)
 	0xC0,						//		END_COLLECTION
 	0xC0,						//	END_COLLECTION
+	
+	// Dial
+	0x05,0x01,          		//	USAGE_PAGE(Generic Desktop Controls)
+	0x09,0x0E,          		//	LOCAL_USAGE(Reserved)
+	0xA1,0x01,          		//	COLLECTION(Applicatior)
+	0x85,0x05,          		//		REPORT_ID(5)
+	0x05,0x0D,          		//		USAGE_PAGE(Digitizer)
+	0x09,0x21,          		//		LOCAL_USAGE(Puck)
+	0xA1,0x00,          		//		MAIN_COLLECTION(Physical)
+	0x05,0x09,          		//		USAGE_PAGE(Button)
+	0x09,0x01,          		//		LOCAL_USAGE(Button 1 (primary/trigger))
+	0x95,0x01,          		//		REPORT_COUNT(1)
+	0x75,0x01,          		//		REPORT_SIZE(1)
+	0x15,0x00,          		//		LOGICAL_MINIMUM(0)
+	0x25,0x01,          		//		LOCAL_MAXIMUM(1)
+	0x81,0x02,          		//		INPUT(data var absolute NoWrap linear) Input 0.1
+	0x05,0x01,          		//		USAGE_PAGE(Generic Desktop Controls)
+	0x09,0x37,          		//		LOCAL_USAGE(Dial)
+	0x95,0x01,          		//		REPORT_COUNT(1)
+	0x75,0x0F,          		//		REPORT_SIZE(15)
+	0x55,0x0F,          		//		UNIT_EXPONENT(15)
+	0x65,0x14,          		//		REPORT_UNIT(20)
+	0x36,0xF0,0xF1,     		//		PHYSICAL_MINIMUM(61936)
+	0x46,0x10,0x0E,     		//		PHYSICAL_MAXIMUM(3600)
+	0x16,0xF0,0xF1,     		//		LOGICAL_MINIMUM(-3600)
+	0x26,0x10,0x0E,     		//		LOCAL_MAXIMUM(3600)
+	0x81,0x06,          		//		INPUT(data var relative NoWrap linear) Input 2.0
+	0xC0,               		//		END_COLLECTION
+	0xC0,               		//	END_COLLECTION
 };
 static UINT8C ComRepDesc[/*34*/] = {//自定义HID报文描述符
 	0x06, 0x00, 0xff, 	// Usage page Vendor defined
