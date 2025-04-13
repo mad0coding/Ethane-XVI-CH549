@@ -51,7 +51,7 @@ uint8_t FillReport(void)//报文填写
 	int8_t auto_num;
 	
 	//***********************************各报文及发送标志初始化***********************************//
-	KeyBrd_if_send = Mouse_if_send = Point_if_send = Vol_if_send = 0; // 发送标志置零
+	KeyBrd_if_send = Mouse_if_send = Point_if_send = Vol_if_send = Dial_if_send = 0; // 发送标志置零
 	
 	memcpy(KeyBrd_data_old + 1, KeyBrd_data + 1, KB_LEN - 1); // 记录上一次报文
 	memset(KeyBrd_data + 1, 0, KB_LEN - 1); // 清除所有键
@@ -104,7 +104,6 @@ uint8_t FillReport(void)//报文填写
 			if(keyNow[i]){//若按下
 				if(CFG_K_MODE(keyAddr[sysCs][i]) == m1_button){//模式1:单键
 					KeyInsert(i + 3,CFG_K_KEY(keyAddr[sysCs][i]));//填入键值
-					//if(CFG_K_KEY(keyAddr[sysCs][i]) == 0) Dial_data[1] = 1;//测试代码！！！！
 				}
 				else if(CFG_K_MODE(keyAddr[sysCs][i]) == m2_shortcut){//模式2:快捷键
 					KeyInsert(i + 3,CFG_K_KEY(keyAddr[sysCs][i]));//填入键值
@@ -284,12 +283,12 @@ uint8_t FillReport(void)//报文填写
 	//******************************************************************************************//
 	
 	if(switch_i != 0xFF 
-		&& (KeyBrd_if_send || Mouse_if_send || Point_if_send || Vol_if_send)){
+		&& (KeyBrd_if_send || Mouse_if_send || Point_if_send || Vol_if_send || Dial_if_send)){
 		switch_key = 0;//若临时切换键按下期间有其他操作则清除切换键自身键值
 	}
 	
 	if(mode3_delaying == 1){//延时中则发送标志置零
-		KeyBrd_if_send = Mouse_if_send = Point_if_send = Vol_if_send = 0;
+		KeyBrd_if_send = Mouse_if_send = Point_if_send = Vol_if_send = Dial_if_send = 0;
 	}
 	
 	return 0;
@@ -492,7 +491,7 @@ void RkEcKeyHandle(void)//摇杆旋钮按键处理
 				if(keyV[i]) KeyInsert(0xFF, keyV[i]);//填入键值
 				KeyBrd_data[1] |= keyF[i];//填入功能键
 			}
-			else if(keyM[i] == 3){ // Dial
+			else if(keyM[i] == 3){ // Dial按键
 				Dial_data[1] |= 0x01; // 按下
 			}
 		}
@@ -731,21 +730,23 @@ void EcHandle(uint8_t clear)//旋钮处理
 	static int8_t TIM_count[2] = {0,0};//编码器计数
 	static int8_t EC_count[2] = {0,0};//执行计数
 	static uint8_t EC_pulse[2] = {0,0};//间隔标志
-	uint8_t EC_flag = 0;//执行标志
+	static int16_t dial_angle = 0; // 轮盘转角
 	int16_t tool16 = 0; // 工具变量
+	uint8_t EC_flag = 0;//执行标志
 	
 	uint8_t i;
 	
-	if(clear){//清除
-		TIM_count[0] = TIM_count[1] = EC_count[0] = EC_count[2] = 0;
-		EC_pulse[0] = EC_pulse[1] = EC_flag = 0;
+	if(clear){ // 清除
+		TIM_count[0] = EC_count[0] = EC_pulse[0] = 0;
+		TIM_count[1] = EC_count[1] = EC_pulse[1] = 0;
+		EC_flag = dial_angle = 0;
 		return;
 	}
 
-	TIM_count[0] -= (CFG_E_DIR(0) * 2 - 1) * (int8_t)(EC1val)/**4*/;//编码器计数读取
-	EC1val = 0;//编码器清零
-	TIM_count[1] -= (CFG_E_DIR(0) * 2 - 1) * (int8_t)(EC2val)/**4*/;//编码器计数读取
-	EC2val = 0;//编码器清零
+	TIM_count[0] -= (CFG_E_DIR(0) * 2 - 1) * (int8_t)(EC1val); // 编码器计数读取
+	EC1val = 0; // 编码器清零
+	TIM_count[1] -= (CFG_E_DIR(1) * 2 - 1) * (int8_t)(EC2val); // 编码器计数读取
+	EC2val = 0; // 编码器清零
 	
 //	if(TIM_old != TIM_count){
 //		TIM_old = TIM_count;
@@ -778,29 +779,39 @@ void EcHandle(uint8_t clear)//旋钮处理
 			}
 			case 2:{ // Dial
 				if(EC_flag){
-					if(EC_pulse[i]){//若上次已发送则本次间隔
-						EC_pulse[i] = 0;//清空标志
-						EC_count[i] -= EC_flag * 2 - 3;//计数跟进
+					if(EC_pulse[i]){ // 分期发送
+						Dial_data[1] |= dial_angle << 1;
+						Dial_data[2] = dial_angle >> 7;
 					}
 					else{
 						if(CFG_E_KEY(i, 1) >= kv_orig_1 && CFG_E_KEY(i, 1) <= kv_orig_0
 						&& CFG_E_KEY(i, 2) >= kv_orig_1 && CFG_E_KEY(i, 2) <= kv_orig_0){ // 1~9以及0
 							// 转角 = 左旋键数字*10 + 右旋键数字 + 1
-							tool16 = (CFG_E_KEY(i, 1) + 1 - kv_orig_1) % 10 * 10 + (CFG_E_KEY(i, 2) + 1 - kv_orig_1) % 10 + 1;
-							tool16 *= (EC_flag * 2 - 3) * 10; // 乘以方向和分辨率
+							dial_angle = (CFG_E_KEY(i, 1) + 1 - kv_orig_1) % 10 * 10 + (CFG_E_KEY(i, 2) + 1 - kv_orig_1) % 10 + 1;
 						}
-						else tool16 = (EC_flag * 2 - 3) * 10 * 10; // 默认10度
+						else dial_angle = 10; // 默认10度
+						dial_angle *= (EC_flag * 2 - 3) * 10; // 乘以方向和分辨率
 
+						// 1~5分期: ctrl none shift alt win
+						if(CFG_E_FUNC(i, 1) == 0x01) EC_pulse[i] = 1; // ctrl
+						else if(CFG_E_FUNC(i, 1) == 0x02) EC_pulse[i] = 3; // shift
+						else if(CFG_E_FUNC(i, 1) == 0x04) EC_pulse[i] = 4; // alt
+						else if(CFG_E_FUNC(i, 1) == 0x08) EC_pulse[i] = 5; // win
+						else EC_pulse[i] = 2; // none
+						
+						tool16 = dial_angle / EC_pulse[i] + dial_angle % EC_pulse[i]; // 第一次发送带上余数
+						dial_angle /= EC_pulse[i];
+						
 						Dial_data[1] |= tool16 << 1;
 						Dial_data[2] = tool16 >> 7;
-						
-						EC_pulse[i] = 1; // 本次已发送则下次间隔
 					}
+					EC_pulse[i]--; // 计数标志递减
+					if(!EC_pulse[i]) EC_count[i] -= EC_flag * 2 - 3; // 若全部发送完成则计数跟进
 				}
 				break;
 			}
 			default:{
-				EC_count[i] = TIM_count[i]/*/4*/;
+				EC_count[i] = TIM_count[i]; // 直接完全跟进
 				break;
 			}
 		}
