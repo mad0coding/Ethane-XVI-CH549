@@ -147,12 +147,15 @@ static UINT8C TONE_PWM[] = {//声调PWM分频值表
 static UINT8C TONE_KEY[] = {29,31,33,35,255,24,26,28, 17,19,21,23,255,12,14,16,};//键位音符映射表
 
 UINT16D buzzTimVol = 10, TONE_TIMValue = 10000;//声调定时器计数值,延时值
+uint8_t cmdBuzzTone = 0xFF, cmdBuzzVol = 0; // 命令音符 命令音量
 
 void BuzzHandle(void){//蜂鸣器处理
 	uint8_t i;//循环变量
 	uint8_t count = 0, effective = 0xFF;//按下按键计数,有效按键
-	uint8_t buzzTone = 0xFF, buzzToneOld = 0xFF;//音符
-	int8_t buzzVol = 1;//音量
+	uint8_t buzzTone = 0xFF, buzzToneOld = 0xFF; // 音符
+	int8_t buzzVol = 1, buzzVolOld = 1; // 音量
+
+	cmdBuzzTone = 0xFF; // 清除命令音符
 	
 	while((!keyOld[18] || keyNow[18]) && (!keyOld[17] || keyNow[17]) && (!keyOld[16] || keyNow[16])){//摇杆或旋钮的释放沿退出
 		WDOG_COUNT = 0;//清零看门狗计数
@@ -184,6 +187,7 @@ void BuzzHandle(void){//蜂鸣器处理
 			if(keyNow[i]) count++;//按下按键计数
 		}
 		if(count == 0) effective = 0xFF;//全部发音键释放后空置有效按键
+
 		if(effective != 0xFF){//若有有效按键
 			if(!keyNow[effective]){//若此键已被释放
 				for(i = 0; i < 16; i++){//重新扫描
@@ -196,7 +200,13 @@ void BuzzHandle(void){//蜂鸣器处理
 			else if(keyNow[4]) buzzTone -= 12;//下半部降八度
 		}
 		else buzzTone = 0xFF;//清空音符
-		if(buzzToneOld == buzzTone) continue;//若音符未改变则跳过
+
+		if(cmdBuzzTone <= 48){ // 若有命令音符
+			buzzTone = cmdBuzzTone; // 使用命令音符
+			buzzVol = cmdBuzzVol; // 使用命令音量
+		}
+
+		if(buzzToneOld == buzzTone && buzzVolOld == buzzVol) continue; // 若音符音量未改变则跳过
 		if(buzzTone < 18){//低频由定时器实现
 			TONE_TIMValue = TONE_TIM[buzzTone];
 			buzzTimVol = (((uint32_t)TONE_TIMValue * buzzVol) >> 8) / 3;
@@ -213,7 +223,8 @@ void BuzzHandle(void){//蜂鸣器处理
 			ET0 = BUZZ_PWM = 0;//关定时器中断及清零PWM占空比
 			PWM_SEL_CHANNEL(PWM_CH0, Disable);//PWM0输出失能
 		}
-		buzzToneOld = buzzTone;//记录音符
+		buzzToneOld = buzzTone; // 记录音符
+		buzzVolOld = buzzVol; // 记录音量
 	}
 	ET0 = BUZZ_PWM = 0; // 关定时器中断及清零PWM占空比
 	PWM_SEL_CHANNEL(PWM_CH0, Enable); // PWM0输出使能 供摩尔斯码使用

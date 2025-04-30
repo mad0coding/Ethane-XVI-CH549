@@ -488,6 +488,13 @@ else{//若未在接收状态 则监听各种命令
 	else if(Buf[0] == 'B' && Buf[1] == 'B' && Buf[2] == 'U' && Buf[3] == 'Z'){//蜂鸣器模式命令
 		asyncFlag = ASYNC_FLAG_BUZZ;//异步标志置位
 	}
+    else if(Buf[0] == 'B' && Buf[1] == 'B' && Buf[2] == 'T' && Buf[3] == 'V'){ // 蜂鸣器音符命令
+        if(Buf[4] <= 48 && Buf[5] && Buf[5] <= 10){ // 音符音量合法
+			cmdBuzzTone = Buf[4];	// 接受音符
+			cmdBuzzVol = Buf[5];	// 接受音量
+        }
+        else cmdBuzzTone = 0xFF;    // 清除音符
+	}
 	else{//非法命令
 		Buf[Offset+0] = 'R'; Buf[Offset+1] = 'I'; Buf[Offset+2] = 'N'; Buf[Offset+3] = 'V';//非法命令响应字节
 	}
