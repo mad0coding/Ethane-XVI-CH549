@@ -16,9 +16,10 @@
 #define KP_NUM		19//按键个数
 
 //XDATA地址分配
-#define XBASE_EP0_BUF		(XBASE_FLASH_BUF - 64*5)
-#define XBASE_EP2_BUF		(XBASE_EP0_BUF + 64*1)
-#define XBASE_EP1_BUF		(XBASE_EP0_BUF + 64*3)
+#define XBASE_EP0_BUF		(XBASE_FLASH_BUF - 64*7)
+#define XBASE_EP1_BUF		(XBASE_EP0_BUF + 64*1)
+#define XBASE_EP2_BUF		(XBASE_EP0_BUF + 64*3)
+#define XBASE_EP3_BUF		(XBASE_EP0_BUF + 64*5)
 #define XBASE_FLASH_BUF		(1024+512)
 
 //IO定义

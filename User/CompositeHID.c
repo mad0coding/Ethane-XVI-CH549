@@ -5,6 +5,7 @@
 static UINT8X Ep0Buffer[MIN(64,THIS_ENDP0_SIZE+2)] _at_ XBASE_EP0_BUF;							//端点0 OUT&IN
 static UINT8X Ep1Buffer[MIN(64,ENDP1_OUT_SIZE+2)+MIN(64,ENDP1_IN_SIZE+2)] _at_ XBASE_EP1_BUF;	//端点1 OUT&IN
 static UINT8X Ep2Buffer[MIN(64,ENDP2_OUT_SIZE+2)+MIN(64,ENDP2_IN_SIZE+2)] _at_ XBASE_EP2_BUF;	//端点2 OUT&IN
+static UINT8X Ep3Buffer[MIN(64,ENDP3_OUT_SIZE+2)+MIN(64,ENDP3_IN_SIZE+2)] _at_ XBASE_EP3_BUF;	//端点3 OUT&IN
 
 
 UINT8X WakeUpEnFlag = 0;	//远程唤醒使能标志
@@ -17,6 +18,7 @@ static PXUSB_SETUP_REQ  SetupReqBuf;	//暂存Setup包
 static bit Ready = 0;			//USB就绪标志
 static bit Endp1Busy = 0;		//传输完成控制标志
 static bit Endp2Busy = 0;		//传输完成控制标志
+static bit Endp3Busy = 0;		//传输完成控制标志
 
 bit bitNUM = 0, bitCAPS = 0, bitSCROLL = 0;//数字锁定 大写锁定 滚动锁定
 
@@ -54,7 +56,7 @@ static UINT8C MyManuInfo[] = {36,0x03,
 UINT8X MySrNumInfo[26];//序列号字符串 初始化时加载
 
 /*HID类报文描述符*/
-static UINT8C KeyRepDesc[/*285*/] = {//HID报文描述符
+static UINT8C KeyRepDesc[/*285*/] = { // HID报文描述符
 	//键盘
     0x05, 0x01,					//	USAGE_PAGE (Generic Desktop)
     0x09, 0x06,					//	USAGE (Keyboard)
@@ -213,8 +215,8 @@ static UINT8C KeyRepDesc[/*285*/] = {//HID报文描述符
 	0xC0,               		//		END_COLLECTION
 	0xC0,               		//	END_COLLECTION
 };
-static UINT8C ComRepDesc[/*34*/] = {//自定义HID报文描述符
-	0x06, 0x00, 0xff, 	// Usage page Vendor defined
+static UINT8C ComRepDesc[/*34*/] = { // 自定义HID报文描述符
+	0x06, 0x00, 0xff, 	// Usage page Vendor defined ( FF00H )
 	0x09, 0x01, 		// Local usage 1
 	0xa1, 0x01, 		// Collation Application
 	0x09, 0x02, 		// Local usage 2
@@ -231,28 +233,51 @@ static UINT8C ComRepDesc[/*34*/] = {//自定义HID报文描述符
 	0x91, 0x06, 		// Output ( Data, Relative, Wrap )
 	0xc0,				// END_COLLECTION
 };
+static UINT8C RgbRepDesc[/*34*/] = { // RGB自定义HID报文描述符
+	0x06, 0x01, 0xff, 	// Usage page Vendor defined ( FF01H )
+	0x09, 0x03, 		// Local usage 3
+	0xa1, 0x01, 		// Collation Application
+	0x09, 0x04, 		// Local usage 4
+	0x15, 0x00, 		// Logical min ( 0H )
+	0x26, 0xff, 0x00,	// Logical max ( FFH )
+	0x75, 0x08,  		// Report size ( 08H )
+	0x95, 0x40, 		// Report count ( 40H )
+	0x81, 0x06,  		// Input ( Data, Relative, Wrap )
+	0x09, 0x04, 		// Local usage 4
+	0x15, 0x00,  		// Logical min ( 0H )
+	0x26, 0xff, 0x00,	// Logical max ( FFH )
+	0x75, 0x08, 		// Report size ( 08H )
+	0x95, 0x40, 		// Report count ( 40H )
+	0x91, 0x06, 		// Output ( Data, Relative, Wrap )
+	0xc0,				// END_COLLECTION
+};
 
 /*配置描述符*/
 static UINT8C CfgDesc[] = {//配置描述符
-	0x09,//1. 第一个字节 0x09 表示该配置描述符的长度为 9 字节。
-	0x02,//2. 第二个字节 0x02 表示该描述符的类型为配置描述符 (Configuration Descriptor)。
-	9+32+32,//3. 第三个字节 66 表示配置描述符的总长度 (Total Length) 的低字节。
-	0x00,//4. 第四个字节 0x00 表示配置描述符的总长度的高字节。
-	USBD_MAX_NUM_INTERFACES,//5. 第五个字节 0x02 表示该配置的接口数目 (NumInterfaces)。
-	0x01,//6. 第六个字节 0x01 表示配置描述符的标识符 (Configuration Value)。
-	0x00,//7. 第七个字节 0x00 表示该配置的描述字符串索引 (Configuration String Index)。
-	0xA0,//8. 第八个字节 0xA0 表示该配置的特性标志 (Attributes)。A0=0b10100000，bit7必须1，bit6为是否自供电，bit5为是否远程唤醒
-	250,//9. 第九个字节 0x32 表示该配置的最大功率 (Max Power)。这里的值 0x32 表示设备使用的最大电流为 (250 * 2 mA) = 500 mA。
+	0x09,	// 1. 第一个字节 0x09 表示该配置描述符的长度为 9 字节
+	0x02,	// 2. 第二个字节 0x02 表示该描述符的类型为配置描述符 (Configuration Descriptor)
+	9+32+32+32,	// 3. 第三个字节 66 表示配置描述符的总长度 (Total Length) 的低字节
+	0x00,	// 4. 第四个字节 0x00 表示配置描述符的总长度的高字节
+	USBD_MAX_NUM_INTERFACES,	// 5. 第五个字节 0x02 表示该配置的接口数目 (NumInterfaces)
+	0x01,	// 6. 第六个字节 0x01 表示配置描述符的标识符 (Configuration Value)
+	0x00,	// 7. 第七个字节 0x00 表示该配置的描述字符串索引 (Configuration String Index)
+	0xA0,	// 8. 第八个字节 0xA0 表示该配置的特性标志 (Attributes)，A0=0b10100000，bit7必须1，bit6为是否自供电，bit5为是否远程唤醒
+	250,	// 9. 第九个字节 0x32 表示该配置的最大功率 (Max Power)，这里的值 0x32 表示设备使用的最大电流为 (250 * 2 mA) = 500 mA
 
-    0x09,0x04,USBD_HID_INTERFACE,0x00,2,0x03,0x01,0x00,0x00,//HID接口描述符,1端点
-    0x09,0x21,0x11,0x01,0x00,0x01,0x22,sizeof(KeyRepDesc)&0xFF,sizeof(KeyRepDesc)>>8,//HID类描述符
-    0x07,0x05,HID_EPIN_ADDR,0x03,ENDP1_IN_SIZE,0x00,HID_FS_BINTERVAL,//端点描述符,IN端点1
-	0x07,0x05,HID_EPOUT_ADDR,0x03,ENDP1_OUT_SIZE,0x00,HID_FS_BINTERVAL,//端点描述符,OUT端点1
+    0x09,0x04,USBD_HID_INTERFACE,0x00,2,0x03,0x01,0x00,0x00,							// HID接口描述符,1端点
+    0x09,0x21,0x11,0x01,0x00,0x01,0x22,sizeof(KeyRepDesc)&0xFF,sizeof(KeyRepDesc)>>8,	// HID类描述符
+    0x07,0x05,HID_EPIN_ADDR,0x03,ENDP1_IN_SIZE,0x00,HID_FS_BINTERVAL,					// 端点描述符,IN端点1
+	0x07,0x05,HID_EPOUT_ADDR,0x03,ENDP1_OUT_SIZE,0x00,HID_FS_BINTERVAL,					// 端点描述符,OUT端点1
 	
-	0x09,0x04,USBD_CUSTOM_HID_INTERFACE,0x00,2,0x03,0x00,0x00,0x00,//CustomHID接口描述符,2端点
-    0x09,0x21,0x10,0x01,0x21,0x01,0X22,sizeof(ComRepDesc),0x00,//HID类描述符
-    0x07,0x05,CUSTOM_HID_EPIN_ADDR,0x03,ENDP2_IN_SIZE,0x00,CUSTOM_HID_FS_BINTERVAL,//端点描述符,IN端点2
-	0x07,0x05,CUSTOM_HID_EPOUT_ADDR,0x03,ENDP2_OUT_SIZE,0x00,CUSTOM_HID_FS_BINTERVAL,//端点描述符,OUT端点2
+	0x09,0x04,USBD_CUSTOM_HID_INTERFACE,0x00,2,0x03,0x00,0x00,0x00,						// CustomHID接口描述符,2端点
+    0x09,0x21,0x10,0x01,0x21,0x01,0X22,sizeof(ComRepDesc),0x00,							// HID类描述符
+    0x07,0x05,CUSTOM_HID_EPIN_ADDR,0x03,ENDP2_IN_SIZE,0x00,CUSTOM_HID_FS_BINTERVAL,		// 端点描述符,IN端点2
+	0x07,0x05,CUSTOM_HID_EPOUT_ADDR,0x03,ENDP2_OUT_SIZE,0x00,CUSTOM_HID_FS_BINTERVAL,	// 端点描述符,OUT端点2
+	
+	0x09,0x04,USBD_RGB_HID_INTERFACE,0x00,2,0x03,0x00,0x00,0x00,				// RgbHID接口描述符,2端点
+    0x09,0x21,0x10,0x01,0x21,0x01,0X22,sizeof(RgbRepDesc),0x00,					// HID类描述符
+    0x07,0x05,RGB_HID_EPIN_ADDR,0x03,ENDP3_IN_SIZE,0x00,RGB_HID_FS_BINTERVAL,	// 端点描述符,IN端点3
+	0x07,0x05,RGB_HID_EPOUT_ADDR,0x03,ENDP3_OUT_SIZE,0x00,RGB_HID_FS_BINTERVAL,	// 端点描述符,OUT端点3
 };
 
 
@@ -286,6 +311,11 @@ void USBDeviceInit(){
 	
     UEP1_T_LEN = 0;									//预使用发送长度一定要清空
 	UEP2_T_LEN = 0;									//预使用发送长度一定要清空
+	UEP3_T_LEN = 0;									//预使用发送长度一定要清空
+	
+	UEP3_DMA = Ep3Buffer;							//端点3数据传输地址
+    UEP2_3_MOD |= bUEP3_TX_EN | bUEP3_RX_EN;		//端点3发送接收使能
+    UEP2_3_MOD &= ~bUEP3_BUF_MOD;					//端点3收发各64字节缓冲区
     UEP2_DMA = Ep2Buffer;							//端点2数据传输地址
     UEP2_3_MOD |= bUEP2_TX_EN | bUEP2_RX_EN;		//端点2发送接收使能
     UEP2_3_MOD &= ~bUEP2_BUF_MOD;					//端点2收发各64字节缓冲区
@@ -312,7 +342,7 @@ void USBDeviceInit(){
 * Return         : None
 *******************************************************************************/
 void Enp1IntIn(UINT8 *buf, UINT8 len){
-	memcpy(Ep1Buffer+MAX_PACKET_SIZE, buf, len);					//加载上传数据
+	memcpy(Ep1Buffer+MAX_PACKET_SIZE, buf, len);	//加载上传数据
     if(Ready && !Endp1Busy){						//USB就绪且端点1空闲
         UEP1_T_LEN = len;												//设置发送长度
         UEP1_CTRL = UEP1_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;		//有数据时上传数据并应答ACK
@@ -337,6 +367,22 @@ void Enp2IntIn(UINT8 *buf, UINT8 len){
 }
 
 /*******************************************************************************
+* Function Name  : Enp3IntIn()
+* Description    : USB设备模式端点2的中断上传
+* Input          : None
+* Output         : None
+* Return         : None
+*******************************************************************************/
+void Enp3IntIn(UINT8 *buf, UINT8 len){
+	memcpy(Ep3Buffer+MAX_PACKET_SIZE, buf, len);	//加载上传数据
+    if(Ready && !Endp3Busy){						//USB就绪且端点3空闲
+        UEP3_T_LEN = 64;												//设置发送长度 固定为64
+        UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;		//有数据时上传数据并应答ACK
+        Endp3Busy = 1;
+    }
+}
+
+/*******************************************************************************
 * Function Name  : DeviceInterrupt()
 * Description    : CH559USB中断处理函数
 *******************************************************************************/
@@ -348,6 +394,21 @@ void DeviceInterrupt( void ) interrupt INT_NO_USB using 1				//USB中断服务�
     if(UIF_TRANSFER){			//USB传输完成标志
         switch (USB_INT_ST & (MASK_UIS_TOKEN | MASK_UIS_ENDP))
         {
+		case UIS_TOKEN_IN | 3:							//端点3上传
+            UEP3_T_LEN = 0;                                                     //预使用发送长度一定要清空
+            UEP3_CTRL ^= bUEP_T_TOG;                                            //手动翻转同步标志位
+            Endp3Busy = 0;
+            UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_NAK;           //默认应答NAK
+            break;
+        case UIS_TOKEN_OUT | 3:							//端点3下传
+            if(U_TOG_OK){														//不同步的数据包将丢弃
+                UEP3_CTRL ^= bUEP_R_TOG;									    //手动翻转同步标志位
+				len = USB_RX_LEN;                                               //接收数据长度，数据从Ep3Buffer首地址开始存放
+				UEP3_T_LEN = len;												//设置发送长度
+				
+				Enp3IntIn(Ep3Buffer, len); // 环回 测试代码！！！
+			}
+            break;
 		case UIS_TOKEN_IN | 2:							//端点2上传
             UEP2_T_LEN = 0;                                                     //预使用发送长度一定要清空
             UEP2_CTRL ^= bUEP_T_TOG;                                            //手动翻转同步标志位
@@ -596,6 +657,10 @@ else{//若未在接收状态 则监听各种命令
                                 pDescr = ComRepDesc;
                                 len = sizeof(ComRepDesc);
                             }
+							else if(UsbSetupBuf->wIndexL == 2){	//接口2报表描述符
+                                pDescr = RgbRepDesc;
+                                len = sizeof(RgbRepDesc);
+                            }
                             else errflag = 0xFF;				//不支持的其他接口
                             break;
                         default:							//不支持的命令或者出错
@@ -633,17 +698,23 @@ else{//若未在接收状态 则监听各种命令
                         {
                             switch( UsbSetupBuf->wIndexL )
                             {
+							case 0x83:
+                                UEP3_CTRL = UEP3_CTRL & ~ ( bUEP_T_TOG | MASK_UEP_T_RES ) | UEP_T_RES_NAK;
+                                break;
+							case 0x03:
+                                UEP3_CTRL = UEP3_CTRL & ~ ( bUEP_R_TOG | MASK_UEP_R_RES ) | UEP_R_RES_ACK;
+                                break;
                             case 0x82:
                                 UEP2_CTRL = UEP2_CTRL & ~ ( bUEP_T_TOG | MASK_UEP_T_RES ) | UEP_T_RES_NAK;
+                                break;
+							case 0x02:
+                                UEP2_CTRL = UEP2_CTRL & ~ ( bUEP_R_TOG | MASK_UEP_R_RES ) | UEP_R_RES_ACK;
                                 break;
                             case 0x81:
                                 UEP1_CTRL = UEP1_CTRL & ~ ( bUEP_T_TOG | MASK_UEP_T_RES ) | UEP_T_RES_NAK;
                                 break;
                             case 0x01:
                                 UEP1_CTRL = UEP1_CTRL & ~ ( bUEP_R_TOG | MASK_UEP_R_RES ) | UEP_R_RES_ACK;
-                                break;
-							case 0x02:
-                                UEP2_CTRL = UEP2_CTRL & ~ ( bUEP_R_TOG | MASK_UEP_R_RES ) | UEP_R_RES_ACK;
                                 break;
                             default:		//其他不支持的端点
                                 errflag = 0xFF;
@@ -676,6 +747,12 @@ else{//若未在接收状态 则监听各种命令
                             {
                                 switch( ( (UINT16)UsbSetupBuf->wIndexH << 8 ) | UsbSetupBuf->wIndexL )
                                 {
+								case 0x83:
+                                    UEP3_CTRL = UEP3_CTRL & (~bUEP_T_TOG) | UEP_T_RES_STALL;/* 设置端点3 IN STALL */
+                                    break;
+                                case 0x03:
+                                    UEP3_CTRL = UEP3_CTRL & (~bUEP_R_TOG) | UEP_R_RES_STALL;/* 设置端点3 OUT Stall */
+                                    break;
                                 case 0x82:
                                     UEP2_CTRL = UEP2_CTRL & (~bUEP_T_TOG) | UEP_T_RES_STALL;/* 设置端点2 IN STALL */
                                     break;
@@ -763,6 +840,7 @@ else{//若未在接收状态 则监听各种命令
         UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
         UEP1_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
 		UEP2_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
+		UEP3_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
         USB_DEV_AD = 0x00;
         UIF_SUSPEND = 0;
         UIF_TRANSFER = 0;
