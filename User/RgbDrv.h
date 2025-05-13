@@ -52,18 +52,21 @@
 #define LIGHT_M_OFF			(*(LIGHT_THIS + 255))//屏蔽灭渐变
 
 
-extern PUINT8C DATA_LIGHT;//闪存区灯效信息指针
+extern uint8_t rgbHidFlag; // RGB通信标志
+extern PUINT8C DATA_LIGHT; // 闪存区灯效信息指针
+
+extern uint8_t FrameRaw[];//原始帧缓存
 
 
-void ClearKeyRGB(void);//清除键盘RGB
-void KeyRGB(uint8_t clear);//键盘RGB控制
+void ClearKeyRGB(void); // 清除键盘RGB
+void KeyRGB(uint8_t clear); // 键盘RGB控制
 
-void Rgb2Hsv(uint8_t vR, uint8_t vG, uint8_t vB, uint16_t* pH, uint16_t* pS, uint16_t* pV);//RGB转HSV
-void Hsv2Rgb(uint16_t vH, uint16_t vS, uint16_t vV, uint8_t* pR, uint8_t* pG, uint8_t* pB);//HSV转RGB
+void Rgb2Hsv(uint8_t vR, uint8_t vG, uint8_t vB, uint16_t* pH, uint16_t* pS, uint16_t* pV); // RGB转HSV
+void Hsv2Rgb(uint16_t vH, uint16_t vS, uint16_t vV, uint8_t* pR, uint8_t* pG, uint8_t* pB); // HSV转RGB
 
-void WsWrite16(void);//写入16个灯
+void WsWrite16(void); // 写入16个灯
 
-void SysRGB();//系统RGB控制
+void SysRGB(); // 系统RGB控制
 
 
 

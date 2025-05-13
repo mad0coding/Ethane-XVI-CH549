@@ -2,7 +2,9 @@
 //全开理论灯功耗576，实测总功耗604，全关实测总功耗18，故得全开灯功耗604-18=590
 #include "RgbDrv.h"
 
-PUINT8C DATA_LIGHT = DATA_LIGHT_BASE;//闪存区灯效信息指针
+uint8_t rgbHidFlag = 0; // RGB通信标志
+
+PUINT8C DATA_LIGHT = DATA_LIGHT_BASE; // 闪存区灯效信息指针
 
 static UINT8C LED_CURVE[] = {//LED非线性校正表
 	  0,  0,  0,  0,   0,  0,  0,  0,   0,  0,  0,  0,   0,  0,  0,  0,   0,  0,  0,  0,
@@ -94,7 +96,7 @@ static uint8_t fracUD[16] = {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,};//按动效果
 
 static uint8_t inXi[16] = {0,1,2,3, 4,5,6,7, 8,9,10,11, 12,13,14,15,};
 
-static uint8_t FrameRaw[16*3] = {//原始帧缓存
+uint8_t FrameRaw[16*3] = {//原始帧缓存
 	0,0,0,	0,0,0,	0,0,0,	0,0,0,
 	0,0,0,	0,0,0,	0,0,0,	0,0,0,
 	0,0,0,	0,0,0,	0,0,0,	0,0,0,
@@ -111,7 +113,7 @@ void ClearKeyRGB(void){//清除键盘RGB
 	memset(FrameBuf, 0, sizeof(FrameBuf));
 }
 
-void KeyRGB(uint8_t clear){//键盘RGB控制
+void KeyRGB(uint8_t clear){ // 键盘RGB控制
 	static uint32_t dTime = 0, leaveTime = -65535;//时间记录 离开时间
 	static uint16_t randTime = 0;//间隔随机时间
 	static uint8_t taskTick = 0;//0~3bit:0为启动沿,1为动作期,2为结束沿,3为间隔期;bit7:呼吸模式用
@@ -129,6 +131,15 @@ void KeyRGB(uint8_t clear){//键盘RGB控制
 		/*if(LIGHT_MONO <= 0) */memset(fracM, 0, 16);//快切换则清空主效果比例
 		/*if(LIGHT_MONO <= 1) */taskTick = 0;//快、缓切换则清零任务节拍
 		return;
+	}
+	
+	if(rgbHidFlag){
+		if(rgbHidFlag & ~0x80) rgbHidFlag--;
+		if(rgbHidFlag & 0x80){ // 有新帧
+			rgbHidFlag &= ~0x80; // 清除新帧标志
+			goto mapGRB; // 测试代码！！！
+		}
+		else return;
 	}
 	
 	if((uint8_t)((uint8_t)Systime - eTime) < 20) return;//以20ms周期处理灯效
@@ -324,6 +335,8 @@ void KeyRGB(uint8_t clear){//键盘RGB控制
 		fracSHLD -= tool16;
 	}
 	
+	mapGRB:
+	
 	//GRB换位和旋转映射
 	if(CFG_KB_DIR == 0){//正常方向
 		for(i = 0; i < 16; i++){	FrameBuf[i*3+1] = FrameRaw[i*3+0];
@@ -360,7 +373,7 @@ void WsWrite16(void){ // 写入16个灯
 }
 
 //H:0~COLOR_ANGLE*6,S:0~100(已用delta代替),V:0~255
-void Rgb2Hsv(uint8_t vR, uint8_t vG, uint8_t vB, uint16_t* pH, uint16_t* pS, uint16_t* pV){//RGB转HSV
+void Rgb2Hsv(uint8_t vR, uint8_t vG, uint8_t vB, uint16_t* pH, uint16_t* pS, uint16_t* pV){ // RGB转HSV
     UINT8D max = MAX(MAX(vR,vG),vB), min = MIN(MIN(vR,vG),vB);
     UINT8D delta = max - min;
     if(delta == 0) *pH = 0;
@@ -372,7 +385,7 @@ void Rgb2Hsv(uint8_t vR, uint8_t vG, uint8_t vB, uint16_t* pH, uint16_t* pS, uin
     else *pS = delta;//100 * delta / max;//注意此处S直接用delta代替,故函数外直接修改V不合法
     *pV = max;
 }
-void Hsv2Rgb(uint16_t vH, uint16_t vS, uint16_t vV, uint8_t* pR, uint8_t* pG, uint8_t* pB){//HSV转RGB
+void Hsv2Rgb(uint16_t vH, uint16_t vS, uint16_t vV, uint8_t* pR, uint8_t* pG, uint8_t* pB){ // HSV转RGB
 	UINT8D hi = (uint16_t)(vH / COLOR_ANGLE) % 6;
     UINT16D f = vH - hi * COLOR_ANGLE;
     UINT8D p = vV - vS;
@@ -394,7 +407,7 @@ extern uint8_t mode3_key;//模式3按键(1-16)
 
 extern uint32_t changeTime;//配置切换时间
 
-void SysRGB(void){//系统RGB控制
+void SysRGB(void){ // 系统RGB控制
 	uint8_t i;
 	static uint8_t rgbWeight = 0;//系统RGB指示灯权重
 	uint8_t rgbOutput[3];//系统RGB指示灯输出

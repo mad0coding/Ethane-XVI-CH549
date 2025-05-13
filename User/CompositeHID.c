@@ -406,7 +406,19 @@ void DeviceInterrupt( void ) interrupt INT_NO_USB using 1				//USB中断服务�
 				len = USB_RX_LEN;                                               //接收数据长度，数据从Ep3Buffer首地址开始存放
 				UEP3_T_LEN = len;												//设置发送长度
 				
-				Enp3IntIn(Ep3Buffer, len); // 环回 测试代码！！！
+				//Enp3IntIn(Ep3Buffer, len); // 环回 测试代码！！！
+				if(Ep3Buffer[0] == 0xA5 && Ep3Buffer[1] == 0x5A){ // 帧头
+					if(Ep3Buffer[2] == 0){		// 数据帧
+						rgbHidFlag = 0x80 | 100; // 生命周期 20s*100
+						memcpy(FrameRaw, Ep3Buffer + 4, 16*3);
+					}
+					else if(Ep3Buffer[2] == 1){	// 起始帧
+						
+					}
+					else if(Ep3Buffer[2] == 2){	// 结束帧
+						rgbHidFlag = 0; // 生命周期结束
+					}
+				}
 			}
             break;
 		case UIS_TOKEN_IN | 2:							//端点2上传
