@@ -49,7 +49,7 @@
 #define KP_E1C	P3_7//INT3
 #define KP_E2A	P0_1
 #define KP_E2B	P0_3
-#define KP_E2C	P5_7
+#define KP_E2C	(P5 & bRST)
 
 #define BUZZ_G		P2_5//蜂鸣器驱动栅极
 #define BUZZ_PWM	PWM_DATA0//蜂鸣器驱动占空比

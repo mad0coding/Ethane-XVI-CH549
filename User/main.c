@@ -16,7 +16,7 @@
 
 #pragma  NOAREGS
 
-UINT8C FIRMWARE_VERSION[4] = {1,5,2,2}; // 固件版本
+UINT8C FIRMWARE_VERSION[4] = {1,5,3,0}; // 固件版本
 
 uint8_t asyncFlag = 0;//异步操作标志
 
@@ -79,12 +79,12 @@ void main()
 	ADC_ChSelect(2);				//初始化通道2并选择
 	ADC_StartSample();				//启动采样
 	
-	GPIO_INT_Init((INT_P03_L|INT_P57_H|INT_INT0_L), INT_EDGE, Enable); //使能3个中断
-	PIN_FUNC |= bINT0_PIN_X;		//INT0使用P22
-	GPIO_Init(PORT3, PIN7, MODE0);	//初始化为高阻
-	
-	INTX |= bIX3 | bIT3;	//INT3选择高电平和边沿触发(即上升沿触发)
-	IE_INT3 = 1;			//允许INT3中断
+//	GPIO_INT_Init((INT_P03_L|INT_P57_H|INT_INT0_L), INT_EDGE, Enable); //使能3个中断
+//	PIN_FUNC |= bINT0_PIN_X;		//INT0使用P22
+//	GPIO_Init(PORT3, PIN7, MODE0);	//初始化为高阻
+//	
+//	INTX |= bIX3 | bIT3;	//INT3选择高电平和边沿触发(即上升沿触发)
+//	IE_INT3 = 1;			//允许INT3中断
 	
 	PWM0OutPolarLowAct();				//PWM0反极性
 	SetPWMClkDiv(32);					//设置频率
@@ -97,71 +97,77 @@ void main()
     mTimer0RunCTL(1);				//T0定时器启动
 //    ET0 = 1;						//T0定时器中断开启
 
-	CH549WDTModeSelect(1);		//启动看门狗
+//	CH549WDTModeSelect(1);		//启动看门狗
 	
 	ParaLoad();		//参数读取
 	
     while(1){
-		WDOG_COUNT = 0;//清零看门狗计数
-//		if(!KP_E2) WDOG_COUNT = 0xFF;//按下旋钮2则触发看门狗 测试代码！！！！！！！！！！
-		/********************基本IO********************/
-		GetTime();//时间获取
-		
-		KeyRead();//读取按键
-		KeyFilter(1);//滤波一阶段
-		AdcRead();//摇杆ADC读取一个通道
-		
-        WsWrite16();//灯写入
-		
-		AdcRead();//摇杆ADC读取另一个通道
-		KeyRead();//再次读取按键
-		KeyFilter(2);//滤波二阶段
-		/**********************************************/
-		
-		if(asyncFlag & 0x80) continue;//若USB正在接收数据则跳过HID发送
-		else if(asyncFlag){//有需要的异步操作
-			AsyncHandle(asyncFlag);//异步处理
-			asyncFlag = 0;//清除标志
-			continue;
-		}
-		
-		if(All_if_send == 0){ // 若总发送标志已清空
-			MultiFunc(); // 处理各种功能
-			
-			All_if_send = KeyBrd_if_send | (Mouse_if_send << 1) | (Point_if_send << 2) | (Vol_if_send << 3) 
-						| (Dial_if_send << 4); // 生成总发送标志
-		}
-		
-		if((uint8_t)((uint8_t)Systime - reportSendTime) < 8) continue;	//延时未到则跳过发送
-		if(All_if_send != 0) reportSendTime = Systime;	//若有要发送的则记录发送时间低8位
-		
-		if(All_if_send && WakeUpEnFlag == 0x03){//若要发送且主机已休眠
-			CH554USBDevWakeup();//唤醒
-			mDelaymS(50);
-			CH554USBDevWakeup();//唤醒
-			mDelaymS(50);
-		}
-		
-		if(All_if_send & 0x01){		//键盘
-			All_if_send &= ~0x01;	//清除bit0
-			Enp1IntIn(KeyBrd_data, sizeof(KeyBrd_data));
-		}
-		else if(All_if_send & 0x02){//鼠标
-			All_if_send &= ~0x02;	//清除bit1
-			Enp1IntIn(Mouse_data, sizeof(Mouse_data));
-		}
-		else if(All_if_send & 0x04){//指针
-			All_if_send &= ~0x04;	//清除bit2
-			Enp1IntIn(Point_data, sizeof(Point_data));
-		}
-		else if(All_if_send & 0x08){//媒体
-			All_if_send &= ~0x08;	//清除bit3
-			Enp1IntIn(Vol_data, sizeof(Vol_data));
-		}
-		else if(All_if_send & 0x10){//轮盘
-			All_if_send &= ~0x10;	//清除bit4
-			Enp1IntIn(Dial_data, sizeof(Dial_data));
-		}
+//		P2_0 = !KP_E2A;
+//		P2_1 = !KP_E2B;
+//		P2_3 = !KP_E2C;
+		PWM_R = 30 * !KP_E2A;
+		PWM_G = 10 * !KP_E2B;
+		PWM_B = 10 * !KP_E2C;
+//		WDOG_COUNT = 0;//清零看门狗计数
+////		if(!KP_E2) WDOG_COUNT = 0xFF;//按下旋钮2则触发看门狗 测试代码！！！！！！！！！！
+//		/********************基本IO********************/
+//		GetTime();//时间获取
+//		
+//		KeyRead();//读取按键
+//		KeyFilter(1);//滤波一阶段
+//		AdcRead();//摇杆ADC读取一个通道
+//		
+//        WsWrite16();//灯写入
+//		
+//		AdcRead();//摇杆ADC读取另一个通道
+//		KeyRead();//再次读取按键
+//		KeyFilter(2);//滤波二阶段
+//		/**********************************************/
+//		
+//		if(asyncFlag & 0x80) continue;//若USB正在接收数据则跳过HID发送
+//		else if(asyncFlag){//有需要的异步操作
+//			AsyncHandle(asyncFlag);//异步处理
+//			asyncFlag = 0;//清除标志
+//			continue;
+//		}
+//		
+//		if(All_if_send == 0){ // 若总发送标志已清空
+//			MultiFunc(); // 处理各种功能
+//			
+//			All_if_send = KeyBrd_if_send | (Mouse_if_send << 1) | (Point_if_send << 2) | (Vol_if_send << 3) 
+//						| (Dial_if_send << 4); // 生成总发送标志
+//		}
+//		
+//		if((uint8_t)((uint8_t)Systime - reportSendTime) < 8) continue;	//延时未到则跳过发送
+//		if(All_if_send != 0) reportSendTime = Systime;	//若有要发送的则记录发送时间低8位
+//		
+//		if(All_if_send && WakeUpEnFlag == 0x03){//若要发送且主机已休眠
+//			CH554USBDevWakeup();//唤醒
+//			mDelaymS(50);
+//			CH554USBDevWakeup();//唤醒
+//			mDelaymS(50);
+//		}
+//		
+//		if(All_if_send & 0x01){		//键盘
+//			All_if_send &= ~0x01;	//清除bit0
+//			Enp1IntIn(KeyBrd_data, sizeof(KeyBrd_data));
+//		}
+//		else if(All_if_send & 0x02){//鼠标
+//			All_if_send &= ~0x02;	//清除bit1
+//			Enp1IntIn(Mouse_data, sizeof(Mouse_data));
+//		}
+//		else if(All_if_send & 0x04){//指针
+//			All_if_send &= ~0x04;	//清除bit2
+//			Enp1IntIn(Point_data, sizeof(Point_data));
+//		}
+//		else if(All_if_send & 0x08){//媒体
+//			All_if_send &= ~0x08;	//清除bit3
+//			Enp1IntIn(Vol_data, sizeof(Vol_data));
+//		}
+//		else if(All_if_send & 0x10){//轮盘
+//			All_if_send &= ~0x10;	//清除bit4
+//			Enp1IntIn(Dial_data, sizeof(Dial_data));
+//		}
     }
 }
 
