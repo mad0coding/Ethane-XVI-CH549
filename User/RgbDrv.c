@@ -3,6 +3,7 @@
 #include "RgbDrv.h"
 
 uint8_t rgbHidFlag = 0; // RGB通信标志
+// bit7:新帧标志 bit6~4:模式 bit3~0:预留
 
 PUINT8C DATA_LIGHT = DATA_LIGHT_BASE; // 闪存区灯效信息指针
 
@@ -133,13 +134,13 @@ void KeyRGB(uint8_t clear){ // 键盘RGB控制
 		return;
 	}
 	
-	if(rgbHidFlag){
-		if(rgbHidFlag & ~0x80) rgbHidFlag--;
+	if(rgbHidFlag & 0x70){ // 非硬件模式
 		if(rgbHidFlag & 0x80){ // 有新帧
 			rgbHidFlag &= ~0x80; // 清除新帧标志
-			goto mapGRB; // 测试代码！！！
+			// 唯一的goto语句 暂为避免套if或大改逻辑或重新封装函数
+			goto MAP_GRB_TO_RGB; // 跳过所有硬件灯效 直接输出帧
 		}
-		else return;
+		else return; // 无新帧则退出
 	}
 	
 	if((uint8_t)((uint8_t)Systime - eTime) < 20) return;//以20ms周期处理灯效
@@ -335,7 +336,7 @@ void KeyRGB(uint8_t clear){ // 键盘RGB控制
 		fracSHLD -= tool16;
 	}
 	
-	mapGRB:
+	MAP_GRB_TO_RGB: // 跳过所有硬件灯效 直接执行映射并写入帧缓存
 	
 	//GRB换位和旋转映射
 	if(CFG_KB_DIR == 0){//正常方向
