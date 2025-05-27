@@ -249,14 +249,15 @@ UINT8D EC2val = 0;//计数值
 bit EC2freq = 0;//倍频设置
 void GPIO_EXT_ISR(void) interrupt INT_NO_GPIO
 {
-	register UINT8 ECA = P0_1, ECB = P0_3;//这里AB反过来
-	if(EC2freq){	//若启用倍频
-		if(ECA && ECB || !ECA && !ECB) EC2val--;//顺时针(只针对开发使用的编码器)
-		else						   EC2val++;//逆时针(只针对开发使用的编码器)
-	}else{			//若不倍频
-		register UINT8 ECnew = (ECA << 1) | ECB;//更新记录状态
-		if(EC2old == 0 && ECnew == 3)	   EC2val--;//顺时针(只针对开发使用的编码器)
-		else if(EC2old == 1 && ECnew == 2) EC2val++;//逆时针(只针对开发使用的编码器)
-		EC2old = ECnew;//更新记录状态
-	}
+	EC2val++;
+//	register UINT8 ECA = P0_1, ECB = P0_3;//这里AB反过来
+//	if(EC2freq){	//若启用倍频
+//		if(ECA && ECB || !ECA && !ECB) EC2val--;//顺时针(只针对开发使用的编码器)
+//		else						   EC2val++;//逆时针(只针对开发使用的编码器)
+//	}else{			//若不倍频
+//		register UINT8 ECnew = (ECA << 1) | ECB;//更新记录状态
+//		if(EC2old == 0 && ECnew == 3)	   EC2val--;//顺时针(只针对开发使用的编码器)
+//		else if(EC2old == 1 && ECnew == 2) EC2val++;//逆时针(只针对开发使用的编码器)
+//		EC2old = ECnew;//更新记录状态
+//	}
 }
