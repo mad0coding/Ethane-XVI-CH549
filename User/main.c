@@ -16,7 +16,7 @@
 
 #pragma  NOAREGS
 
-UINT8C FIRMWARE_VERSION[4] = {1,5,3,0}; // 固件版本
+UINT8C FIRMWARE_VERSION[4] = {1,5,3,1}; // 固件版本
 
 uint8_t asyncFlag = 0;//异步操作标志
 
@@ -79,12 +79,12 @@ void main()
 	ADC_ChSelect(2);				//初始化通道2并选择
 	ADC_StartSample();				//启动采样
 	
-//	GPIO_INT_Init((INT_P03_L|INT_P57_H|INT_INT0_L), INT_EDGE, Enable); //使能3个中断
-//	PIN_FUNC |= bINT0_PIN_X;		//INT0使用P22
-//	GPIO_Init(PORT3, PIN7, MODE0);	//初始化为高阻
-//	
-//	INTX |= bIX3 | bIT3;	//INT3选择高电平和边沿触发(即上升沿触发)
-//	IE_INT3 = 1;			//允许INT3中断
+	GPIO_INT_Init((INT_P03_L|INT_P57_H|INT_INT0_L), INT_EDGE, Enable); //使能3个中断
+	PIN_FUNC |= bINT0_PIN_X;		//INT0使用P22
+	GPIO_Init(PORT3, PIN7, MODE0);	//初始化为高阻
+	
+	INTX |= bIX3 | bIT3;	//INT3选择高电平和边沿触发(即上升沿触发)
+	IE_INT3 = 1;			//允许INT3中断
 	
 	PWM0OutPolarLowAct();				//PWM0反极性
 	SetPWMClkDiv(32);					//设置频率
@@ -105,9 +105,9 @@ void main()
 //		P2_0 = !KP_E2A;
 //		P2_1 = !KP_E2B;
 //		P2_3 = !KP_E2C;
-		PWM_R = 30 * !KP_E2A;
-		PWM_G = 10 * !KP_E2B;
-		PWM_B = 10 * !KP_E2C;
+		PWM_R = 20 * (EC2val % 4 == 1);
+		PWM_G = 10 * (EC2val % 4 == 2);
+		PWM_B = 10 * (EC2val % 4 == 3);
 //		WDOG_COUNT = 0;//清零看门狗计数
 ////		if(!KP_E2) WDOG_COUNT = 0xFF;//按下旋钮2则触发看门狗 测试代码！！！！！！！！！！
 //		/********************基本IO********************/
