@@ -79,7 +79,16 @@ void main()
 	ADC_ChSelect(2);				//初始化通道2并选择
 	ADC_StartSample();				//启动采样
 	
-	GPIO_INT_Init((INT_P03_L|INT_P57_H|INT_INT0_L), INT_EDGE, Enable); //使能3个中断
+	if(!KP_E1 && !KP_E2){
+		GPIO_INT_Init((INT_P03_L|INT_P57_H|INT_INT0_L), INT_EDGE, Enable); //使能3个中断
+	}
+	else if(!KP_E1){
+		GPIO_INT_Init((INT_P03_L|INT_INT0_L), INT_EDGE, Enable); //使能2个中断
+	}
+	else{
+		GPIO_INT_Init((INT_P57_H|INT_INT0_L), INT_EDGE, Enable); //使能2个中断
+	}
+//	GPIO_INT_Init((INT_P03_L|INT_P57_H|INT_INT0_L), INT_EDGE, Enable); //使能3个中断
 	PIN_FUNC |= bINT0_PIN_X;		//INT0使用P22
 	GPIO_Init(PORT3, PIN7, MODE0);	//初始化为高阻
 	
