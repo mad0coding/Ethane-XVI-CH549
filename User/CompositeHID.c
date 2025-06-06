@@ -407,7 +407,7 @@ void DeviceInterrupt( void ) interrupt INT_NO_USB using 1				//USB中断服务�
 				UEP3_T_LEN = len;												//设置发送长度
 				
 				if(!(Ep3Buffer[0] == 0xA5 && Ep3Buffer[1] == 0x5A)) break; // 检查帧头
-				if(Ep3Buffer[2] == 'S' && 1){ // Sender:SignalRGB
+				if(Ep3Buffer[2] == 3 && 1){ // Sender:SignalRGB
 					if(Ep3Buffer[3] == 0){		// 数据帧
 						rgbHidFlag = (rgbHidFlag & ~0xF0) | 0x80 | 0x20; // 新帧标志+SignalRGB模式
 						memcpy(FrameRaw, Ep3Buffer + 4, 16*3); // 帧拷贝
