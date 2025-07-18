@@ -264,9 +264,9 @@ static void MorseBuzz(void){ // 摩尔斯码蜂鸣器控制
 
 static void PrintTest(void){ // 打印输出
 	static uint32_t printTime = 0;
-	if(Systime - printTime >= 1000){ // 周期1000ms
+	if(Systime - printTime >= 1000/* && tickDif > 100*/){ // 周期1000ms
 		printTime += 1000;
-		memset(debugBuf, ' ', 64);
+//		memset(debugBuf, ' ', 64);
 		
 //		sprintf(debugBuf, "%u", tickDif); // 时间监测打印
 		

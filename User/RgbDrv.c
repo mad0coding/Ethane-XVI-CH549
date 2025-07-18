@@ -289,7 +289,7 @@ void KeyRGB(uint8_t clear){ // 键盘RGB控制
 			tool16 = (255 - fracUD[i]) / (LIGHT_T_D(i) + 1);//31
 			if((255 - fracUD[i]) && tool16 == 0) tool16 = 1;
 			fracUD[i] += tool16;
-			if(leftSHLD > LIGHT_SHLD(i)/*i*16*/) leftSHLD = LIGHT_SHLD(i)/*i*16*/;//若按下且需压低屏蔽
+			if(leftSHLD > LIGHT_SHLD(i)) leftSHLD = LIGHT_SHLD(i);//若按下且需压低屏蔽
 		}else{//若抬起
 			tool16 = fracUD[i] / (LIGHT_T_U(i) + 1);//31
 			if(fracUD[i] && tool16 == 0) tool16 = 1;
@@ -378,10 +378,18 @@ void Rgb2Hsv(uint8_t vR, uint8_t vG, uint8_t vB, uint16_t* pH, uint16_t* pS, uin
     UINT8D max = MAX(MAX(vR,vG),vB), min = MIN(MIN(vR,vG),vB);
     UINT8D delta = max - min;
     if(delta == 0) *pH = 0;
-    else if(max == vR) *pH = ((int16_t)vG-vB)*COLOR_ANGLE/delta;
-    else if(max == vG) *pH = ((int16_t)vB-vR)*COLOR_ANGLE/delta + COLOR_ANGLE*2;
-    else if(max == vB) *pH = ((int16_t)vR-vG)*COLOR_ANGLE/delta + COLOR_ANGLE*4;
-    if(*pH > COLOR_ANGLE * 6) *pH += COLOR_ANGLE * 6;//处理反向溢出
+    else if(max == vR){
+		if(vG >= vB) *pH = ((uint16_t)vG-vB)*COLOR_ANGLE/delta;
+		else *pH = COLOR_ANGLE*6 - ((uint16_t)vB-vG)*COLOR_ANGLE/delta;
+	}
+    else if(max == vG){
+		if(vB > vR) *pH = COLOR_ANGLE*2 + ((uint16_t)vB-vR)*COLOR_ANGLE/delta;
+		else *pH = COLOR_ANGLE*2 - ((uint16_t)vR-vB)*COLOR_ANGLE/delta;
+	}
+    else if(max == vB){
+		if(vR > vG) *pH = COLOR_ANGLE*4 + ((uint16_t)vR-vG)*COLOR_ANGLE/delta;
+		else *pH = COLOR_ANGLE*4 - ((uint16_t)vG-vR)*COLOR_ANGLE/delta;
+	}
     if(max == 0) *pS = 0;
     else *pS = delta;//100 * delta / max;//注意此处S直接用delta代替,故函数外直接修改V不合法
     *pV = max;

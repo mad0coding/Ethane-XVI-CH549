@@ -758,8 +758,8 @@ void EcHandle(uint8_t clear)//旋钮处理
 //	}
 	
 	for(i = 0; i < 2; i++){//处理每个旋钮
-		if(TIM_count[i] > EC_count[i]) EC_flag = 1;
-		else if(TIM_count[i] < EC_count[i]) EC_flag = 2;
+		if((int8_t)(TIM_count[i] - EC_count[i]) > 0) EC_flag = 1;
+		else if((int8_t)(TIM_count[i] - EC_count[i]) < 0) EC_flag = 2;
 		else EC_flag = 0;
 		
 		switch(CFGb_E_MODE(i)){
