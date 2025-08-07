@@ -727,7 +727,7 @@ void EcHandle(uint8_t clear)//旋钮处理
 {
 //	static uint32_t oldTime = 0;//记录时间
 //	static int TIM_old = 0;//编码器旧计数
-	static int8_t TIM_count[2] = {0,0};//编码器计数
+//	static int8_t TIM_count[2] = {0,0};//编码器计数
 	static int8_t EC_count[2] = {0,0};//执行计数
 	static uint8_t EC_pulse[2] = {0,0};//间隔标志
 	static int16_t dial_angle = 0; // 轮盘转角
@@ -737,16 +737,16 @@ void EcHandle(uint8_t clear)//旋钮处理
 	uint8_t i;
 	
 	if(clear){ // 清除
-		TIM_count[0] = EC_count[0] = EC_pulse[0] = 0;
-		TIM_count[1] = EC_count[1] = EC_pulse[1] = 0;
+		ecValue[0] = EC_count[0] = EC_pulse[0] = 0;
+		ecValue[1] = EC_count[1] = EC_pulse[1] = 0;
 		EC_flag = dial_angle = 0;
 		return;
 	}
 
-	TIM_count[0] -= (CFG_E_DIR(0) * 2 - 1) * (int8_t)(EC1val); // 编码器计数读取
-	EC1val = 0; // 编码器清零
-	TIM_count[1] -= (CFG_E_DIR(1) * 2 - 1) * (int8_t)(EC2val); // 编码器计数读取
-	EC2val = 0; // 编码器清零
+//	TIM_count[0] -= (CFG_E_DIR(0) * 2 - 1) * (int8_t)(EC1val); // 编码器计数读取
+//	EC1val = 0; // 编码器清零
+//	TIM_count[1] -= (CFG_E_DIR(1) * 2 - 1) * (int8_t)(EC2val); // 编码器计数读取
+//	EC2val = 0; // 编码器清零
 	
 //	if(TIM_old != TIM_count){
 //		TIM_old = TIM_count;
@@ -758,8 +758,8 @@ void EcHandle(uint8_t clear)//旋钮处理
 //	}
 	
 	for(i = 0; i < 2; i++){//处理每个旋钮
-		if((int8_t)(TIM_count[i] - EC_count[i]) > 0) EC_flag = 1;
-		else if((int8_t)(TIM_count[i] - EC_count[i]) < 0) EC_flag = 2;
+		if((int8_t)(ecValue[i] - EC_count[i]) > 0) EC_flag = 1;
+		else if((int8_t)(ecValue[i] - EC_count[i]) < 0) EC_flag = 2;
 		else EC_flag = 0;
 		
 		switch(CFGb_E_MODE(i)){
@@ -811,7 +811,7 @@ void EcHandle(uint8_t clear)//旋钮处理
 				break;
 			}
 			default:{
-				EC_count[i] = TIM_count[i]; // 直接完全跟进
+				EC_count[i] = ecValue[i]; // 直接完全跟进
 				break;
 			}
 		}

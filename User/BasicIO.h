@@ -81,6 +81,7 @@ extern bit EC1freq, EC2freq;
 
 extern uint16_t adcValue[];
 extern uint16_t Adc_Set_Mid[];
+extern uint8_t ecValue[];
 extern UINT8D keyFltNum;//按键滤波参数
 
 extern uint8_t keyNow[KP_NUM];//按键映射结果
@@ -91,6 +92,7 @@ extern uint8_t debugBuf[];
 
 void ArrayInit(void);//数组初始化
 void AdcRead(void);//摇杆读取
+void EcRead(void); // 旋钮读取
 void KeyRead(void);//按键读取
 void KeyFilter(uint8_t ts);//按键滤波
 

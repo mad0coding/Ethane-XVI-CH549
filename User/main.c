@@ -16,7 +16,7 @@
 
 #pragma  NOAREGS
 
-UINT8C FIRMWARE_VERSION[4] = {1,6,1,0}; // 固件版本
+UINT8C FIRMWARE_VERSION[4] = {1,6,2,0}; // 固件版本
 
 uint8_t asyncFlag = 0;//异步操作标志
 
@@ -116,6 +116,7 @@ void main()
 		AdcRead();//摇杆ADC读取另一个通道
 		KeyRead();//再次读取按键
 		KeyFilter(2);//滤波二阶段
+		EcRead(); // 旋钮读取
 		/**********************************************/
 		
 		if(asyncFlag & 0x80) continue;//若USB正在接收数据则跳过HID发送

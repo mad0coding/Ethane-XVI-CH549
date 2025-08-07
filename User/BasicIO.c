@@ -26,7 +26,8 @@ uint16_t Adc_Set_Mid[2*5] = {//校正值
 	0,0,		//下限值
 };
 
-uint16_t adcValue[2] = {2048,2048};		//ADC采样值
+uint16_t adcValue[2] = {2048,2048};	// ADC采样值
+uint8_t ecValue[2] = {0,0};			// 摇杆计数值
 
 uint8_t keyNow[KP_NUM];		//按键映射结果
 uint8_t keyOld[KP_NUM];		//按键映射结果旧值
@@ -71,6 +72,13 @@ void AdcRead(void){//摇杆读取
 		ADC_ExChannelSelect(ch*2);	//选择通道ch 0或2
 		ADC_StartSample();			//启动下一次ADC采样
 	}
+}
+
+void EcRead(void){ // 旋钮读取
+	ecValue[0] -= (CFG_E_DIR(0) * 2 - 1) * (int8_t)(EC1val); // 编码器计数读取
+	EC1val = 0; // 编码器清零
+	ecValue[1] -= (CFG_E_DIR(1) * 2 - 1) * (int8_t)(EC2val); // 编码器计数读取
+	EC2val = 0; // 编码器清零
 }
 
 void KeyRead(void){//按键读取

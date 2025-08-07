@@ -526,12 +526,15 @@ else{//若未在接收状态 则监听各种命令
 			Buf[Offset+4+index] = (Buf[Offset+4+index*2] << 4) | Buf[Offset+5+index*2];
 		}
 	}
-	else if(Buf[0] == 'B' && Buf[1] == 'I' && Buf[2] == 'P' && Buf[3] == 'T'){//输入读取命令
-		*(PUINT16X)&Buf[Offset+4] = adcValue[0];//摇杆值
+	else if(Buf[0] == 'B' && Buf[1] == 'I' && Buf[2] == 'P' && Buf[3] == 'T'){ // 输入读取命令
+		*(PUINT16X)&Buf[Offset+4] = adcValue[0]; // 摇杆值
 		*(PUINT16X)&Buf[Offset+6] = adcValue[1];
-		*(PUINT32X)&Buf[Offset+8] = 0;
-		for(index = 0; index < KP_NUM; index++){//按键值
-			*(PUINT32X)&Buf[Offset+8] |= (uint32_t)keyNow[index] << index;
+		*(PUINT16X)&Buf[Offset+8] = 0; // 保留
+		Buf[Offset+10] = ecValue[0]; // 旋钮值
+		Buf[Offset+11] = ecValue[1];
+		*(PUINT32X)&Buf[Offset+12] = 0; // 按键值
+		for(index = 0; index < KP_NUM; index++){ // 按键值
+			*(PUINT32X)&Buf[Offset+12] |= (uint32_t)keyNow[index] << index;
 		}
 	}
 	else if(Buf[0] == 'B' && Buf[1] == 'G' && Buf[2] == 'P' && Buf[3] == 'M'){//参数读取命令
