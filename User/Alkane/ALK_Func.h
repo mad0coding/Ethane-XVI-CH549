@@ -70,21 +70,21 @@
 #define kv_shortcut		253
 #define kv_delay		254
 
-#define LIMIT(_X, _min, _max)	(MIN(MAX(_X, _min), _max))
-#define MIN(_X, _Y)		((_X) < (_Y) ? (_X) : (_Y))
-#define MAX(_X, _Y)		((_X) > (_Y) ? (_X) : (_Y))
-#define ABS(_X)			((_X) > 0 ? (_X) : (-(_X)))
-#define SIGN(_X)		(((_X)<0) ? (-1) : (((_X)>0) ? 1 : 0))
+#define LIMIT(_X, _min, _max)   (MIN(MAX(_X, _min), _max))
+#define MIN(_X, _Y)		        ((_X) < (_Y) ? (_X) : (_Y))
+#define MAX(_X, _Y)		        ((_X) > (_Y) ? (_X) : (_Y))
+#define ABS(_X)			        ((_X) > 0 ? (_X) : (-(_X)))
+#define SIGN(_X)		        (((_X)<0) ? (-1) : (((_X)>0) ? 1 : 0))
 
 
-ALK_U8 FillReport(void);//报文填写
+ALK_U8 FillReport(void); // 报文填写
 
-void CsChange(ALK_U8 change, ALK_U8 ifTmp);//切换
-void KeyInsert(ALK_U8 r_i, ALK_U8 key_v);//单键填入
-void Mode3Handle(void);//mode3处理
-void RkEcKeyHandle(void);//摇杆旋钮按键处理
-void RkHandle(ALK_U8 clear);//摇杆处理
-void EcHandle(ALK_U8 clear);//旋钮处理
+void CsChange(ALK_U8 change, ALK_U8 ifTmp); // 切换
+void KeyInsert(ALK_U8 r_i, ALK_U8 key_v); // 单键填入
+void Mode3Handle(void); // mode3处理
+void RkEcKeyHandle(void); // 摇杆旋钮按键处理
+void RkHandle(ALK_U8 clear); // 摇杆处理
+void EcHandle(ALK_U8 clear); // 旋钮处理
 void MorseHandle(void); // 摩尔斯码处理
 
 //void Default_para(void);//载入默认参数

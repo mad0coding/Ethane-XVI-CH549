@@ -29,7 +29,7 @@ ALK_U8 clickerNum = 0;//自动连点数
 ALK_U32 changeTime = -10000*0;//配置切换时间
 
 //******************************数据相关******************************//
-ALK_U8 mode3_key = 0;//模式3按键(1-16)
+ALK_U8 mode3_key = 0;//模式3按键(1-ALK_KEY_NUM)
 static ALK_U16 mode3_i = 0;//模式3源数据下标(访问mode3_data)
 static ALK_U16 mode3_loop_count = 0;//模式3循环计数
 static ALK_U8 mode3_loop_flag = 0;//模式3循环操作标志 bit7:是否结束 bit2:当前有释放沿 bit1~0:未晚于第一释放沿
@@ -81,14 +81,14 @@ ALK_U8 FillReport(void)//报文填写
 		if(mode3_gap) Mode3Handle();//若翻转后要间隔也即翻转前不用间隔则执行处理
 	}
 	else{//空闲状态
-		for(i = 0; i < 16; i++){//统计按下的各模式数量
+		for(i = 0; i < ALK_KEY_NUM; i++){//统计按下的各模式数量
 			if(keyNow[i/*+1*/]){
 				if(CFG_K_MODE(keyAddr[sysCs][i]) == m1_button && i != switch_i) mode1_num++;
 				else if(CFG_K_MODE(keyAddr[sysCs][i]) == m2_shortcut && i != switch_i) mode2_num++;
 				else if(CFG_K_MODE(keyAddr[sysCs][i]) == m7_clicker && i != switch_i) mode7_num++;
 			}
 		}
-		for(i = 0; i < 16; i++){//对于16个按键
+		for(i = 0; i < ALK_KEY_NUM; i++){//对于全部键盘按键
 			if(i == switch_i){//若有正在生效的临时切换键
 				if(!keyNow[i] && !keyOld[i]){//释放沿之后一拍
 					switch_count++;//计数滤波
@@ -143,7 +143,7 @@ ALK_U8 FillReport(void)//报文填写
 						turn_dif = (keyDir[sysCs] + 4 - turn_old) % 4;//相对旧键盘方向
 						if(turn_dif == 0) switch_i = i;
 						else if(turn_dif == 1) switch_i = TURN_L90[i];
-						else if(turn_dif == 2) switch_i = 16 - i;
+						else if(turn_dif == 2) switch_i = 16 - i; // 测试代码!!!(临时代码)
 						else if(turn_dif == 3) switch_i = TURN_R90[i];
 						break;//跳出本次循环
 					}
@@ -194,7 +194,7 @@ ALK_U8 FillReport(void)//报文填写
 			}
 		}//处理完16个按键的主要内容
 		
-		for(i = 0; i < 16; i++){//对于16个按键的触摸
+		for(i = 0; i < ALK_KEY_NUM; i++){//对于全部键盘按键的触摸
 			if(CFG_K_MODE(keyAddr[sysCs][i]) == m4_move || CFG_K_MODE(keyAddr[sysCs][i]) == m5_press){//模式4:光标移位,模式5:光标点击
 				if(CFG_K_FUNC(keyAddr[sysCs][i]) == 1 || CFG_K_FUNC(keyAddr[sysCs][i]) == 2){
 					x = CFG_K_X(keyAddr[sysCs][i]) * 32768 / CFG_SCN_W;
@@ -221,7 +221,7 @@ ALK_U8 FillReport(void)//报文填写
 		}//处理完16个按键的触摸
 		
 		auto_num = 0;//正在执行自动连点的按键数量
-		for(i = 0; i < 16; i++){//对于16个按键的连点
+		for(i = 0; i < ALK_KEY_NUM; i++){//对于全部键盘按键的连点
 			if(CFG_K_MODE(keyAddr[sysCs][i]) == m7_clicker){//模式7:按键连点
 				if(oldTime > Systime){//若系统时间重置
 					keyWork[i] = 0;//清空设定时间
@@ -486,7 +486,7 @@ void RkEcKeyHandle(void)//摇杆旋钮按键处理
 	keyM[2] = CFGb_Rk_MODE(0);	keyV[2] = CFG_R_KEY(0,0);	keyF[2] = CFG_R_FUNC(0);
 	
 	for(i = 0; i < 3; i++){//2个旋钮按键1个摇杆按键
-		if(keyNow[i + 16]){//若为按下状态
+		if(keyNow[i + ALK_KEY_NUM]){//若为按下状态
 			if(keyM[i] == 1){//按键/快捷键
 				if(keyV[i]) KeyInsert(0xFF, keyV[i]);//填入键值
 				KeyBrd_data[1] |= keyF[i];//填入功能键
@@ -495,7 +495,7 @@ void RkEcKeyHandle(void)//摇杆旋钮按键处理
 				Dial_data[1] |= 0x01; // 按下
 			}
 		}
-		else if(keyOld[i + 16]){//若为释放沿
+		else if(keyOld[i + ALK_KEY_NUM]){//若为释放沿
 			if(keyM[i] == 2){//永久切换键
 				switch_i = 0xFF;//直接复位临时切换键标志
 				CsChange(keyV[i] - kv_orig_1 + 1, 0);//切换 该函数内有参数检查 此处USB键值从数字键1的键值开始有效
