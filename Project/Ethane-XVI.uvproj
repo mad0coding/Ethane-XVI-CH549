@@ -45,7 +45,7 @@
             <NotGenerated>0</NotGenerated>
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
-          <OutputDirectory>.\OUTPUT\</OutputDirectory>
+          <OutputDirectory>.\Output\</OutputDirectory>
           <OutputName>Ethane-XVI</OutputName>
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
@@ -324,7 +324,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>..\User;..\Libraries\Public;..\Libraries\GPIO;..\Libraries\ADC;..\Libraries\PWM;..\Libraries\FlashRom;..\Libraries\Timer</IncludePath>
+              <IncludePath>..\User;..\User\Alkane;..\Libraries\Public;..\Libraries\GPIO;..\Libraries\ADC;..\Libraries\PWM;..\Libraries\FlashRom;..\Libraries\Timer</IncludePath>
             </VariousControls>
           </C51>
           <Ax51>
@@ -437,14 +437,24 @@
               <FilePath>..\User\ParaConfig.c</FilePath>
             </File>
             <File>
-              <FileName>ParaUse.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\User\ParaUse.c</FilePath>
-            </File>
-            <File>
               <FileName>Diag.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\User\Diag.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Alkane</GroupName>
+          <Files>
+            <File>
+              <FileName>ALK_Func.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\Alkane\ALK_Func.c</FilePath>
+            </File>
+            <File>
+              <FileName>ALK_Rgb.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\Alkane\ALK_Rgb.c</FilePath>
             </File>
           </Files>
         </Group>

@@ -1,5 +1,5 @@
 
-#include "ParaUse.h"
+#include "ALK_Func.h"
 
 //******************************报文发送******************************//
 extern uint8_t KeyBrd_data[];//键盘报文

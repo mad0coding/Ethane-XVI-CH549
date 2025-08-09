@@ -8,7 +8,7 @@
 
 #include "BasicIO.h"
 #include "ParaConfig.h"
-#include "ParaUse.h"
+#include "ALK_Func.h"
 
 #define HID_EPIN_ADDR						0x81U // HID使用上行端点1
 #define HID_EPOUT_ADDR						0x01U // HID使用下行端点1

@@ -1,5 +1,5 @@
-#ifndef _PARAUSE_H_
-#define _PARAUSE_H_
+#ifndef _ALK_FUNC_H_
+#define _ALK_FUNC_H_
 
 #include "CH549.H"
 #include "DEBUG.H"

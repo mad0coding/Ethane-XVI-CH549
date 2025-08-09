@@ -7,7 +7,7 @@
 #include <stdlib.h>
 
 #include "BasicIO.h"
-#include "ParaUse.h"
+#include "ALK_Func.h"
 
 // NOP延时
 #define WS_NOP_BIT0		_nop_();
