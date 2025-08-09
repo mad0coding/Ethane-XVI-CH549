@@ -1,6 +1,8 @@
 #ifndef _ALK_FUNC_H_
 #define _ALK_FUNC_H_
 
+#include "ALK_Def.h"
+
 #include "CH549.H"
 #include "DEBUG.H"
 
@@ -75,14 +77,14 @@
 #define SIGN(_X)		(((_X)<0) ? (-1) : (((_X)>0) ? 1 : 0))
 
 
-uint8_t FillReport(void);//报文填写
+ALK_U8 FillReport(void);//报文填写
 
-void CsChange(uint8_t change, uint8_t ifTmp);//切换
-void KeyInsert(uint8_t r_i, uint8_t key_v);//单键填入
+void CsChange(ALK_U8 change, ALK_U8 ifTmp);//切换
+void KeyInsert(ALK_U8 r_i, ALK_U8 key_v);//单键填入
 void Mode3Handle(void);//mode3处理
 void RkEcKeyHandle(void);//摇杆旋钮按键处理
-void RkHandle(uint8_t clear);//摇杆处理
-void EcHandle(uint8_t clear);//旋钮处理
+void RkHandle(ALK_U8 clear);//摇杆处理
+void EcHandle(ALK_U8 clear);//旋钮处理
 void MorseHandle(void); // 摩尔斯码处理
 
 //void Default_para(void);//载入默认参数
