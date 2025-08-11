@@ -268,7 +268,7 @@ static void MorseBuzz(void){ // 摩尔斯码蜂鸣器控制
 //FillReport()	909~991~1700(空~常态~全按)
 //SysRGB()		96~112~140(空~常态~切换)
 //KeyRGB(0)		1880~2308~3756~5426~10586(空~定色~流水~呼吸~变色)
-//UINT16D tickStart = 0, tickEnd = 0, tickDif = 0; // 时间监测
+UINT16D tickStart = 0, tickEnd = 0, tickDif = 0; // 时间监测
 
 static void PrintTest(void){ // 打印输出
 	static uint32_t printTime = 0;
@@ -276,7 +276,7 @@ static void PrintTest(void){ // 打印输出
 		printTime += 1000;
 		memset(debugBuf, ' ', 64);
 		
-//		sprintf(debugBuf, "%u", tickDif); // 时间监测打印
+		sprintf(debugBuf, "%u", tickDif); // 时间监测打印
 		
 		Enp2IntIn(debugBuf, 64); // 端点2打印输出
 	}
@@ -284,7 +284,7 @@ static void PrintTest(void){ // 打印输出
 }
 
 void MultiFunc(void){ // 功能集合函数
-//	PrintTest(); // 测试代码
+	PrintTest(); // 测试代码
 	KeyTurn(); // 按键旋转映射
 	
 	if(FillReport() == 1){ // 报文填写 若返回蜂鸣器模式
@@ -295,7 +295,9 @@ void MultiFunc(void){ // 功能集合函数
 	MorseBuzz(); // 摩斯码蜂鸣器控制
 	
 	SysRGB(); // 系统RGB控制
+	TICK_START(TICK_SOURSE);
 	KeyRGB(0); // 键盘RGB控制
+	TICK_END_TH(TICK_SOURSE, 100);
 //	if(WakeUpEnFlag & 1) PWM_R = 100;
 //	else PWM_R = 0;
 //	if(WakeUpEnFlag & 2) PWM_G = 100;

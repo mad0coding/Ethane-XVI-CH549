@@ -116,37 +116,88 @@ void ClearKeyRGB(void){//清除键盘RGB
 
 //H:0~COLOR_ANGLE*6,S:0~100(已用delta代替),V:0~255
 static void Rgb2Hsv(ALK_U8 vR, ALK_U8 vG, ALK_U8 vB, ALK_U16* pH, ALK_U16* pS, ALK_U16* pV){ // RGB转HSV
-    ALK_U8F max = MAX(MAX(vR,vG),vB), min = MIN(MIN(vR,vG),vB);
-    ALK_U8F delta = max - min;
-    if(delta == 0) *pH = 0;
-    else if(max == vR){
+	ALK_U8F max = MAX(MAX(vR,vG),vB), min = MIN(MIN(vR,vG),vB);
+	ALK_U8F delta = max - min;
+	if(delta == 0) *pH = 0;
+	else if(max == vR){
 		if(vG >= vB) *pH = ((ALK_U16)vG-vB)*COLOR_ANGLE/delta;
 		else *pH = COLOR_ANGLE*6 - ((ALK_U16)vB-vG)*COLOR_ANGLE/delta;
 	}
-    else if(max == vG){
+	else if(max == vG){
 		if(vB > vR) *pH = COLOR_ANGLE*2 + ((ALK_U16)vB-vR)*COLOR_ANGLE/delta;
 		else *pH = COLOR_ANGLE*2 - ((ALK_U16)vR-vB)*COLOR_ANGLE/delta;
 	}
-    else if(max == vB){
+	else if(max == vB){
 		if(vR > vG) *pH = COLOR_ANGLE*4 + ((ALK_U16)vR-vG)*COLOR_ANGLE/delta;
 		else *pH = COLOR_ANGLE*4 - ((ALK_U16)vG-vR)*COLOR_ANGLE/delta;
 	}
-    if(max == 0) *pS = 0;
-    else *pS = delta;//100 * delta / max;//注意此处S直接用delta代替,故函数外直接修改V不合法
-    *pV = max;
+	/*if(max == 0) *pS = 0;
+	else */*pS = delta;//100 * delta / max;//注意此处S直接用delta代替,故函数外直接修改V不合法
+	*pV = max;
 }
 static void Hsv2Rgb(ALK_U16 vH, ALK_U16 vS, ALK_U16 vV, ALK_U8* pR, ALK_U8* pG, ALK_U8* pB){ // HSV转RGB
 	ALK_U8F hi = (ALK_U16)(vH / COLOR_ANGLE) % 6;
-    ALK_U16F f = vH - hi * COLOR_ANGLE;
-    ALK_U8F p = vV - vS;
-    ALK_U8F q = vV - (ALK_U16)vS * f / COLOR_ANGLE;
-    ALK_U8F t = vV - (ALK_U16)vS * (COLOR_ANGLE - f) / COLOR_ANGLE;
-    if(hi == 0)     {*pR = vV;   *pG = t;    *pB = p;}
-    else if(hi == 1){*pR = q;    *pG = vV;   *pB = p;}
-    else if(hi == 2){*pR = p;    *pG = vV;   *pB = t;}
-    else if(hi == 3){*pR = p;    *pG = q;    *pB = vV;}
-    else if(hi == 4){*pR = t;    *pG = p;    *pB = vV;}
-    else if(hi == 5){*pR = vV;   *pG = p;    *pB = q;}
+	ALK_U16F f = vH - hi * COLOR_ANGLE;
+	ALK_U8F p = vV - vS;
+	ALK_U8F q = vV - (ALK_U16)vS * f / COLOR_ANGLE;
+	ALK_U8F t = vV - (ALK_U16)vS * (COLOR_ANGLE - f) / COLOR_ANGLE;
+	if(hi == 0)     {*pR = vV;   *pG = t;    *pB = p;}
+	else if(hi == 1){*pR = q;    *pG = vV;   *pB = p;}
+	else if(hi == 2){*pR = p;    *pG = vV;   *pB = t;}
+	else if(hi == 3){*pR = p;    *pG = q;    *pB = vV;}
+	else if(hi == 4){*pR = t;    *pG = p;    *pB = vV;}
+	else if(hi == 5){*pR = vV;   *pG = p;    *pB = q;}
+}
+
+static void RgbHueShift(ALK_U8 vR, ALK_U8 vG, ALK_U8 vB, ALK_U16 dH, ALK_U8* pR, ALK_U8* pG, ALK_U8* pB){ // RGB色相移动
+	ALK_U8F max = MAX(MAX(vR,vG),vB), min = MIN(MIN(vR,vG),vB);
+	ALK_U8F delta = max - min;
+	ALK_U16F h;
+	ALK_U8F hi;// = (ALK_U16)(vH / COLOR_ANGLE) % 6;
+	ALK_U8F f;
+	if(delta == 0) h = 0;
+	else if(max == vR){
+		if(vG >= vB) h = ((ALK_U16)vG-vB)*COLOR_ANGLE/delta;
+		else h = COLOR_ANGLE*6 - ((ALK_U16)vB-vG)*COLOR_ANGLE/delta;
+	}
+	else if(max == vG){
+		if(vB > vR) h = COLOR_ANGLE*2 + ((ALK_U16)vB-vR)*COLOR_ANGLE/delta;
+		else h = COLOR_ANGLE*2 - ((ALK_U16)vR-vB)*COLOR_ANGLE/delta;
+	}
+	else if(max == vB){
+		if(vR > vG) h = COLOR_ANGLE*4 + ((ALK_U16)vR-vG)*COLOR_ANGLE/delta;
+		else h = COLOR_ANGLE*4 - ((ALK_U16)vG-vR)*COLOR_ANGLE/delta;
+	}
+	// *pS = delta;//100 * delta / max;//注意此处S直接用delta代替,故函数外直接修改V不合法
+	// *pV = max;
+	h += dH;//加入色环变化
+	if(h >= COLOR_ANGLE * 6) h -= COLOR_ANGLE * 6;//防止越界
+// #define vH		h
+#define vS		delta
+#define vV		max
+#define p		min // 借用
+#define q		delta // 借用
+#define t		delta // 借用
+	if(h < COLOR_ANGLE) hi = 0;
+	else if(h < COLOR_ANGLE * 2) hi = 1;
+	else if(h < COLOR_ANGLE * 3) hi = 2;
+	else if(h < COLOR_ANGLE * 4) hi = 3;
+	else if(h < COLOR_ANGLE * 5) hi = 4;
+	else hi = 5;
+	// do{
+	/*ALK_U16F */ f = h - hi * COLOR_ANGLE;
+	/*ALK_U8F */p = vV - vS;
+	// ALK_U8F q = vV - (ALK_U16)vS * f / COLOR_ANGLE;
+	// ALK_U8F t = vV - (ALK_U16)vS * (COLOR_ANGLE - f) / COLOR_ANGLE;
+	if(hi & 0x01) q = vV - (ALK_U16)vS * f / COLOR_ANGLE;
+	else t = vV - (ALK_U16)vS * (COLOR_ANGLE - f) / COLOR_ANGLE;
+	if(hi == 0)     {*pR = vV;   *pG = t;    *pB = p;}
+	else if(hi == 1){*pR = q;    *pG = vV;   *pB = p;}
+	else if(hi == 2){*pR = p;    *pG = vV;   *pB = t;}
+	else if(hi == 3){*pR = p;    *pG = q;    *pB = vV;}
+	else if(hi == 4){*pR = t;    *pG = p;    *pB = vV;}
+	else{*pR = vV;   *pG = p;    *pB = q;}
+	// }while(0);
 }
 
 void KeyRGB(ALK_U8 clear){ // 键盘RGB控制
@@ -258,10 +309,13 @@ void KeyRGB(ALK_U8 clear){ // 键盘RGB控制
 	
 	for(i = 0; i < 16; i++){//16键处理开始
 		if(LIGHT_COLOR_T && (LIGHT_COLOR_S & 0x01)){//若启用上配色色彩变化
-			Rgb2Hsv(FrameRaw[3*i+0], FrameRaw[3*i+1], FrameRaw[3*i+2], &h, &s, &v);
-			h += (Systime / LIGHT_COLOR_T) % (COLOR_ANGLE * 6);//加入色环变化
-			if(h >= COLOR_ANGLE * 6) h -= COLOR_ANGLE * 6;//防止越界
-			Hsv2Rgb(h, s, v, &FrameRaw[3*i+0], &FrameRaw[3*i+1], &FrameRaw[3*i+2]);
+			// Rgb2Hsv(FrameRaw[3*i+0], FrameRaw[3*i+1], FrameRaw[3*i+2], &h, &s, &v);
+			// h += (Systime / LIGHT_COLOR_T) % (COLOR_ANGLE * 6);//加入色环变化
+			// if(h >= COLOR_ANGLE * 6) h -= COLOR_ANGLE * 6;//防止越界
+			// Hsv2Rgb(h, s, v, &FrameRaw[3*i+0], &FrameRaw[3*i+1], &FrameRaw[3*i+2]);
+			RgbHueShift(FrameRaw[3*i+0], FrameRaw[3*i+1], FrameRaw[3*i+2],
+						(Systime / LIGHT_COLOR_T) % (COLOR_ANGLE * 6),
+						&FrameRaw[3*i+0], &FrameRaw[3*i+1], &FrameRaw[3*i+2]);
 		}
 		
 		//主效果
@@ -336,10 +390,13 @@ void KeyRGB(ALK_U8 clear){ // 键盘RGB控制
 
 		//加入按动效果
 		if(LIGHT_COLOR_T && (LIGHT_COLOR_S & 0x02)){//若启用下配色色彩变化
-			Rgb2Hsv(LIGHT_DOWN(3*i+0), LIGHT_DOWN(3*i+1), LIGHT_DOWN(3*i+2), &h, &s, &v);
-			h += (Systime / LIGHT_COLOR_T) % (COLOR_ANGLE * 6);//加入色环变化
-			if(h >= COLOR_ANGLE * 6) h -= COLOR_ANGLE * 6;//防止越界
-			Hsv2Rgb(h, s, v, &r, &g, &b);
+			// Rgb2Hsv(LIGHT_DOWN(3*i+0), LIGHT_DOWN(3*i+1), LIGHT_DOWN(3*i+2), &h, &s, &v);
+			// h += (Systime / LIGHT_COLOR_T) % (COLOR_ANGLE * 6);//加入色环变化
+			// if(h >= COLOR_ANGLE * 6) h -= COLOR_ANGLE * 6;//防止越界
+			// Hsv2Rgb(h, s, v, &r, &g, &b);
+			RgbHueShift(LIGHT_DOWN(3*i+0), LIGHT_DOWN(3*i+1), LIGHT_DOWN(3*i+2),
+						(Systime / LIGHT_COLOR_T) % (COLOR_ANGLE * 6),
+						&r, &g, &b);
 			FrameRaw[3*i+0] += ((ALK_S16)r - FrameRaw[3*i+0]) * fracUD[i] / 255;
 			FrameRaw[3*i+1] += ((ALK_S16)g - FrameRaw[3*i+1]) * fracUD[i] / 255;
 			FrameRaw[3*i+2] += ((ALK_S16)b - FrameRaw[3*i+2]) * fracUD[i] / 255;
