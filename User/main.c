@@ -16,32 +16,12 @@
 
 #pragma  NOAREGS
 
-UINT8C FIRMWARE_VERSION[4] = {1,6,2,3}; // 固件版本
+UINT8C FIRMWARE_VERSION[4] = {1,6,2,4}; // 固件版本
 
 uint8_t asyncFlag = 0;//异步操作标志
 
 uint8_t reportSendTime = 0;//报文发送时间
 uint8_t All_if_send = 0;//总发送标志
-uint8_t KeyBrd_if_send = 0;//键盘报文是否发送
-uint8_t Mouse_if_send = 0;//鼠标报文是否发送
-uint8_t Point_if_send = 0;//指针报文是否发送
-uint8_t Vol_if_send = 0;//媒体报文是否发送
-uint8_t Dial_if_send = 0;//轮盘报文是否发送
-
-uint8_t KeyBrd_data[KB_LEN] = {1,0,0,0};//编号1,功能键,保留0,其他按键
-//功能键:bit7-bit0分别为为右win alt shift ctrl,左win alt shift ctrl
-
-uint8_t Mouse_data[5] = {2,0,0,0,0};//编号2,功能键,x,y,滚轮
-//功能键:bit0为左键,bit1为右键,bit2为中键,bit6为x是否溢出,bit7为y是否溢出
-
-uint8_t Point_data[7] = {3,0x10,1,0,0,0,0};//编号3,功能键,id,x_L,x_H,y_L,y_H
-//功能键:bit0为Tip Switch,bit1为Barrel Switch,bit2为Invert,bit3为Eraser Switch,bit4为In Range
-
-uint8_t Vol_data[2] = {4,0};//编号4,功能键
-//功能键:bit0音量加,bit1音量减,bit2静音,bit3播放暂停
-
-uint8_t Dial_data[3] = {5,0,0};//编号5,功能键+dial_L,dial_H
-//功能键:bit0按键,bit1~7为轮盘低7bit
 
 
 void main()
@@ -145,23 +125,23 @@ void main()
 		
 		if(All_if_send & 0x01){		//键盘
 			All_if_send &= ~0x01;	//清除bit0
-			Enp1IntIn(KeyBrd_data, sizeof(KeyBrd_data));
+			Enp1IntIn(KeyBrd_data, ALK_RPT_L_KEYBRD);
 		}
 		else if(All_if_send & 0x02){//鼠标
 			All_if_send &= ~0x02;	//清除bit1
-			Enp1IntIn(Mouse_data, sizeof(Mouse_data));
+			Enp1IntIn(Mouse_data, ALK_RPT_L_MOUSE);
 		}
 		else if(All_if_send & 0x04){//指针
 			All_if_send &= ~0x04;	//清除bit2
-			Enp1IntIn(Point_data, sizeof(Point_data));
+			Enp1IntIn(Point_data, ALK_RPT_L_POINT);
 		}
 		else if(All_if_send & 0x08){//媒体
 			All_if_send &= ~0x08;	//清除bit3
-			Enp1IntIn(Vol_data, sizeof(Vol_data));
+			Enp1IntIn(Vol_data, ALK_RPT_L_VOL);
 		}
 		else if(All_if_send & 0x10){//轮盘
 			All_if_send &= ~0x10;	//清除bit4
-			Enp1IntIn(Dial_data, sizeof(Dial_data));
+			Enp1IntIn(Dial_data, ALK_RPT_L_DIAL);
 		}
     }
 }

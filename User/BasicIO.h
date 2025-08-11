@@ -12,7 +12,7 @@
 #include "RgbDrv.h"
 #include "ALK_Func.h"
 
-#define KB_LEN		22//键盘报文长度
+// #define ALK_RPT_L_KEYBRD		22//键盘报文长度
 #define KP_NUM		19//按键个数
 
 //XDATA地址分配

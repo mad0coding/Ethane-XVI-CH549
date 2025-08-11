@@ -11,6 +11,12 @@
 #include "BasicIO.h"
 #include "ParaConfig.h"
 
+#define ALK_RPT_L_KEYBRD		22-0	// 键盘报文长度
+#define ALK_RPT_L_MOUSE			5	// 鼠标报文长度
+#define ALK_RPT_L_POINT			7	// 指针报文长度
+#define ALK_RPT_L_VOL			2	// 媒体报文长度
+#define ALK_RPT_L_DIAL			3	// 轮盘报文长度
+
 
 #define m0_none			0
 #define m1_button		1
@@ -75,6 +81,19 @@
 #define MAX(_X, _Y)		        ((_X) > (_Y) ? (_X) : (_Y))
 #define ABS(_X)			        ((_X) > 0 ? (_X) : (-(_X)))
 #define SIGN(_X)		        (((_X)<0) ? (-1) : (((_X)>0) ? 1 : 0))
+
+
+extern ALK_U8 KeyBrd_data[];	// 键盘报文
+extern ALK_U8 Mouse_data[];		// 鼠标报文
+extern ALK_U8 Point_data[];		// 指针报文
+extern ALK_U8 Vol_data[];		// 音量报文
+extern ALK_U8 Dial_data[];		// 轮盘报文
+
+extern ALK_U8 KeyBrd_if_send;	// 键盘报文是否发送
+extern ALK_U8 Vol_if_send;		// 音量报文是否发送
+extern ALK_U8 Point_if_send;	// 指针报文是否发送
+extern ALK_U8 Mouse_if_send;	// 鼠标报文是否发送
+extern ALK_U8 Dial_if_send;		// 轮盘报文是否发送
 
 
 ALK_U8 FillReport(void); // 报文填写

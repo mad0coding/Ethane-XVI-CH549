@@ -2,27 +2,38 @@
 #include "ALK_Func.h"
 
 //******************************报文发送******************************//
-extern ALK_U8 KeyBrd_data[];//键盘报文
-extern ALK_U8 Mouse_data[];//鼠标报文
-extern ALK_U8 Point_data[];//指针报文
-extern ALK_U8 Vol_data[];//音量报文
-extern ALK_U8 Dial_data[];//轮盘报文
-static ALK_U8 KeyBrd_data_old[KB_LEN];//上次键盘报文
-static ALK_U8 Mouse_data_old = 0;//上次鼠标报文
-static ALK_U8 Vol_data_old = 0;//上次音量报文
-static ALK_U8 Dial_data_old = 0;//上次轮盘报文
-extern ALK_U8 KeyBrd_if_send;//键盘报文是否发送
-extern ALK_U8 Vol_if_send;//音量报文是否发送
-extern ALK_U8 Point_if_send;//指针报文是否发送
-extern ALK_U8 Mouse_if_send;//鼠标报文是否发送
-extern ALK_U8 Dial_if_send;//轮盘报文是否发送
+ALK_U8 KeyBrd_if_send = 0;	// 键盘报文是否发送
+ALK_U8 Mouse_if_send = 0;	// 鼠标报文是否发送
+ALK_U8 Point_if_send = 0;	// 指针报文是否发送
+ALK_U8 Vol_if_send = 0;		// 媒体报文是否发送
+ALK_U8 Dial_if_send = 0;	// 轮盘报文是否发送
+
+ALK_U8 KeyBrd_data[ALK_RPT_L_KEYBRD] = {1,0,0,0}; // 编号1,功能键,保留0,其他按键
+// 功能键:bit7-bit0分别为为右win alt shift ctrl,左win alt shift ctrl
+
+ALK_U8 Mouse_data[ALK_RPT_L_MOUSE] = {2,0,0,0,0}; // 编号2,功能键,x,y,滚轮
+// 功能键:bit0为左键,bit1为右键,bit2为中键,bit6为x是否溢出,bit7为y是否溢出
+
+ALK_U8 Point_data[ALK_RPT_L_POINT] = {3,0x10,1,0,0,0,0}; // 编号3,功能键,id,x_L,x_H,y_L,y_H
+// 功能键:bit0为Tip Switch,bit1为Barrel Switch,bit2为Invert,bit3为Eraser Switch,bit4为In Range
+
+ALK_U8 Vol_data[ALK_RPT_L_VOL] = {4,0}; // 编号4,功能键
+// 功能键:bit0音量加,bit1音量减,bit2静音,bit3播放暂停
+
+ALK_U8 Dial_data[ALK_RPT_L_DIAL] = {5,0,0}; // 编号5,功能键+dial_L,dial_H
+// 功能键:bit0按键,bit1~7为轮盘低7bit
+
+static ALK_U8 KeyBrd_data_old[ALK_RPT_L_KEYBRD]; // 上次键盘报文
+static ALK_U8 Mouse_data_old = 0; // 上次鼠标报文
+static ALK_U8 Vol_data_old = 0; // 上次音量报文
+static ALK_U8 Dial_data_old = 0; // 上次轮盘报文
 //********************************************************************//
 
 //******************************摩尔斯码******************************//
 ALK_U8 morse_key = 0; // bit0~2:点/划/按state bit4~bit7:点/划/按/松edge
 ALK_U8 morse_vol = 0; // 音量
-ALK_U8 morse_gap = 40; // 间隔时间 单位10ms
-ALK_U8 morse_long = 15; // 长按时间 单位10ms
+static ALK_U8 morse_gap = 40; // 间隔时间 单位10ms
+static ALK_U8 morse_long = 15; // 长按时间 单位10ms
 //********************************************************************//
 
 ALK_U8 clickerNum = 0;//自动连点数
@@ -53,8 +64,8 @@ ALK_U8 FillReport(void)//报文填写
 	//***********************************各报文及发送标志初始化***********************************//
 	KeyBrd_if_send = Mouse_if_send = Point_if_send = Vol_if_send = Dial_if_send = 0; // 发送标志置零
 	
-	memcpy(KeyBrd_data_old + 1, KeyBrd_data + 1, KB_LEN - 1); // 记录上一次报文
-	memset(KeyBrd_data + 1, 0, KB_LEN - 1); // 清除所有键
+	memcpy(KeyBrd_data_old + 1, KeyBrd_data + 1, ALK_RPT_L_KEYBRD - 1); // 记录上一次报文
+	memset(KeyBrd_data + 1, 0, ALK_RPT_L_KEYBRD - 1); // 清除所有键
 
 	Mouse_data_old = Mouse_data[1]; // 记录上一次报文
 	memset(Mouse_data + 1, 0, 4); // 清除鼠标报文
@@ -260,7 +271,7 @@ ALK_U8 FillReport(void)//报文填写
 	//**********************************************************************************//
 	
 	//***********************************判断各报文是否要发送***********************************//
-	for(i = 1; i < KB_LEN; i++){
+	for(i = 1; i < ALK_RPT_L_KEYBRD; i++){
 		if(KeyBrd_data_old[i] != KeyBrd_data[i]){ // 键盘报文与上一次不同则发送
 			KeyBrd_if_send = 1;	break;
 		}
@@ -334,7 +345,7 @@ void KeyInsert(ALK_U8 r_i, ALK_U8 key_v)//单键填入
 	else if(key_v == kv_win) KeyBrd_data[1] |= 0x08;//win
 	else{//普通键盘按键
 		if(r_i == 0xFF){//若使用自动填入
-			for(r_i = 3; r_i < KB_LEN; r_i++){//搜索空位
+			for(r_i = 3; r_i < ALK_RPT_L_KEYBRD; r_i++){//搜索空位
 				if(!KeyBrd_data[r_i]) break;//若此处为空
 			}
 		}
@@ -366,7 +377,7 @@ void Mode3Handle(void)//mode3处理(按键组处理)
 	end_i = 0;//结束位置
 	if(mode3_key) end_i = keyAddr[sysCs][mode3_key - 1] + 3 + CFG_K_LEN(keyAddr[sysCs][mode3_key - 1]);
 	
-	for(; report_i < KB_LEN; mode3_i++){//当报文未填满
+	for(; report_i < ALK_RPT_L_KEYBRD; mode3_i++){//当报文未填满
 		if(mode3_i >= end_i){//当读完数据
 			mode3_key = 0;
 			break;
