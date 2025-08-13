@@ -36,11 +36,11 @@ static ALK_U8 morse_gap = 40; // 间隔时间 单位10ms
 static ALK_U8 morse_long = 15; // 长按时间 单位10ms
 //********************************************************************//
 
-ALK_U8 clickerNum = 0;//自动连点数
-ALK_U32 changeTime = -10000*0;//配置切换时间
+ALK_U8 clickerNum = 0; // 自动连点数
+ALK_U32 changeTime = -10000*0; // 配置切换时间
 
 //******************************数据相关******************************//
-ALK_U8 mode3_key = 0;//模式3按键(1-ALK_KEY_NUM)
+ALK_U8 mode3_key = 0; // 按键组按键(1-ALK_KEY_NUM)
 static ALK_U16 mode3_i = 0;//模式3源数据下标(访问mode3_data)
 static ALK_U16 mode3_loop_count = 0;//模式3循环计数
 static ALK_U8 mode3_loop_flag = 0;//模式3循环操作标志 bit7:是否结束 bit2:当前有释放沿 bit1~0:未晚于第一释放沿
@@ -49,6 +49,14 @@ static ALK_U8 mode3_delaying = 0;//模式3是否延时中
 //********************************************************************//
 static ALK_U8 switch_i = 0xFF, switch_count = 0;//切换键选择和计数
 static ALK_U8 switch_key = 0, switch_func = 0;//切换键缓存
+
+
+static void KeyInsert(ALK_U8 r_i, ALK_U8 key_v); // 单键填入
+static void Mode3Handle(void); // mode3处理
+static void RkEcKeyHandle(void); // 摇杆旋钮按键处理
+static void RkHandle(ALK_U8 clear); // 摇杆处理
+static void EcHandle(ALK_U8 clear); // 旋钮处理
+static void MorseHandle(void); // 摩尔斯码处理
 
 
 ALK_U8 FillReport(void)//报文填写
@@ -326,7 +334,7 @@ void CsChange(ALK_U8 change, ALK_U8 ifTmp)//切换
 	memset(keyFlag,0,sizeof(keyFlag));
 }
 
-void KeyInsert(ALK_U8 r_i, ALK_U8 key_v)//单键填入
+static void KeyInsert(ALK_U8 r_i, ALK_U8 key_v)//单键填入
 {
 	if(key_v == kv_wheel_down) Mouse_data[4] += -1;//滚轮向下
 	else if(key_v == kv_wheel_up) Mouse_data[4] += 1;//滚轮向上
@@ -354,7 +362,7 @@ void KeyInsert(ALK_U8 r_i, ALK_U8 key_v)//单键填入
 	}
 }
 
-void Mode3Handle(void)//mode3处理(按键组处理)
+static void Mode3Handle(void)//mode3处理(按键组处理)
 {
 	static ALK_U32 setTime = 0, oldTime = 0;//设定时间及记录时间
 	static ALK_U16 loopStart = 0xFFFF;//循环起始地址
@@ -487,7 +495,7 @@ void Mode3Handle(void)//mode3处理(按键组处理)
 }
 
 //1:按键/快捷键,2:永久切换键
-void RkEcKeyHandle(void)//摇杆旋钮按键处理
+static void RkEcKeyHandle(void)//摇杆旋钮按键处理
 {
 	ALK_U8 keyM[3], keyV[3], keyF[3];//按键模式,键值,功能键
 	ALK_U8 i;
@@ -516,7 +524,7 @@ void RkEcKeyHandle(void)//摇杆旋钮按键处理
 }
 
 //1:四向四按键,2:八向四按键,3:速度鼠标,4:光标位置
-void RkHandle(ALK_U8 clear)//摇杆处理
+static void RkHandle(ALK_U8 clear)//摇杆处理
 {
 	static ALK_S16 RK_pulse = 0;//间隔标志
 	static ALK_S16 x_pic = 0, y_pic = 0;
@@ -734,7 +742,7 @@ void RkHandle(ALK_U8 clear)//摇杆处理
 }
 
 //1:按键/快捷键 2:Dial
-void EcHandle(ALK_U8 clear)//旋钮处理
+static void EcHandle(ALK_U8 clear)//旋钮处理
 {
 //	static ALK_U32 oldTime = 0;//记录时间
 //	static ALK_S8 TIM_count[2] = {0,0};//编码器计数
@@ -881,7 +889,7 @@ static void MorseInput(ALK_U8 input){ // 输入
 	}
 }
 
-void MorseHandle(void){ // 摩尔斯码处理
+static void MorseHandle(void){ // 摩尔斯码处理
 	static ALK_U32 morseTime = 0; // 任何动作时刻
 	static ALK_U32 pressTime = 0; // 按下时刻
 	if(Systime - morseTime > morse_gap * 10){ // 超过间隔时间

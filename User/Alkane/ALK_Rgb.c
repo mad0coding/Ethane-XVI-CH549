@@ -92,27 +92,18 @@ static ALK_U8C INX_TABLE[] = {//预置灯效下标表
 	3,2,1,0,	 4,13,12,11, 5,14,15,10, 6,7,8,9,//←↓
 };
 
-static ALK_U8 fracM[16] = {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,};//主效果比例
-static ALK_U8 fracUD[16] = {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,};//按动效果比例
+static ALK_U8 fracM[ALK_KEY_NUM] = {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,};//主效果比例
+static ALK_U8 fracUD[ALK_KEY_NUM] = {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,};//按动效果比例
 
-static ALK_U8 inXi[16] = {0,1,2,3, 4,5,6,7, 8,9,10,11, 12,13,14,15,};
+static ALK_U8 inXi[ALK_KEY_NUM] = {0,1,2,3, 4,5,6,7, 8,9,10,11, 12,13,14,15,};
 
-ALK_U8 FrameRaw[16*3] = {//原始帧缓存
+ALK_U8 FrameRaw[ALK_KEY_NUM*3] = {//原始帧缓存
 	0,0,0,	0,0,0,	0,0,0,	0,0,0,
 	0,0,0,	0,0,0,	0,0,0,	0,0,0,
 	0,0,0,	0,0,0,	0,0,0,	0,0,0,
 	0,0,0,	0,0,0,	0,0,0,	0,0,0,
 };//RGB
-UINT8I FrameBuf[16*3] = {//帧缓存
-	0,0,0,	0,0,0,	0,0,0,	0,0,0,
-	0,0,0,	0,0,0,	0,0,0,	0,0,0,
-	0,0,0,	0,0,0,	0,0,0,	0,0,0,
-	0,0,0,	0,0,0,	0,0,0,	0,0,0,
-};//GRB
 
-void ClearKeyRGB(void){//清除键盘RGB
-	memset(FrameBuf, 0, sizeof(FrameBuf));
-}
 
 //H:0~COLOR_ANGLE*6,S:0~100(已用delta代替),V:0~255
 static void Rgb2Hsv(ALK_U8 vR, ALK_U8 vG, ALK_U8 vB, ALK_U16* pH, ALK_U16* pS, ALK_U16* pV){ // RGB转HSV
@@ -215,7 +206,7 @@ void KeyRGB(ALK_U8 clear){ // 键盘RGB控制
 	if(clear){
 		dTime = Systime;//重置时间记录
 		leaveTime = Systime - 65535;//重置离开时间
-		/*if(LIGHT_MONO <= 0) */memset(fracM, 0, 16);//快切换则清空主效果比例
+		/*if(LIGHT_MONO <= 0) */memset(fracM, 0, ALK_KEY_NUM);//快切换则清空主效果比例
 		/*if(LIGHT_MONO <= 1) */taskTick = 0;//快、缓切换则清零任务节拍
 		return;
 	}
@@ -233,7 +224,7 @@ void KeyRGB(ALK_U8 clear){ // 键盘RGB控制
 	eTime += 20;//时间跟进
 
 	if(LIGHT_T_WAIT){//若启用等待时间
-		for(i = 0; i < 16; i++){//检查是否有按键
+		for(i = 0; i < ALK_KEY_NUM; i++){//检查是否有按键
 			if(keyNow[i]){//若有按下
 				leaveTime = Systime;//不断更新离开时间
 				break;
@@ -302,12 +293,12 @@ void KeyRGB(ALK_U8 clear){ // 键盘RGB控制
 		INXi++;
 	}
 	
-	if(lightMode < 32) memcpy(inXi, INX_TABLE + 16*lightMode, 16);//32种预置灯效
-	else if(lightMode == 100) memcpy(inXi, &LIGHT_IDX(0), 16);//自定义
+	if(lightMode < 32) memcpy(inXi, INX_TABLE + ALK_KEY_NUM*lightMode, ALK_KEY_NUM);//32种预置灯效
+	else if(lightMode == 100) memcpy(inXi, &LIGHT_IDX(0), ALK_KEY_NUM);//自定义
 	
-	memcpy(FrameRaw, &LIGHT_UP(0), 16*3);//将上配色载入原始帧缓存
+	memcpy(FrameRaw, &LIGHT_UP(0), ALK_KEY_NUM*3);//将上配色载入原始帧缓存
 	
-	for(i = 0; i < 16; i++){//16键处理开始
+	for(i = 0; i < ALK_KEY_NUM; i++){//16键处理开始
 		if(LIGHT_COLOR_T && (LIGHT_COLOR_S & 0x01)){//若启用上配色色彩变化
 			// Rgb2Hsv(FrameRaw[3*i+0], FrameRaw[3*i+1], FrameRaw[3*i+2], &h, &s, &v);
 			// h += (Systime / LIGHT_COLOR_T) % (COLOR_ANGLE * 6);//加入色环变化
@@ -328,7 +319,7 @@ void KeyRGB(ALK_U8 clear){ // 键盘RGB控制
 			}else{//上升段
 				tool16 = LIGHT_G_ON % 3;//用亮渐变字节来选择上升段曲线
 				if(taskTick == 0x81){//若为动作期并第二次进入上升段则代表一次循环已完
-					if(i == 16 - 1) taskTick = 2;//清除最高位并进入结束沿(必须在最后一键处理)
+					if(i == ALK_KEY_NUM - 1) taskTick = 2;//清除最高位并进入结束沿(必须在最后一键处理)
 					v = 0;//清零亮度
 				}
 			}
@@ -449,10 +440,6 @@ void KeyRGB(ALK_U8 clear){ // 键盘RGB控制
 static ALK_U16C RGB_DELAY[8] = {0,1,10,50, 100,500,1000,2000};//RGB延时表(单位ms)
 
 extern bit bitNUM, bitCAPS, bitSCROLL;//数字锁定 大写锁定 滚动锁定
-extern ALK_U8 clickerNum;//自动连点数
-extern ALK_U8 mode3_key;//模式3按键(1-16)
-
-extern ALK_U32 changeTime;//配置切换时间
 
 void SysRGB(void){ // 系统RGB控制
 	ALK_U8 i;

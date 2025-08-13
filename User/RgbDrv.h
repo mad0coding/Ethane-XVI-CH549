@@ -18,6 +18,11 @@
 #define PWM_B		PWM_DATA4
 
 
+extern ALK_U8 FrameRaw[ALK_KEY_NUM*3];//原始帧缓存
+extern UINT8I FrameBuf[ALK_KEY_NUM*3];//帧缓存
+
+
+void ClearKeyRGB(void); // 清除键盘RGB
 void WsWrite16(void); // 写入16个灯
 
 

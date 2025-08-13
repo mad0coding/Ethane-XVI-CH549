@@ -3,12 +3,6 @@
 
 #include "ALK_Def.h"
 
-#include "CH549.H"
-#include "DEBUG.H"
-
-#include "FlashRom.H"
-
-#include "BasicIO.h"
 #include "ParaConfig.h"
 
 #define ALK_RPT_L_KEYBRD		22-0	// 键盘报文长度
@@ -83,11 +77,11 @@
 #define SIGN(_X)		        (((_X)<0) ? (-1) : (((_X)>0) ? 1 : 0))
 
 
-extern ALK_U8 KeyBrd_data[];	// 键盘报文
-extern ALK_U8 Mouse_data[];		// 鼠标报文
-extern ALK_U8 Point_data[];		// 指针报文
-extern ALK_U8 Vol_data[];		// 音量报文
-extern ALK_U8 Dial_data[];		// 轮盘报文
+extern ALK_U8 KeyBrd_data[ALK_RPT_L_KEYBRD];	// 键盘报文
+extern ALK_U8 Mouse_data[ALK_RPT_L_MOUSE];		// 鼠标报文
+extern ALK_U8 Point_data[ALK_RPT_L_POINT];		// 指针报文
+extern ALK_U8 Vol_data[ALK_RPT_L_VOL];			// 音量报文
+extern ALK_U8 Dial_data[ALK_RPT_L_DIAL];		// 轮盘报文
 
 extern ALK_U8 KeyBrd_if_send;	// 键盘报文是否发送
 extern ALK_U8 Vol_if_send;		// 音量报文是否发送
@@ -95,18 +89,18 @@ extern ALK_U8 Point_if_send;	// 指针报文是否发送
 extern ALK_U8 Mouse_if_send;	// 鼠标报文是否发送
 extern ALK_U8 Dial_if_send;		// 轮盘报文是否发送
 
+extern ALK_U8 morse_key;	// 摩尔斯码按键
+extern ALK_U8 morse_vol;	// 摩尔斯码音量
+
+extern ALK_U8 clickerNum;	// 自动连点数
+extern ALK_U8 mode3_key;	// 按键组按键(1-ALK_KEY_NUM)
+
+extern ALK_U32 changeTime;	// 配置切换时间
+
 
 ALK_U8 FillReport(void); // 报文填写
 
 void CsChange(ALK_U8 change, ALK_U8 ifTmp); // 切换
-void KeyInsert(ALK_U8 r_i, ALK_U8 key_v); // 单键填入
-void Mode3Handle(void); // mode3处理
-void RkEcKeyHandle(void); // 摇杆旋钮按键处理
-void RkHandle(ALK_U8 clear); // 摇杆处理
-void EcHandle(ALK_U8 clear); // 旋钮处理
-void MorseHandle(void); // 摩尔斯码处理
-
-//void Default_para(void);//载入默认参数
 
 
 

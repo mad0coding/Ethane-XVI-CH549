@@ -9,6 +9,8 @@
 #include "Diag.h"
 //#include "CompositeHID.H"
 
+#include "ALK_Def.h"
+
 //异步标志定义
 #define ASYNC_FLAG_CFG		10
 #define ASYNC_FLAG_LIGHT	30
@@ -112,9 +114,9 @@
 
 
 extern UINT8X FlashBuf[512];//配置缓存数组
-extern uint16_t keyAddr[CFG_NUM][16];//3组每组16按键的数据地址
-extern uint16_t keyWork[16];//3组每组16按键的工作用数组
-extern uint8_t keyFlag[16];//16按键的标记用数组
+extern uint16_t keyAddr[CFG_NUM][ALK_KEY_NUM];//3组每组16按键的数据地址
+extern uint16_t keyWork[ALK_KEY_NUM];//3组每组16按键的工作用数组
+extern uint8_t keyFlag[ALK_KEY_NUM];//16按键的标记用数组
 extern uint8_t keyDir[CFG_NUM];//键盘方向
 extern uint8_t sysCs;//总配置选择
 extern PUINT8C DATA_CFG;//闪存区配置信息指针

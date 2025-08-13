@@ -3,9 +3,9 @@
 
 UINT8X FlashBuf[512] _at_ XBASE_FLASH_BUF;//配置缓存数组
 
-uint16_t keyAddr[CFG_NUM][16];//每组16按键的数据地址
-uint16_t keyWork[16];//16按键的工作用数组
-uint8_t keyFlag[16];//16按键的标记用数组
+uint16_t keyAddr[CFG_NUM][ALK_KEY_NUM];//每组按键的数据地址
+uint16_t keyWork[ALK_KEY_NUM];//按键的工作用数组
+uint8_t keyFlag[ALK_KEY_NUM];//按键的标记用数组
 
 uint8_t keyDir[CFG_NUM];//键盘方向
 
@@ -147,7 +147,7 @@ void ParaUpdate(uint8_t pos){//参数更新
 		KeyRGB(1);//键盘RGB控制清零
 	}
 	
-	for(i = 0; i < 16; i++){
+	for(i = 0; i < ALK_KEY_NUM; i++){
 		keyAddr[pos][i] = addr;//存储地址
 		if(CFG_K_ID(addr) != i + 1){//若ID不对
 			keyAddr[pos][0] = 0;//置零以标记为无效

@@ -16,12 +16,12 @@
 
 #pragma  NOAREGS
 
-UINT8C FIRMWARE_VERSION[4] = {1,6,2,4}; // 固件版本
+UINT8C FIRMWARE_VERSION[4] = {1,6,2,5}; // 固件版本
 
 uint8_t asyncFlag = 0;//异步操作标志
 
-uint8_t reportSendTime = 0;//报文发送时间
-uint8_t All_if_send = 0;//总发送标志
+static uint8_t reportSendTime = 0; // 报文发送时间
+static uint8_t All_if_send = 0; // 总发送标志
 
 
 void main()

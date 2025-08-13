@@ -240,9 +240,6 @@ void BuzzHandle(void){//蜂鸣器处理
 	asyncFlag = 0; // 清除标志 防止蜂鸣器模式期间意外打入异步需求
 }
 
-extern uint8_t morse_key;
-extern uint8_t morse_vol;
-
 static void MorseBuzz(void){ // 摩尔斯码蜂鸣器控制
 	if(morse_key & 0x02){ // 划
 		SetPWMClkDiv(FREQ_SYS / 256 / 781);

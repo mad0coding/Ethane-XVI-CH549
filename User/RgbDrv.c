@@ -3,6 +3,18 @@
 #include "RgbDrv.h"
 
 
+UINT8I FrameBuf[ALK_KEY_NUM*3] = {//帧缓存
+	0,0,0,	0,0,0,	0,0,0,	0,0,0,
+	0,0,0,	0,0,0,	0,0,0,	0,0,0,
+	0,0,0,	0,0,0,	0,0,0,	0,0,0,
+	0,0,0,	0,0,0,	0,0,0,	0,0,0,
+};//GRB
+
+
+void ClearKeyRGB(void){ // 清除键盘RGB
+	memset(FrameBuf, 0, sizeof(FrameBuf));
+}
+
 void WsWrite16(void){ // 写入16个灯
 	UINT8D i, iBit;
 	EA = 0; // 关中断
