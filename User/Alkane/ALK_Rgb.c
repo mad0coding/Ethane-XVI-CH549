@@ -200,7 +200,7 @@ void KeyRGB(ALK_U8 clear){ // 键盘RGB控制
 	ALK_U8 /*lightMode = 0, */ifINX = 0, leftSHLD = 255;//模式,是否有自定义标记,屏蔽剩余
 	ALK_U8F i, j;//按键循环变量,RGB循环变量
 	ALK_S16F tool16 = 0;//工具变量
-	ALK_U16 h, s, v;//HSV色值
+	ALK_U16 /*h, s, */v;//HSV色值
 	ALK_U8 r, g, b;//RGB色值
 	
 	if(clear){
@@ -214,8 +214,7 @@ void KeyRGB(ALK_U8 clear){ // 键盘RGB控制
 	if(rgbHidFlag & 0x70){ // 非硬件模式
 		if(rgbHidFlag & 0x80){ // 有新帧
 			rgbHidFlag &= ~0x80; // 清除新帧标志
-			// 唯一的goto语句 暂为避免套if或大改逻辑或重新封装函数
-			goto MAP_GRB_TO_RGB; // 跳过所有硬件灯效 直接输出帧
+			return; // 跳过所有硬件灯效 之后直接输出帧
 		}
 		else return; // 无新帧则退出
 	}
@@ -417,23 +416,6 @@ void KeyRGB(ALK_U8 clear){ // 键盘RGB控制
 		tool16 = (fracSHLD - leftSHLD) / (LIGHT_M_OFF + 1);//屏蔽灭渐变
 		if(tool16 == 0) tool16 = 1;
 		fracSHLD -= tool16;
-	}
-	
-	MAP_GRB_TO_RGB: // 跳过所有硬件灯效 直接执行映射并写入帧缓存
-	
-	//GRB换位和旋转映射
-	if(CFG_KB_DIR == 0){//正常方向
-		for(i = 0; i < 16; i++){	FrameBuf[i*3+1] = FrameRaw[i*3+0];
-			FrameBuf[i*3+0] = FrameRaw[i*3+1];FrameBuf[i*3+2] = FrameRaw[i*3+2];	}
-	}else if(CFG_KB_DIR == 3){//左旋90度(此处与按键读取相反)
-		for(i = 0; i < 16; i++){	FrameBuf[i*3+1] = FrameRaw[TURN_R90[i]*3+0];
-			FrameBuf[i*3+0] = FrameRaw[TURN_R90[i]*3+1];FrameBuf[i*3+2] = FrameRaw[TURN_R90[i]*3+2];	}
-	}else if(CFG_KB_DIR == 2){//旋转180度
-		for(i = 0; i < 16; i++){	FrameBuf[i*3+1] = FrameRaw[(16 - i)*3+0];
-			FrameBuf[i*3+0] = FrameRaw[(16 - i)*3+1];FrameBuf[i*3+2] = FrameRaw[(16 - i)*3+2];	}
-	}else if(CFG_KB_DIR == 1){//右旋90度(此处与按键读取相反)
-		for(i = 0; i < 16; i++){	FrameBuf[i*3+1] = FrameRaw[TURN_L90[i]*3+0];
-			FrameBuf[i*3+0] = FrameRaw[TURN_L90[i]*3+1];FrameBuf[i*3+2] = FrameRaw[TURN_L90[i]*3+2];	}
 	}
 }
 

@@ -23,6 +23,7 @@ extern UINT8I FrameBuf[ALK_KEY_NUM*3];//帧缓存
 
 
 void ClearKeyRGB(void); // 清除键盘RGB
+void RgbMap(void); // 键盘RGB映射
 void WsWrite16(void); // 写入16个灯
 
 

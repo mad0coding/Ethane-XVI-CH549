@@ -294,6 +294,7 @@ void MultiFunc(void){ // 功能集合函数
 	SysRGB(); // 系统RGB控制
 	TICK_START(TICK_SOURSE);
 	KeyRGB(0); // 键盘RGB控制
+	RgbMap(); // 键盘RGB映射
 	TICK_END_TH(TICK_SOURSE, 100);
 //	if(WakeUpEnFlag & 1) PWM_R = 100;
 //	else PWM_R = 0;
