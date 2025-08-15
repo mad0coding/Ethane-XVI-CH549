@@ -452,7 +452,7 @@ else{//若未在接收状态 则监听各种命令
 	Buf[Offset+0] = 'R'; Buf[Offset+1] = Buf[1]; Buf[Offset+2] = Buf[2]; Buf[Offset+3] = Buf[3];//预填入响应字节
 	if((Buf[0] == 'D' && Buf[1] == 'K' && Buf[2] == 'B' && Buf[3] == 'C' 
 		|| Buf[0] == 'D' && Buf[1] == 'L' && Buf[2] == 'T' && Buf[3] == 'C') 
-		&& Buf[4] >= '1' && Buf[4] <= '0' + CFG_NUM){//连接命令
+		&& Buf[4] >= '1' && Buf[4] <= '0' + ALK_CFG_NUM){//连接命令
 		if(Buf[1] == 'K'){	//键盘配置
 			packs = 8;
 			asyncFlag = Buf[4] - '1' + ASYNC_FLAG_CFG;//确定键盘存储位置
@@ -533,7 +533,7 @@ else{//若未在接收状态 则监听各种命令
 		Buf[Offset+10] = ecValue[0]; // 旋钮值
 		Buf[Offset+11] = ecValue[1];
 		*(PUINT32X)&Buf[Offset+12] = 0; // 按键值
-		for(index = 0; index < KP_NUM; index++){ // 按键值
+		for(index = 0; index < ALK_BUTTON_NUM; index++){ // 按键值
 			*(PUINT32X)&Buf[Offset+12] |= (uint32_t)keyNow[index] << index;
 		}
 	}
@@ -554,7 +554,7 @@ else{//若未在接收状态 则监听各种命令
 	else if(Buf[0] == 'B' && Buf[1] == 'C' && Buf[2] == 'S' && Buf[3] == 'C'){//配置切换命令
 		memset(&Buf[Offset+4], ' ', 64 - 4);//后面全置为空格
 		Buf[Offset+4] = sysCs + '1';//把旧选择上报
-		if(Buf[4] >= '1' && Buf[4] <= '0' + CFG_NUM){//新选择合法
+		if(Buf[4] >= '1' && Buf[4] <= '0' + ALK_CFG_NUM){//新选择合法
 			Buf[Offset+5] = Buf[4];//把新选择环回
 			FlashBuf[0] = Buf[4] - '1';//用FlashBuf暂存新选择
 			asyncFlag = ASYNC_FLAG_CSC;//异步标志置位

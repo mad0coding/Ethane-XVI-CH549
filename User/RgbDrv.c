@@ -3,7 +3,7 @@
 #include "RgbDrv.h"
 
 
-UINT8I FrameBuf[ALK_KEY_NUM*3] = {//帧缓存
+static UINT8I FrameBuf[ALK_KEY_NUM*3] = {//帧缓存
 	0,0,0,	0,0,0,	0,0,0,	0,0,0,
 	0,0,0,	0,0,0,	0,0,0,	0,0,0,
 	0,0,0,	0,0,0,	0,0,0,	0,0,0,

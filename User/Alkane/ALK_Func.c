@@ -1,6 +1,20 @@
 
 #include "ALK_Func.h"
 
+
+ALK_U8_CFG *DATA_CFG = DATA_CFG_BASE; // 闪存区配置信息指针
+
+ALK_U8 sysCs = 0; // 总配置选择
+
+ALK_U8 keyDir[ALK_CFG_NUM]; // 键盘方向
+
+ALK_U8 keyNow[ALK_BUTTON_NUM]; // 应用层按键状态
+ALK_U8 keyOld[ALK_BUTTON_NUM]; // 应用层按键旧值
+
+ALK_U16 keyAddr[ALK_CFG_NUM][ALK_KEY_NUM]; // 每组按键的数据地址
+static ALK_U16 keyWork[ALK_KEY_NUM] = {0}; // 按键工作用数组
+static ALK_U8 keyFlag[ALK_KEY_NUM] = {0}; // 按键标记用数组
+
 //******************************报文发送******************************//
 ALK_U8 KeyBrd_if_send = 0;	// 键盘报文是否发送
 ALK_U8 Mouse_if_send = 0;	// 鼠标报文是否发送
@@ -242,7 +256,7 @@ ALK_U8 FillReport(void)//报文填写
 		auto_num = 0;//正在执行自动连点的按键数量
 		for(i = 0; i < ALK_KEY_NUM; i++){//对于全部键盘按键的连点
 			if(CFG_K_MODE(keyAddr[sysCs][i]) == m7_clicker){//模式7:按键连点
-				if(oldTime > Systime){//若系统时间重置
+				if(oldTime > ALK_Systime){//若系统时间重置
 					keyWork[i] = 0;//清空设定时间
 					keyFlag[i] &= ~0x04;//复位点击标志
 					keyFlag[i] &= ~0x02;//停止连点
@@ -255,9 +269,9 @@ ALK_U8 FillReport(void)//报文填写
 						keyFlag[i] &= ~0x04;//复位点击标志
 					}
 					else{//若上次未点击
-						if((ALK_U16)((ALK_U16)Systime - keyWork[i]) >= CFG_K_T(keyAddr[sysCs][i])){//若定时已到
+						if((ALK_U16)((ALK_U16)ALK_Systime - keyWork[i]) >= CFG_K_T(keyAddr[sysCs][i])){//若定时已到
 							KeyInsert(i + 3,CFG_K_KEY(keyAddr[sysCs][i]));//填入键值
-							keyWork[i] = Systime;//记录发送时间低16位
+							keyWork[i] = ALK_Systime;//记录发送时间低16位
 							keyFlag[i] |= 0x04;//置位点击标志
 						}
 					}
@@ -265,7 +279,7 @@ ALK_U8 FillReport(void)//报文填写
 				}
 			}
 		}//处理完16个按键的连点
-		oldTime = Systime;//记录时间更新
+		oldTime = ALK_Systime;//记录时间更新
 		clickerNum = auto_num;//自动连点数更新
 	}
 	//********************************************************************************************//
@@ -316,7 +330,7 @@ ALK_U8 FillReport(void)//报文填写
 void CsChange(ALK_U8 change, ALK_U8 ifTmp)//切换
 {
 	change &= 0x0F;//取低4位
-	if(change == 0 || change > CFG_NUM) return;
+	if(change == 0 || change > ALK_CFG_NUM) return;
 	sysCs = change - 1;
 	CFG_DATA_CSC(sysCs);//更新配置数据选择
 	
@@ -325,7 +339,7 @@ void CsChange(ALK_U8 change, ALK_U8 ifTmp)//切换
 		LIGHT_DATA_CSC(sysCs);//若不是灯效不切换则更新灯效数据选择
 	}
 	
-	changeTime = Systime;
+	changeTime = ALK_Systime;
 	
 	RkHandle(1);
 	EcHandle(1);
@@ -373,9 +387,9 @@ static void Mode3Handle(void)//mode3处理(按键组处理)
 	ALK_U16 end_i;
 	ALK_U8 check_i;
 	
-	if(oldTime > Systime) setTime = 0;//若系统时间重置则终止延时
-	oldTime = Systime;//记录时间更新
-	if(setTime > Systime){//延时未结束
+	if(oldTime > ALK_Systime) setTime = 0;//若系统时间重置则终止延时
+	oldTime = ALK_Systime;//记录时间更新
+	if(setTime > ALK_Systime){//延时未结束
 		mode3_delaying = 1;//延时标志置位
 		mode3_gap = 0;//清零间隔标志
 		return;//退出等待
@@ -425,7 +439,7 @@ static void Mode3Handle(void)//mode3处理(按键组处理)
 		}
 		else if(CFG_ACS(mode3_i) == kv_delay){//若有延时
 			ALK_U16 delayTime = (CFG_ACS(mode3_i + 1) << 8) | CFG_ACS(mode3_i + 2);
-			setTime = Systime + delayTime;
+			setTime = ALK_Systime + delayTime;
 			mode3_i += 3;
 			break;//独占本次报文
 		}
@@ -768,11 +782,11 @@ static void EcHandle(ALK_U8 clear)//旋钮处理
 	
 //	if(TIM_old != TIM_count){
 //		TIM_old = TIM_count;
-//		oldTime = Systime;//若计数值不一致才更新时间
+//		oldTime = ALK_Systime;//若计数值不一致才更新时间
 //	}
-//	if(/*Systime - oldTime > 5000*/0){//若长时间编码器无动作
+//	if(/*ALK_Systime - oldTime > 5000*/0){//若长时间编码器无动作
 //		TIM_old = TIM_count = EC_count = EC_flag = 0;
-//		oldTime = Systime;
+//		oldTime = ALK_Systime;
 //	}
 	
 	for(i = 0; i < 2; i++){//处理每个旋钮
@@ -892,17 +906,17 @@ static void MorseInput(ALK_U8 input){ // 输入
 static void MorseHandle(void){ // 摩尔斯码处理
 	static ALK_U32 morseTime = 0; // 任何动作时刻
 	static ALK_U32 pressTime = 0; // 按下时刻
-	if(Systime - morseTime > morse_gap * 10){ // 超过间隔时间
-		morseTime = Systime;
+	if(ALK_Systime - morseTime > morse_gap * 10){ // 超过间隔时间
+		morseTime = ALK_Systime;
 		MorseInput(0xFF); // 输入中止
 	}
-	if(morse_key & 0xF7) morseTime = Systime; // 任何动作都更新时间
+	if(morse_key & 0xF7) morseTime = ALK_Systime; // 任何动作都更新时间
 	else return;
 	if(morse_key & 0x10) MorseInput(0); // 直接输入点
 	if(morse_key & 0x20) MorseInput(1); // 直接输入划
-	if(morse_key & 0x40) pressTime = Systime; // 记录按下时刻
+	if(morse_key & 0x40) pressTime = ALK_Systime; // 记录按下时刻
 	if(morse_key & 0x80){ // 松开
-		if(Systime - pressTime < morse_long * 10) MorseInput(0); // 判断为点
+		if(ALK_Systime - pressTime < morse_long * 10) MorseInput(0); // 判断为点
 		else MorseInput(1); // 判断为划
 	}
 	morse_key &= ~0xF0; // 复位边沿标志

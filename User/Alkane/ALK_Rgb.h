@@ -8,8 +8,9 @@
 #define COLOR_ANGLE		    167 // 色环的1/6
 #define LIGHT_LIST_MAX	    9 // 列表上限
 
+#define LIGHT_DATA_SIZE		256 // 灯效配置数据长度
 
-#define LIGHT_ADDR_CSC(i)	(DATA_LIGHT_BASE + (i) * 256) // 灯效数据地址 正序
+#define LIGHT_ADDR_CSC(i)	(DATA_LIGHT_BASE + (i) * LIGHT_DATA_SIZE) // 灯效数据地址 正序
 #define LIGHT_DATA_CSC(i)	(DATA_LIGHT = LIGHT_ADDR_CSC(i)) // 灯效数据选择
 
 #define LIGHT_THIS		(DATA_LIGHT)
@@ -42,6 +43,8 @@
 
 extern ALK_U8 rgbHidFlag; // RGB通信标志
 extern PUINT8C DATA_LIGHT; // 闪存区灯效信息指针
+
+extern ALK_U8 FrameRaw[ALK_KEY_NUM*3]; // 原始帧缓存
 
 
 void KeyRGB(ALK_U8 clear); // 键盘RGB控制

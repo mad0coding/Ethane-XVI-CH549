@@ -5,7 +5,7 @@
 ALK_U8 rgbHidFlag = 0; // RGB通信标志
 // bit7:新帧标志 bit6~4:模式 bit3~0:预留
 
-ALK_PU8C DATA_LIGHT = DATA_LIGHT_BASE; // 闪存区灯效信息指针
+ALK_U8_LIGHT *DATA_LIGHT = DATA_LIGHT_BASE; // 闪存区灯效信息指针
 
 static ALK_U8C LED_CURVE[] = {//LED非线性校正表
 	  0,  0,  0,  0,   0,  0,  0,  0,   0,  0,  0,  0,   0,  0,  0,  0,   0,  0,  0,  0,
@@ -92,17 +92,13 @@ static ALK_U8C INX_TABLE[] = {//预置灯效下标表
 	3,2,1,0,	 4,13,12,11, 5,14,15,10, 6,7,8,9,//←↓
 };
 
-static ALK_U8 fracM[ALK_KEY_NUM] = {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,};//主效果比例
-static ALK_U8 fracUD[ALK_KEY_NUM] = {0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,};//按动效果比例
+static ALK_U8 fracM[ALK_KEY_NUM] = {0}; // 主效果比例
+static ALK_U8 fracUD[ALK_KEY_NUM] = {0}; // 按动效果比例
 
-static ALK_U8 inXi[ALK_KEY_NUM] = {0,1,2,3, 4,5,6,7, 8,9,10,11, 12,13,14,15,};
+static ALK_U8 inXi[ALK_KEY_NUM] = {0}; // 亮起顺序
 
-ALK_U8 FrameRaw[ALK_KEY_NUM*3] = {//原始帧缓存
-	0,0,0,	0,0,0,	0,0,0,	0,0,0,
-	0,0,0,	0,0,0,	0,0,0,	0,0,0,
-	0,0,0,	0,0,0,	0,0,0,	0,0,0,
-	0,0,0,	0,0,0,	0,0,0,	0,0,0,
-};//RGB
+ALK_U8 FrameRaw[ALK_KEY_NUM*3] = {0}; // 原始帧缓存 RGB
+
 
 
 //H:0~COLOR_ANGLE*6,S:0~100(已用delta代替),V:0~255
@@ -204,8 +200,8 @@ void KeyRGB(ALK_U8 clear){ // 键盘RGB控制
 	ALK_U8 r, g, b;//RGB色值
 	
 	if(clear){
-		dTime = Systime;//重置时间记录
-		leaveTime = Systime - 65535;//重置离开时间
+		dTime = ALK_Systime;//重置时间记录
+		leaveTime = ALK_Systime - 65535;//重置离开时间
 		/*if(LIGHT_MONO <= 0) */memset(fracM, 0, ALK_KEY_NUM);//快切换则清空主效果比例
 		/*if(LIGHT_MONO <= 1) */taskTick = 0;//快、缓切换则清零任务节拍
 		return;
@@ -219,13 +215,13 @@ void KeyRGB(ALK_U8 clear){ // 键盘RGB控制
 		else return; // 无新帧则退出
 	}
 	
-	if((ALK_U8)((ALK_U8)Systime - eTime) < 20) return;//以20ms周期处理灯效
+	if((ALK_U8)((ALK_U8)ALK_Systime - eTime) < 20) return;//以20ms周期处理灯效
 	eTime += 20;//时间跟进
 
 	if(LIGHT_T_WAIT){//若启用等待时间
 		for(i = 0; i < ALK_KEY_NUM; i++){//检查是否有按键
 			if(keyNow[i]){//若有按下
-				leaveTime = Systime;//不断更新离开时间
+				leaveTime = ALK_Systime;//不断更新离开时间
 				break;
 			}
 		}
@@ -233,17 +229,17 @@ void KeyRGB(ALK_U8 clear){ // 键盘RGB控制
 	
 	if((taskTick & 0x0F) == 2){//若为结束沿
 		taskTick = 3;//进入间隔期
-		dTime = Systime;//记录间隔期起始时间
+		dTime = ALK_Systime;//记录间隔期起始时间
 		INXi = 255;
 	}
-	if((taskTick & 0x0F) == 3 && (ALK_U32)(Systime - dTime) > (LIGHT_T_GAP + (ALK_U32)randTime)//若为间隔期 且 间隔时间已到
-		&& (!LIGHT_T_WAIT || (ALK_U32)(Systime - leaveTime) > LIGHT_T_WAIT * 10UL)){//且 无等待或等待时间已到
+	if((taskTick & 0x0F) == 3 && (ALK_U32)(ALK_Systime - dTime) > (LIGHT_T_GAP + (ALK_U32)randTime)//若为间隔期 且 间隔时间已到
+		&& (!LIGHT_T_WAIT || (ALK_U32)(ALK_Systime - leaveTime) > LIGHT_T_WAIT * 10UL)){//且 无等待或等待时间已到
 		randTime = LIGHT_T_RAND ? ((rand() ^ (TL0 << 8)) % LIGHT_T_RAND) : 0;//更新间隔随机时间
 		taskTick = 0;//进入启动沿
 	}
 	if((taskTick & 0x0F) == 0){//若为启动沿
 		taskTick = 1;//进入动作期
-		dTime = Systime;//记录动作期起始时间
+		dTime = ALK_Systime;//记录动作期起始时间
 		INXi = 0;
 		if(LIGHT_WAVE == 0){//呼吸
 			lightMode = 200;
@@ -287,8 +283,8 @@ void KeyRGB(ALK_U8 clear){ // 键盘RGB控制
 			}
 		}
 	}
-	if((taskTick & 0x0F) == 1 && (ALK_U16)((ALK_U16)Systime - dTime) > LIGHT_T_ACT && lightMode != 200){//若为动作期且动作时间已到且非呼吸模式
-		dTime = Systime;//记录新动作起始时间
+	if((taskTick & 0x0F) == 1 && (ALK_U16)((ALK_U16)ALK_Systime - dTime) > LIGHT_T_ACT && lightMode != 200){//若为动作期且动作时间已到且非呼吸模式
+		dTime = ALK_Systime;//记录新动作起始时间
 		INXi++;
 	}
 	
@@ -300,17 +296,17 @@ void KeyRGB(ALK_U8 clear){ // 键盘RGB控制
 	for(i = 0; i < ALK_KEY_NUM; i++){//16键处理开始
 		if(LIGHT_COLOR_T && (LIGHT_COLOR_S & 0x01)){//若启用上配色色彩变化
 			// Rgb2Hsv(FrameRaw[3*i+0], FrameRaw[3*i+1], FrameRaw[3*i+2], &h, &s, &v);
-			// h += (Systime / LIGHT_COLOR_T) % (COLOR_ANGLE * 6);//加入色环变化
+			// h += (ALK_Systime / LIGHT_COLOR_T) % (COLOR_ANGLE * 6);//加入色环变化
 			// if(h >= COLOR_ANGLE * 6) h -= COLOR_ANGLE * 6;//防止越界
 			// Hsv2Rgb(h, s, v, &FrameRaw[3*i+0], &FrameRaw[3*i+1], &FrameRaw[3*i+2]);
 			RgbHueShift(FrameRaw[3*i+0], FrameRaw[3*i+1], FrameRaw[3*i+2],
-						(Systime / LIGHT_COLOR_T) % (COLOR_ANGLE * 6),
+						(ALK_Systime / LIGHT_COLOR_T) % (COLOR_ANGLE * 6),
 						&FrameRaw[3*i+0], &FrameRaw[3*i+1], &FrameRaw[3*i+2]);
 		}
 		
 		//主效果
 		if(lightMode == 200 && LIGHT_T_ACT){//若为动作期且为呼吸模式
-			v = ((ALK_U16)((ALK_U16)Systime - dTime) / (MAX(LIGHT_T_ACT,1000) / 1000)) % (COLOR_ANGLE * 6);//用动作时间控制呼吸周期
+			v = ((ALK_U16)((ALK_U16)ALK_Systime - dTime) / (MAX(LIGHT_T_ACT,1000) / 1000)) % (COLOR_ANGLE * 6);//用动作时间控制呼吸周期
 			if(v >= COLOR_ANGLE * 3){//下降段
 				v = COLOR_ANGLE * 6 - 1 - v;//0~500
 				tool16 = LIGHT_G_OFF % 3;//用灭渐变字节来选择下降段曲线
@@ -381,11 +377,11 @@ void KeyRGB(ALK_U8 clear){ // 键盘RGB控制
 		//加入按动效果
 		if(LIGHT_COLOR_T && (LIGHT_COLOR_S & 0x02)){//若启用下配色色彩变化
 			// Rgb2Hsv(LIGHT_DOWN(3*i+0), LIGHT_DOWN(3*i+1), LIGHT_DOWN(3*i+2), &h, &s, &v);
-			// h += (Systime / LIGHT_COLOR_T) % (COLOR_ANGLE * 6);//加入色环变化
+			// h += (ALK_Systime / LIGHT_COLOR_T) % (COLOR_ANGLE * 6);//加入色环变化
 			// if(h >= COLOR_ANGLE * 6) h -= COLOR_ANGLE * 6;//防止越界
 			// Hsv2Rgb(h, s, v, &r, &g, &b);
 			RgbHueShift(LIGHT_DOWN(3*i+0), LIGHT_DOWN(3*i+1), LIGHT_DOWN(3*i+2),
-						(Systime / LIGHT_COLOR_T) % (COLOR_ANGLE * 6),
+						(ALK_Systime / LIGHT_COLOR_T) % (COLOR_ANGLE * 6),
 						&r, &g, &b);
 			FrameRaw[3*i+0] += ((ALK_S16)r - FrameRaw[3*i+0]) * fracUD[i] / 255;
 			FrameRaw[3*i+1] += ((ALK_S16)g - FrameRaw[3*i+1]) * fracUD[i] / 255;
@@ -399,7 +395,7 @@ void KeyRGB(ALK_U8 clear){ // 键盘RGB控制
 	}//16键处理结束
 	
 	if(ifINX == 0 && (taskTick & 0x0F) == 1//无匹配且为动作期
-		|| LIGHT_T_WAIT && leaveTime == Systime){//或 启用等待时间且当前有按键
+		|| LIGHT_T_WAIT && leaveTime == ALK_Systime){//或 启用等待时间且当前有按键
 		taskTick = 2;//进入结束沿
 	}
 	
@@ -435,7 +431,7 @@ void SysRGB(void){ // 系统RGB控制
 	rgbInput[4] = !!clickerNum;
 	rgbInput[5] = !!mode3_key;
 	
-	if((CFGb_RGB_T_ON && (Systime - changeTime) < RGB_DELAY[CFGb_RGB_T_ON]) || !CFGb_RGB_T_OFF){//配置切换后在设定时间之内 或 不灭
+	if((CFGb_RGB_T_ON && (ALK_Systime - changeTime) < RGB_DELAY[CFGb_RGB_T_ON]) || !CFGb_RGB_T_OFF){//配置切换后在设定时间之内 或 不灭
 		rgbWeight = 255;
 	}
 	else if(CFGb_RGB_T_OFF){//超过设定时间 且 不是配置为不灭

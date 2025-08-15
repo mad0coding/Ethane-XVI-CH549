@@ -3,25 +3,17 @@
 
 UINT8X FlashBuf[512] _at_ XBASE_FLASH_BUF;//配置缓存数组
 
-uint16_t keyAddr[CFG_NUM][ALK_KEY_NUM];//每组按键的数据地址
-uint16_t keyWork[ALK_KEY_NUM];//按键的工作用数组
-uint8_t keyFlag[ALK_KEY_NUM];//按键的标记用数组
 
-uint8_t keyDir[CFG_NUM];//键盘方向
-
-uint8_t sysCs = 0;//总配置选择
-
-PUINT8C DATA_CFG = DATA_CFG_BASE;//闪存区配置信息指针
 //PUINT8C GLOB_CFG = DATA_GLOB_BASE;//闪存区全局信息指针
 
 void AsyncHandle(uint8_t flag){//异步处理
 	uint8_t ret = 0;
-	if(flag >= ASYNC_FLAG_CFG && flag < ASYNC_FLAG_CFG + CFG_NUM){			//键盘配置存储
+	if(flag >= ASYNC_FLAG_CFG && flag < ASYNC_FLAG_CFG + ALK_CFG_NUM){			//键盘配置存储
 		ret = ParaWrite(CFG_ADDR_CSC(flag - ASYNC_FLAG_CFG), FlashBuf, 8);
 		ParaUpdate(flag - ASYNC_FLAG_CFG);//键盘配置参数更新
 		if(ret) DiagCountInc(DIAG_FMT_LOAD | DIAG_FMT_SAVE, DIAG_I_CFG + flag - ASYNC_FLAG_CFG);//诊断计数增加
 	}
-	else if(flag >= ASYNC_FLAG_LIGHT && flag < ASYNC_FLAG_LIGHT + CFG_NUM){	//灯效配置存储
+	else if(flag >= ASYNC_FLAG_LIGHT && flag < ASYNC_FLAG_LIGHT + ALK_CFG_NUM){	//灯效配置存储
 		ret = ParaWrite(LIGHT_ADDR_CSC(flag - ASYNC_FLAG_LIGHT), FlashBuf, 4);
 		KeyRGB(1);//键盘RGB控制清零
 		if(ret) DiagCountInc(DIAG_FMT_LOAD | DIAG_FMT_SAVE, DIAG_I_LIGHT + flag - ASYNC_FLAG_LIGHT);//诊断计数增加
@@ -126,16 +118,14 @@ uint8_t ParaWrite(uint16_t addr, uint8_t *buf, uint8_t num){//参数写入
 void ParaLoad(void){//参数读取
 	uint8_t i;
 	GlobalParaLoad();//全局参数读取
-	for(i = CFG_NUM - 1; i != 255; i--) ParaUpdate(i);//倒序装载以实现小序号优先
-	memset(keyWork, 0, sizeof(keyWork));
-	memset(keyFlag, 0, sizeof(keyFlag));
+	for(i = ALK_CFG_NUM - 1; i != 255; i--) ParaUpdate(i);//倒序装载以实现小序号优先
 }
 
 void ParaUpdate(uint8_t pos){//参数更新
 	uint16_t addr;
 	uint8_t i;
 	
-	if(pos < CFG_NUM) addr = DATA_CFG_BASE - pos * 512;//计算本套配置的起始地址
+	if(pos < ALK_CFG_NUM) addr = DATA_CFG_BASE - pos * CFG_DATA_SIZE;//计算本套配置的起始地址
 	else return;
 	
 	keyDir[pos] = CFG_ACS(addr + (&CFG_KB_DIR - CFG_THIS));//读取键盘方向
