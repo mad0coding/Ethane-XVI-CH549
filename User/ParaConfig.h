@@ -41,7 +41,6 @@ void AsyncHandle(uint8_t flag);//异步处理
 void ParaSave(uint8_t pos, uint8_t num);	//参数保存
 uint8_t ParaWrite(uint16_t addr, uint8_t *buf, uint8_t num);	//参数写入
 void ParaLoad(void);					//参数读取
-void ParaUpdate(uint8_t pos);			//参数更新
 void GlobalParaLoad(void);		//全局参数读取
 void GlobalParaUpdate(void);	//全局参数更新
 

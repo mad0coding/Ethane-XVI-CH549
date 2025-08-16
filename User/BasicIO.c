@@ -134,6 +134,8 @@ void GetTime(void){//时间获取
 	Systime += incMs;//系统时间更新
 	THTL0_old += (uint16_t)incMs * 2000;//计时器旧值跟进
 	//测试结果: /2000*2000:8960  /2000<<11:9174  >>11<<11:9177  >>11*2000:8952
+
+	alkSystime = Systime; // 给ALK授时
 }
 
 static UINT16C TONE_TIM[] = {//声调定时器计数值表
@@ -287,6 +289,10 @@ void MultiFunc(void){ // 功能集合函数
 	MorseBuzz(); // 摩斯码蜂鸣器控制
 	
 	SysRGB(); // 系统RGB控制
+	PWM_R = FrameRaw[ALK_KEY_NUM*3 + 0]; // 系统RGB输出
+	PWM_G = FrameRaw[ALK_KEY_NUM*3 + 1];
+	PWM_B = FrameRaw[ALK_KEY_NUM*3 + 2];
+
 	// TICK_START(TICK_SOURSE);
 	KeyRGB(0); // 键盘RGB控制
 	RgbMap(); // 键盘RGB映射

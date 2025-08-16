@@ -121,51 +121,6 @@ void ParaLoad(void){//参数读取
 	for(i = ALK_CFG_NUM - 1; i != 255; i--) ParaUpdate(i);//倒序装载以实现小序号优先
 }
 
-void ParaUpdate(uint8_t pos){//参数更新
-	uint16_t addr;
-	uint8_t i;
-	
-	if(pos < ALK_CFG_NUM) addr = DATA_CFG_BASE - pos * CFG_DATA_SIZE;//计算本套配置的起始地址
-	else return;
-	
-	if(CFG_ACS(addr + (&CFG_ALL_PRI - CFG_THIS)) == 1){//若本配置为优先配置
-		sysCs = pos;//总选择为本配置
-		CFG_DATA_CSC(sysCs);//更新配置数据选择
-		LIGHT_DATA_CSC(sysCs);//更新灯效数据选择
-		KeyRGB(1);//键盘RGB控制清零
-	}
-	
-	for(i = 0; i < ALK_KEY_NUM; i++){
-		keyAddr[pos][i] = addr;//存储地址
-		if(CFG_K_ID(addr) != i + 1){//若ID不对
-			keyAddr[pos][0] = 0;//置零以标记为无效
-			break;
-		}
-		if(CFG_K_MODE(addr) == m0_none || CFG_K_MODE(addr) == m8_buzz){
-			addr += 2;
-		}
-		else if(CFG_K_MODE(addr) == m1_button){
-			addr += 3;
-		}
-		else if(CFG_K_MODE(addr) == m2_shortcut || CFG_K_MODE(addr) == m6_change){
-			addr += 4;
-		}
-		else if(CFG_K_MODE(addr) == m9_morse){
-			addr += 5;
-		}
-		else if(CFG_K_MODE(addr) == m4_move || CFG_K_MODE(addr) == m5_press || CFG_K_MODE(addr) == m7_clicker){
-			addr += 6;
-		}
-		else if(CFG_K_MODE(addr) == m3_group){
-			addr += 3 + CFG_K_LEN(addr);
-		}
-		else{//模式不对
-			keyAddr[pos][0] = 0;//置零以标记为无效
-			break;
-		}
-	}
-}
-
 void GlobalParaLoad(void){//全局参数读取
 	uint8_t i;
 	for(i = 0; i < 2; i++){//摇杆校正数据

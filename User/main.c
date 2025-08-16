@@ -2,7 +2,7 @@
 * File Name          : main.c
 * Author             : Light&Electricity
 * Version            : V1.5
-* Date               : 2025/5/3
+* Date               : 2025/8/16
 * Description        : Ethane-XVI
 ********************************************************************************/
 #include "CH549.H"
@@ -16,7 +16,7 @@
 
 #pragma  NOAREGS
 
-UINT8C FIRMWARE_VERSION[4] = {1,6,2,10}; // 固件版本
+UINT8C FIRMWARE_VERSION[4] = {1,6,2,11}; // 固件版本
 
 uint8_t asyncFlag = 0;//异步操作标志
 
@@ -27,16 +27,16 @@ static uint8_t All_if_send = 0; // 总发送标志
 void main()
 {
 	P2_0 = P2_1 = P2_3 = 0;			//RGB灯GPIO置低
-    CfgFsys( );						//CH549时钟选择配置
-    mDelaymS(5);					//修改主频等待内部晶振稳定,必加
+	CfgFsys( );						//CH549时钟选择配置
+	mDelaymS(5);					//修改主频等待内部晶振稳定,必加
 //    mInitSTDIO( );					//串口0初始化
 	if(!(PCON & bRST_FLAG0)) mDelaymS(50);	//若为软复位或看门狗复位 则额外追加延时
 	
 	ArrayInit();	//数组初始化
 	DiagInit();		//诊断初始化处理
 	
-    USBDeviceInit();				//USB设备模式初始化
-    EA = 1;							//总中断允许
+	USBDeviceInit();				//USB设备模式初始化
+	EA = 1;							//总中断允许
 
 	WS_DOUT = 0;					//WS2812数据线置低
 	GPIO_Init(PORT2, PIN7, MODE1);	//WS2812数据线初始化为推挽
@@ -46,9 +46,9 @@ void main()
 	GPIO_Init(PORT2, PIN3, MODE1);	//初始化为推挽
 	
 	SetPWMClkDiv(32);			//PWM时钟分频配置,FREQ_SYS/32 = 768kHz
-    SetPWMCycle256Clk();		//PWM周期,FREQ_SYS/32/256 = 3kHz
+	SetPWMCycle256Clk();		//PWM周期,FREQ_SYS/32/256 = 3kHz
 	SetPWM2Dat(0);				//LEDG初始占空比配置
-    SetPWM4Dat(0);				//LEDB初始占空比配置
+	SetPWM4Dat(0);				//LEDB初始占空比配置
 	SetPWM5Dat(0);				//LEDR初始占空比配置
 	PWM_SEL_CHANNEL(PWM_CH2, Enable);		//启动通道2输出使能
 	PWM_SEL_CHANNEL(PWM_CH4, Enable);		//启动通道4输出使能
@@ -72,16 +72,16 @@ void main()
 	BUZZ_PWM = 0;						//占空比为0
 	
 	mTimer0Clk12DivFsys();			//T0定时器时钟设置 FREQ_SYS/12
-    mTimer_x_ModInit(0, 1);			//T0定时器模式设置 模式1 16位定时器
-    mTimer_x_SetData(0, 0);			//T0定时器赋值 一直16位循环 不使用中断
-    mTimer0RunCTL(1);				//T0定时器启动
+	mTimer_x_ModInit(0, 1);			//T0定时器模式设置 模式1 16位定时器
+	mTimer_x_SetData(0, 0);			//T0定时器赋值 一直16位循环 不使用中断
+	mTimer0RunCTL(1);				//T0定时器启动
 //    ET0 = 1;						//T0定时器中断开启
 
 	CH549WDTModeSelect(1);		//启动看门狗
 	
 	ParaLoad();		//参数读取
 	
-    while(1){
+	while(1){
 		WDOG_COUNT = 0;//清零看门狗计数
 //		if(!KP_E2) WDOG_COUNT = 0xFF;//按下旋钮2则触发看门狗 测试代码！！！！！！！！！！
 		/********************基本IO********************/
@@ -91,7 +91,7 @@ void main()
 		KeyFilter(1);//滤波一阶段
 		AdcRead();//摇杆ADC读取一个通道
 		
-        WsWrite16();//灯写入
+		WsWrite16();//灯写入
 		
 		AdcRead();//摇杆ADC读取另一个通道
 		KeyRead();//再次读取按键
@@ -143,7 +143,7 @@ void main()
 			All_if_send &= ~0x10;	//清除bit4
 			Enp1IntIn(Dial_data, ALK_RPT_L_DIAL);
 		}
-    }
+	}
 }
 
 

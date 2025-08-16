@@ -14,8 +14,6 @@
 
 #define LIGHT_THIS		(DATA_LIGHT)
 
-//#define LIGHT_ACS(a)		(*((PUINT8C)(a) + 0))
-
 #define LIGHT_UP(n)			(*(LIGHT_THIS + (n) + 0))//按键上配色
 #define LIGHT_DOWN(n)		(*(LIGHT_THIS + (n) + 3*ALK_KEY_NUM))//按键下配色
 #define LIGHT_T_D(n)		(*(LIGHT_THIS + (n) + 6*ALK_KEY_NUM))//按键按下灯渐变
@@ -29,10 +27,10 @@
 #define LIGHT_WAVE			(*(LIGHT_THIS + 241))//动作模式设置
 #define LIGHT_COLOR_S		(*(LIGHT_THIS + 242))//变色设置
 #define LIGHT_COLOR_T		(*(LIGHT_THIS + 243))//变色周期(s)
-#define LIGHT_T_WAIT		(*((PUINT16C)(LIGHT_THIS + 244)))//等待时间(10ms)
-#define LIGHT_T_ACT			(*((PUINT16C)(LIGHT_THIS + 246)))//动作时间(ms)
-#define LIGHT_T_GAP			(*((PUINT16C)(LIGHT_THIS + 248)))//间隔时间(ms)
-#define LIGHT_T_RAND		(*((PUINT16C)(LIGHT_THIS + 250)))//间隔随机时间(ms)
+#define LIGHT_T_WAIT		(*((ALK_U16C*)(LIGHT_THIS + 244)))//等待时间(10ms)
+#define LIGHT_T_ACT			(*((ALK_U16C*)(LIGHT_THIS + 246)))//动作时间(ms)
+#define LIGHT_T_GAP			(*((ALK_U16C*)(LIGHT_THIS + 248)))//间隔时间(ms)
+#define LIGHT_T_RAND		(*((ALK_U16C*)(LIGHT_THIS + 250)))//间隔随机时间(ms)
 #define LIGHT_G_ON			(*(LIGHT_THIS + 252))//亮渐变
 #define LIGHT_G_OFF			(*(LIGHT_THIS + 253))//灭渐变
 #define LIGHT_M_ON			(*(LIGHT_THIS + 254))//屏蔽亮渐变
@@ -41,9 +39,11 @@
 
 
 extern ALK_U8 rgbHidFlag; // RGB通信标志
-extern PUINT8C DATA_LIGHT; // 闪存区灯效信息指针
+extern ALK_U8_LIGHT *DATA_LIGHT; // 闪存区灯效信息指针
 
-extern ALK_U8 FrameRaw[ALK_KEY_NUM*3]; // 原始帧缓存
+extern ALK_U8 FrameRaw[ALK_KEY_NUM*3 + 3]; // 原始帧缓存
+
+extern ALK_U8 numLock, capsLock, scrollLock; // 数字锁定 大写锁定 滚动锁定
 
 
 void KeyRGB(ALK_U8 clear); // 键盘RGB控制

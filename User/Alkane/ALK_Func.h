@@ -4,6 +4,8 @@
 #include "ALK_Def.h"
 #include "ALK_If.h"
 
+#include "ALK_Rgb.h"
+
 
 #define m0_none			0
 #define m1_button		1
@@ -72,19 +74,19 @@
 
 //键盘配置
 #define CFG_THIS		(DATA_CFG)//键盘配置起始
-#define CFG_ACS(a)			(*((PUINT8C)(a) + 0))//按键直接访问
-#define CFG_K_ID(a)			(*((PUINT8C)(a) + 0))//按键ID
-#define CFG_K_MODE(a)		(*((PUINT8C)(a) + 1))//按键模式
-#define CFG_K_KEY(a)		(*((PUINT8C)(a) + 2))//按键键值
-#define CFG_K_LEN(a)		(*((PUINT8C)(a) + 2))//按键组模式时按键长度
-#define CFG_K_MORSE(a)		(*((PUINT8C)(a) + 2))//摩尔斯码设置
-#define CFG_K_MTGAP(a)		(*((PUINT8C)(a) + 3))//摩尔斯码tGap
-#define CFG_K_FUNC(a)		(*((PUINT8C)(a) + 3))//按键功能键
-#define CFG_K_M3DT(a)		(*((PUINT8C)(a) + 3))//按键组模式时数据起始
-#define CFG_K_MTLONG(a)		(*((PUINT8C)(a) + 4))//摩尔斯码tLong
-#define CFG_K_X(a)			(*((PUINT16C)((a) + 2)))//光标模式时X值
-#define CFG_K_Y(a)			(*((PUINT16C)((a) + 4)))//光标模式时Y值
-#define CFG_K_T(a)			(*((PUINT16C)((a) + 4)))//连点模式时周期
+#define CFG_ACS(a)			(*((ALK_U8C*)(a) + 0))//按键直接访问
+#define CFG_K_ID(a)			(*((ALK_U8C*)(a) + 0))//按键ID
+#define CFG_K_MODE(a)		(*((ALK_U8C*)(a) + 1))//按键模式
+#define CFG_K_KEY(a)		(*((ALK_U8C*)(a) + 2))//按键键值
+#define CFG_K_LEN(a)		(*((ALK_U8C*)(a) + 2))//按键组模式时按键长度
+#define CFG_K_MORSE(a)		(*((ALK_U8C*)(a) + 2))//摩尔斯码设置
+#define CFG_K_MTGAP(a)		(*((ALK_U8C*)(a) + 3))//摩尔斯码tGap
+#define CFG_K_FUNC(a)		(*((ALK_U8C*)(a) + 3))//按键功能键
+#define CFG_K_M3DT(a)		(*((ALK_U8C*)(a) + 3))//按键组模式时数据起始
+#define CFG_K_MTLONG(a)		(*((ALK_U8C*)(a) + 4))//摩尔斯码tLong
+#define CFG_K_X(a)			(*((ALK_U16C*)((a) + 2)))//光标模式时X值 测试代码！！！
+#define CFG_K_Y(a)			(*((ALK_U16C*)((a) + 4)))//光标模式时Y值
+#define CFG_K_T(a)			(*((ALK_U16C*)((a) + 4)))//连点模式时周期
 
 #define CFG_R_DATA_S		(CFG_THIS + 468)//摇杆数据起始
 #define CFG_R_DATA_L		(12)//摇杆数据长度
@@ -109,8 +111,8 @@
 #define CFG_RGB_CFG(i)		(*(CFG_THIS + 502 + (i)))//RGB灯指示灯配置
 #define CFG_RGB_TIME		(*(CFG_THIS + 505))//RGB灯标签时间
 
-#define CFG_SCN_W			(*((PUINT16C)(CFG_THIS + 506)))//屏幕宽度
-#define CFG_SCN_H			(*((PUINT16C)(CFG_THIS + 508)))//屏幕高度
+#define CFG_SCN_W			(*((ALK_U16C*)(CFG_THIS + 506)))//屏幕宽度
+#define CFG_SCN_H			(*((ALK_U16C*)(CFG_THIS + 508)))//屏幕高度
 #define CFG_KB_DIR			(*(CFG_THIS + 510))//键盘方向
 #define CFG_ALL_PRI			(*(CFG_THIS + 511))//总优先级
 

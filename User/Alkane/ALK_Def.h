@@ -19,11 +19,9 @@
 //*******************************************************//
 
 //******************** Data type ********************//
-// pointer
-// #define ALK_PU8C		PUINT8C
 // config data type
-#define ALK_U8_CFG		UINT8C
-#define ALK_U8_LIGHT	UINT8C
+#define ALK_U8_CFG		ALK_U8C
+#define ALK_U8_LIGHT	ALK_U8C
 // const
 #define ALK_U8C			UINT8C
 #define ALK_U16C		UINT16C
@@ -35,13 +33,6 @@
 #define ALK_S8			int8_t
 #define ALK_S16			int16_t
 #define ALK_S32			int32_t
-// some platform support fast type
-#define ALK_U8F			UINT8D
-#define ALK_U16F		UINT16D
-#define ALK_S16F		INT16D
-// #define ALK_U8F			uint8_t
-// #define ALK_U16F		uint16_t
-// #define ALK_S16F		int16_t
 //***************************************************//
 
 
@@ -63,7 +54,6 @@
 
 
 
-#define ALK_Systime		Systime
 
 
 #endif

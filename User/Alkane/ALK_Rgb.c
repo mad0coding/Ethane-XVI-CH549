@@ -97,14 +97,14 @@ static ALK_U8 fracUD[ALK_KEY_NUM] = {0}; // 按动效果比例
 
 static ALK_U8 inXi[ALK_KEY_NUM] = {0}; // 亮起顺序
 
-ALK_U8 FrameRaw[ALK_KEY_NUM*3] = {0}; // 原始帧缓存 RGB
+ALK_U8 FrameRaw[ALK_KEY_NUM*3 + 3] = {0}; // 原始帧缓存+指示灯 RGB
 
-
+ALK_U8 numLock, capsLock, scrollLock; // 数字锁定 大写锁定 滚动锁定
 
 //H:0~COLOR_ANGLE*6,S:0~100(已用delta代替),V:0~255
 static void Rgb2Hsv(ALK_U8 vR, ALK_U8 vG, ALK_U8 vB, ALK_U16* pH, ALK_U16* pS, ALK_U16* pV){ // RGB转HSV
-	ALK_U8F max = MAX(MAX(vR,vG),vB), min = MIN(MIN(vR,vG),vB);
-	ALK_U8F delta = max - min;
+	ALK_U8 max = MAX(MAX(vR,vG),vB), min = MIN(MIN(vR,vG),vB);
+	ALK_U8 delta = max - min;
 	if(delta == 0) *pH = 0;
 	else if(max == vR){
 		if(vG >= vB) *pH = ((ALK_U16)vG-vB)*COLOR_ANGLE/delta;
@@ -123,11 +123,11 @@ static void Rgb2Hsv(ALK_U8 vR, ALK_U8 vG, ALK_U8 vB, ALK_U16* pH, ALK_U16* pS, A
 	*pV = max;
 }
 static void Hsv2Rgb(ALK_U16 vH, ALK_U16 vS, ALK_U16 vV, ALK_U8* pR, ALK_U8* pG, ALK_U8* pB){ // HSV转RGB
-	ALK_U8F hi = (ALK_U16)(vH / COLOR_ANGLE) % 6;
-	ALK_U16F f = vH - hi * COLOR_ANGLE;
-	ALK_U8F p = vV - vS;
-	ALK_U8F q = vV - (ALK_U16)vS * f / COLOR_ANGLE;
-	ALK_U8F t = vV - (ALK_U16)vS * (COLOR_ANGLE - f) / COLOR_ANGLE;
+	ALK_U8 hi = (ALK_U16)(vH / COLOR_ANGLE) % 6;
+	ALK_U16 f = vH - hi * COLOR_ANGLE;
+	ALK_U8 p = vV - vS;
+	ALK_U8 q = vV - (ALK_U16)vS * f / COLOR_ANGLE;
+	ALK_U8 t = vV - (ALK_U16)vS * (COLOR_ANGLE - f) / COLOR_ANGLE;
 	if(hi == 0)     {*pR = vV;   *pG = t;    *pB = p;}
 	else if(hi == 1){*pR = q;    *pG = vV;   *pB = p;}
 	else if(hi == 2){*pR = p;    *pG = vV;   *pB = t;}
@@ -137,11 +137,11 @@ static void Hsv2Rgb(ALK_U16 vH, ALK_U16 vS, ALK_U16 vV, ALK_U8* pR, ALK_U8* pG, 
 }
 
 static void RgbHueShift(ALK_U8 vR, ALK_U8 vG, ALK_U8 vB, ALK_U16 dH, ALK_U8* pR, ALK_U8* pG, ALK_U8* pB){ // RGB色相移动
-	ALK_U8F max = MAX(MAX(vR,vG),vB), min = MIN(MIN(vR,vG),vB);
-	ALK_U8F delta = max - min;
-	ALK_U16F h;
-	ALK_U8F hi;// = (ALK_U16)(vH / COLOR_ANGLE) % 6;
-	ALK_U8F f;
+	ALK_U8 max = MAX(MAX(vR,vG),vB), min = MIN(MIN(vR,vG),vB);
+	ALK_U8 delta = max - min;
+	ALK_U16 h;
+	ALK_U8 hi;// = (ALK_U16)(vH / COLOR_ANGLE) % 6;
+	ALK_U8 f;
 	if(delta == 0) h = 0;
 	else if(max == vR){
 		if(vG >= vB) h = ((ALK_U16)vG-vB)*COLOR_ANGLE/delta;
@@ -172,10 +172,10 @@ static void RgbHueShift(ALK_U8 vR, ALK_U8 vG, ALK_U8 vB, ALK_U16 dH, ALK_U8* pR,
 	else if(h < COLOR_ANGLE * 5) hi = 4;
 	else hi = 5;
 	// do{
-	/*ALK_U16F */ f = h - hi * COLOR_ANGLE;
-	/*ALK_U8F */p = vV - vS;
-	// ALK_U8F q = vV - (ALK_U16)vS * f / COLOR_ANGLE;
-	// ALK_U8F t = vV - (ALK_U16)vS * (COLOR_ANGLE - f) / COLOR_ANGLE;
+	/*ALK_U16 */ f = h - hi * COLOR_ANGLE;
+	/*ALK_U8 */p = vV - vS;
+	// ALK_U8 q = vV - (ALK_U16)vS * f / COLOR_ANGLE;
+	// ALK_U8 t = vV - (ALK_U16)vS * (COLOR_ANGLE - f) / COLOR_ANGLE;
 	if(hi & 0x01) q = vV - (ALK_U16)vS * f / COLOR_ANGLE;
 	else t = vV - (ALK_U16)vS * (COLOR_ANGLE - f) / COLOR_ANGLE;
 	if(hi == 0)     {*pR = vV;   *pG = t;    *pB = p;}
@@ -194,8 +194,8 @@ void KeyRGB(ALK_U8 clear){ // 键盘RGB控制
 	static ALK_U8 eTime = 0, INXi = 0, fracSHLD = 0;//时间记录,自定义下标,屏蔽效果比例
 	static ALK_U8 listMode = -1, lightMode = 0;//在列表选中的模式, 真正的模式
 	ALK_U8 /*lightMode = 0, */ifINX = 0, leftSHLD = 255;//模式,是否有自定义标记,屏蔽剩余
-	ALK_U8F i, j;//按键循环变量,RGB循环变量
-	ALK_S16F tool16 = 0;//工具变量
+	ALK_U8 i, j;//按键循环变量,RGB循环变量
+	ALK_S16 tool16 = 0;//工具变量
 	ALK_U16 /*h, s, */v;//HSV色值
 	ALK_U8 r, g, b;//RGB色值
 	
@@ -234,7 +234,7 @@ void KeyRGB(ALK_U8 clear){ // 键盘RGB控制
 	}
 	if((taskTick & 0x0F) == 3 && (ALK_U32)(ALK_Systime - dTime) > (LIGHT_T_GAP + (ALK_U32)randTime)//若为间隔期 且 间隔时间已到
 		&& (!LIGHT_T_WAIT || (ALK_U32)(ALK_Systime - leaveTime) > LIGHT_T_WAIT * 10UL)){//且 无等待或等待时间已到
-		randTime = LIGHT_T_RAND ? ((rand() ^ (TL0 << 8)) % LIGHT_T_RAND) : 0;//更新间隔随机时间
+		randTime = LIGHT_T_RAND ? (ALK_Rand % LIGHT_T_RAND) : 0; // 更新间隔随机时间
 		taskTick = 0;//进入启动沿
 	}
 	if((taskTick & 0x0F) == 0){//若为启动沿
@@ -259,7 +259,7 @@ void KeyRGB(ALK_U8 clear){ // 键盘RGB控制
 				if(++listMode >= j) listMode = 0;//自增或转一圈回来
 			}
 			else{//随机
-				do{ i = (rand() ^ TL0) % j; }while(i == listMode && j > 1);//借用i存储掺入时间的随机数 直到与现在不同
+				do{ i = ALK_Rand % j; }while(i == listMode && j > 1); // 借用i存储掺入时间的随机数 直到与现在不同
 				listMode = i;
 			}
 			
@@ -417,17 +417,15 @@ void KeyRGB(ALK_U8 clear){ // 键盘RGB控制
 
 static ALK_U16C RGB_DELAY[8] = {0,1,10,50, 100,500,1000,2000};//RGB延时表(单位ms)
 
-extern bit bitNUM, bitCAPS, bitSCROLL;//数字锁定 大写锁定 滚动锁定
-
 void SysRGB(void){ // 系统RGB控制
 	ALK_U8 i;
 	static ALK_U8 rgbWeight = 0;//系统RGB指示灯权重
 	ALK_U8 rgbOutput[3];//系统RGB指示灯输出
 	ALK_U8 rgbInput[6];//系统RGB指示灯输入
 	rgbInput[0] = 0;
-	rgbInput[1] = bitNUM;
-	rgbInput[2] = bitCAPS;
-	rgbInput[3] = bitSCROLL;
+	rgbInput[1] = numLock;
+	rgbInput[2] = capsLock;
+	rgbInput[3] = scrollLock;
 	rgbInput[4] = !!clickerNum;
 	rgbInput[5] = !!mode3_key;
 	
@@ -452,9 +450,9 @@ void SysRGB(void){ // 系统RGB控制
 //		rgbOutput[i] = (CFG_RGB_SIGN(i) * (255 - rgbWeight) * (rgbInput[CFGb_RGB_MAP(i)] ^ CFGb_RGB_DIR(i)) 
 //						+ CFG_RGB_RGB(i) * rgbWeight) / 255;//映射 加权平均
 	}
-	PWM_R = rgbOutput[0];
-	PWM_G = rgbOutput[1];
-	PWM_B = rgbOutput[2];
+	FrameRaw[ALK_KEY_NUM*3 + 0] = rgbOutput[0];
+	FrameRaw[ALK_KEY_NUM*3 + 1] = rgbOutput[1];
+	FrameRaw[ALK_KEY_NUM*3 + 2] = rgbOutput[2];
 }
 
 
