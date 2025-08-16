@@ -6,10 +6,8 @@ ALK_U8_CFG *DATA_CFG = DATA_CFG_BASE; // 闪存区配置信息指针
 
 ALK_U8 sysCs = 0; // 总配置选择
 
-ALK_S16 rkValue[ALK_RK_NUM*2]; // 摇杆值
-ALK_U8 ecValue[ALK_EC_NUM] = {0}; // 旋钮值
-
-ALK_U8 keyDir[ALK_CFG_NUM]; // 键盘方向
+ALK_S16 rkValue[ALK_RK_NUM*2];		// 摇杆值
+ALK_U8 ecValue[ALK_EC_NUM] = {0};	// 旋钮值
 
 ALK_U8 keyNow[ALK_BUTTON_NUM]; // 应用层按键状态
 ALK_U8 keyOld[ALK_BUTTON_NUM]; // 应用层按键旧值
@@ -65,7 +63,7 @@ static ALK_U8 mode3_gap = 0;//模式3间隔标志
 static ALK_U8 mode3_delaying = 0;//模式3是否延时中
 //********************************************************************//
 static ALK_U8 switch_i = 0xFF, switch_count = 0;//切换键选择和计数
-static ALK_U8 switch_key = 0, switch_func = 0;//切换键缓存
+static ALK_U8 switch_key = 0, switch_cs = 0;//切换键缓存
 
 
 static void KeyInsert(ALK_U8 r_i, ALK_U8 key_v); // 单键填入
@@ -79,11 +77,11 @@ static void MorseHandle(void); // 摩尔斯码处理
 ALK_U8 FillReport(void)//报文填写
 {
 	static ALK_U32 oldTime = 0;//记录时间
-	ALK_U8 mode1_num = 0, mode2_num = 0, mode7_num = 0;
+	ALK_U8 mode127_num = 0;
 	ALK_U8 i = 0;//公共用
 	
 	ALK_U16 x, y;
-	ALK_U8 turn_old, turn_dif;
+	ALK_U8 turn_old;
 	ALK_S8 auto_num;
 	
 	//***********************************各报文及发送标志初始化***********************************//
@@ -117,11 +115,11 @@ ALK_U8 FillReport(void)//报文填写
 		if(mode3_gap) Mode3Handle();//若翻转后要间隔也即翻转前不用间隔则执行处理
 	}
 	else{//空闲状态
-		for(i = 0; i < ALK_KEY_NUM; i++){//统计按下的各模式数量
-			if(keyNow[i/*+1*/]){
-				if(CFG_K_MODE(keyAddr[sysCs][i]) == m1_button && i != switch_i) mode1_num++;
-				else if(CFG_K_MODE(keyAddr[sysCs][i]) == m2_shortcut && i != switch_i) mode2_num++;
-				else if(CFG_K_MODE(keyAddr[sysCs][i]) == m7_clicker && i != switch_i) mode7_num++;
+		for(i = 0; i < ALK_KEY_NUM; i++){ // 统计按下的涉及键盘的模式数量
+			if(keyNow[i] && i != switch_i){ // 按下且不是临时切换键
+				if(CFG_K_MODE(keyAddr[sysCs][i]) == m1_button 
+				|| CFG_K_MODE(keyAddr[sysCs][i]) == m2_shortcut 
+				|| CFG_K_MODE(keyAddr[sysCs][i]) == m7_clicker) mode127_num++;
 			}
 		}
 		for(i = 0; i < ALK_KEY_NUM; i++){//对于全部键盘按键
@@ -131,7 +129,7 @@ ALK_U8 FillReport(void)//报文填写
 					if(switch_count > 10){
 						switch_count = 0;//计数清零
 						KeyInsert(i + 3,switch_key);//填入键值
-						CsChange(switch_func, 2);//切换回来
+						CsChange(switch_cs + 1, 2);//切换回来
 						switch_i = 0xFF;//复位
 					}
 				}
@@ -146,7 +144,7 @@ ALK_U8 FillReport(void)//报文填写
 					KeyBrd_data[1] |= CFG_K_FUNC(keyAddr[sysCs][i]);//填入功能键
 				}
 				else if(CFG_K_MODE(keyAddr[sysCs][i]) == m3_group){//模式3:按键组
-					if(mode1_num == 0 && mode2_num == 0 && mode7_num == 0 && !keyOld[i]){//不存在1,2,7模式按键且按下沿
+					if(!keyOld[i] && mode127_num == 0){ // 按下沿 且 不存在涉及键盘的模式按键
 						mode3_key = i + 1;//记录mode3按键(要+1)
 						mode3_i = keyAddr[sysCs][i] + 3;//读取起始下标
 						mode3_loop_count = 0;//模式3循环计数清零
@@ -170,18 +168,14 @@ ALK_U8 FillReport(void)//报文填写
 					
 					Point_data[2] = i;
 				}
-				else if(CFG_K_MODE(keyAddr[sysCs][i]) == m6_change){//模式6:切换键
-					if((CFG_K_FUNC(keyAddr[sysCs][i]) & 0x80) && switch_i == 0xFF && !keyOld[i]){//若为临时切换且为独有且按下沿
-						switch_key = CFG_K_KEY(keyAddr[sysCs][i]);//缓存键值
-						switch_func = sysCs + 1;//缓存旧键盘选择
-						turn_old = keyDir[sysCs];//旧键盘方向
-						CsChange(CFG_K_FUNC(keyAddr[sysCs][i]), 1);//临时切换
-						turn_dif = (keyDir[sysCs] + 4 - turn_old) % 4;//相对旧键盘方向
-						if(turn_dif == 0) switch_i = i;
-						else if(turn_dif == 1) switch_i = TURN_L90[i];
-						else if(turn_dif == 2) switch_i = 16 - i; // 测试代码!!!(临时代码)
-						else if(turn_dif == 3) switch_i = TURN_R90[i];
-						break;//跳出本次循环
+				else if(CFG_K_MODE(keyAddr[sysCs][i]) == m6_change){ // 模式6:切换键
+					if(!keyOld[i] && switch_i == 0xFF && (CFG_K_FUNC(keyAddr[sysCs][i]) & 0x80)){ // 按下沿 且 独有 且 临时切换
+						switch_key = CFG_K_KEY(keyAddr[sysCs][i]); // 缓存键值
+						switch_cs = sysCs; // 缓存旧键盘选择
+						turn_old = CFG_KB_DIR; // 旧键盘方向
+						CsChange(CFG_K_FUNC(keyAddr[sysCs][i]), 1); // 临时切换
+						switch_i = KeyiRemap(i, turn_old, CFG_KB_DIR); // 寻找本键在新配置的位置
+						break; // 跳出本次循环
 					}
 				}
 				else if(CFG_K_MODE(keyAddr[sysCs][i]) == m7_clicker){//模式7:按键连点

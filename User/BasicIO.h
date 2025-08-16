@@ -68,8 +68,6 @@ extern UINT16D tickStart, tickEnd, tickDif;
 
 extern uint32_t Systime;//系统时间
 
-extern UINT8C TURN_L90[16];//左旋按键映射矩阵
-extern UINT8C TURN_R90[16];//右旋按键映射矩阵
 extern UINT16D TONE_TIMValue;//声调定时器计数值
 extern UINT16D buzzTimVol;//声调定时器延时值
 extern uint8_t cmdBuzzTone, cmdBuzzVol; // 命令音符 命令音量

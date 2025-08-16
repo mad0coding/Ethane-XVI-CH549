@@ -2,8 +2,7 @@
 #define _ALK_FUNC_H_
 
 #include "ALK_Def.h"
-
-#include "ParaConfig.h"
+#include "ALK_If.h"
 
 
 #define m0_none			0
@@ -144,8 +143,6 @@
 extern ALK_U8_CFG *DATA_CFG; // 闪存区配置信息指针
 
 extern ALK_U8 sysCs; // 总配置选择
-
-extern ALK_U8 keyDir[ALK_CFG_NUM]; // 键盘方向
 
 extern ALK_S16 rkValue[ALK_RK_NUM*2];	// 摇杆值
 extern ALK_U8 ecValue[ALK_EC_NUM];		// 旋钮值

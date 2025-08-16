@@ -1,7 +1,6 @@
 #ifndef _ALK_RGB_H_
 #define _ALK_RGB_H_
 
-#include "BasicIO.h"
 #include "ALK_Func.h"
 
 

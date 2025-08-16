@@ -456,6 +456,11 @@
               <FileType>1</FileType>
               <FilePath>..\User\Alkane\ALK_Rgb.c</FilePath>
             </File>
+            <File>
+              <FileName>ALK_If.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\Alkane\ALK_If.c</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>

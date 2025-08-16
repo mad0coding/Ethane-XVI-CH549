@@ -128,8 +128,6 @@ void ParaUpdate(uint8_t pos){//参数更新
 	if(pos < ALK_CFG_NUM) addr = DATA_CFG_BASE - pos * CFG_DATA_SIZE;//计算本套配置的起始地址
 	else return;
 	
-	keyDir[pos] = CFG_ACS(addr + (&CFG_KB_DIR - CFG_THIS));//读取键盘方向
-	
 	if(CFG_ACS(addr + (&CFG_ALL_PRI - CFG_THIS)) == 1){//若本配置为优先配置
 		sysCs = pos;//总选择为本配置
 		CFG_DATA_CSC(sysCs);//更新配置数据选择
