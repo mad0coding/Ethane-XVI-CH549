@@ -26,7 +26,6 @@ uint16_t Adc_Set_Mid[2*5] = {//校正值
 };
 
 uint16_t adcValue[2] = {2048,2048};	// ADC采样值
-uint8_t ecValue[2] = {0,0};			// 摇杆计数值
 
 static uint8_t keyRaw[ALK_BUTTON_NUM];		//按键原始采样
 static uint8_t keyFlt[ALK_BUTTON_NUM];		//按键滤波结果
@@ -63,8 +62,8 @@ void AdcRead(void){//摇杆读取
 		ADC_CTRL = bADC_IF;			//清标志
 		//adcValue[!ch] = ADC_DAT;	//记录采样值
 		//adcValue[!ch] = (ADC_DAT + adcValue[!ch]) >> 1;	//记录采样值 有滤波
-		adcValue[ch] += ((int16_t)ADC_DAT - (int16_t)adcValue[ch]) >> 2;	//记录采样值 有滤波
 		ch = !ch;					//切换选择
+		adcValue[ch] += ((int16_t)ADC_DAT - (int16_t)adcValue[ch]) >> 2;	//记录采样值 有滤波
 		ADC_ExChannelSelect(ch*2);	//选择通道ch 0或2
 		ADC_StartSample();			//启动下一次ADC采样
 	}
@@ -75,6 +74,15 @@ void EcRead(void){ // 旋钮读取
 	EC1val = 0; // 编码器清零
 	ecValue[1] -= (CFG_E_DIR(1) * 2 - 1) * (int8_t)(EC2val); // 编码器计数读取
 	EC2val = 0; // 编码器清零
+
+	rkValue[0] = LIMIT(adcValue[0], ANA_MIN(0), ANA_MAX(0)); // 钳位
+	rkValue[1] = LIMIT(adcValue[1], ANA_MIN(1), ANA_MAX(1));
+
+	if(rkValue[0] < ANA_MID(0)) rkValue[0] = -((ALK_S16)rkValue[0] - (ALK_S16)ANA_MID(0)) * 4096L / ANA_DOWN(0); // 向右为正
+	else rkValue[0] = -((ALK_S16)rkValue[0] - (ALK_S16)ANA_MID(0)) * 4096L / ANA_UP(0); // 放大到正负4096
+	
+	if(rkValue[1] < ANA_MID(1)) rkValue[1] = ((ALK_S16)rkValue[1] - (ALK_S16)ANA_MID(1)) * 4096L / ANA_DOWN(1); // 向上为正
+	else rkValue[1] = ((ALK_S16)rkValue[1] - (ALK_S16)ANA_MID(1)) * 4096L / ANA_UP(1);
 }
 
 void KeyRead(void){//按键读取

@@ -147,8 +147,11 @@ extern ALK_U8 sysCs; // 总配置选择
 
 extern ALK_U8 keyDir[ALK_CFG_NUM]; // 键盘方向
 
-extern ALK_U8 keyNow[ALK_BUTTON_NUM]; // 应用层按键状态
-extern ALK_U8 keyOld[ALK_BUTTON_NUM]; // 应用层按键旧值
+extern ALK_S16 rkValue[ALK_RK_NUM*2];	// 摇杆值
+extern ALK_U8 ecValue[ALK_EC_NUM];		// 旋钮值
+
+extern ALK_U8 keyNow[ALK_BUTTON_NUM];	// 应用层按键状态
+extern ALK_U8 keyOld[ALK_BUTTON_NUM];	// 应用层按键旧值
 
 extern ALK_U16 keyAddr[ALK_CFG_NUM][ALK_KEY_NUM]; // 每组全部按键的数据地址
 
@@ -169,7 +172,7 @@ extern ALK_U8 morse_key;	// 摩尔斯码按键
 extern ALK_U8 morse_vol;	// 摩尔斯码音量
 
 extern ALK_U8 clickerNum;	// 自动连点数
-extern ALK_U8 mode3_key;	// 按键组按键(1-ALK_KEY_NUM)
+extern ALK_U8 mode3_key;	// 按键组按键
 
 extern ALK_U32 changeTime;	// 配置切换时间
 

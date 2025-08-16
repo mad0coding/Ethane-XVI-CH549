@@ -79,7 +79,6 @@ extern bit EC1freq, EC2freq;
 
 extern uint16_t adcValue[];
 extern uint16_t Adc_Set_Mid[];
-extern uint8_t ecValue[];
 extern UINT8D keyFltNum;//按键滤波参数
 
 extern uint8_t debugBuf[];

@@ -6,6 +6,9 @@ ALK_U8_CFG *DATA_CFG = DATA_CFG_BASE; // 闪存区配置信息指针
 
 ALK_U8 sysCs = 0; // 总配置选择
 
+ALK_S16 rkValue[ALK_RK_NUM*2]; // 摇杆值
+ALK_U8 ecValue[ALK_EC_NUM] = {0}; // 旋钮值
+
 ALK_U8 keyDir[ALK_CFG_NUM]; // 键盘方向
 
 ALK_U8 keyNow[ALK_BUTTON_NUM]; // 应用层按键状态
@@ -54,7 +57,7 @@ ALK_U8 clickerNum = 0; // 自动连点数
 ALK_U32 changeTime = -10000*0; // 配置切换时间
 
 //******************************数据相关******************************//
-ALK_U8 mode3_key = 0; // 按键组按键(1-ALK_KEY_NUM)
+ALK_U8 mode3_key = 0; // 按键组按键
 static ALK_U16 mode3_i = 0;//模式3源数据下标(访问mode3_data)
 static ALK_U16 mode3_loop_count = 0;//模式3循环计数
 static ALK_U8 mode3_loop_flag = 0;//模式3循环操作标志 bit7:是否结束 bit2:当前有释放沿 bit1~0:未晚于第一释放沿
@@ -551,25 +554,13 @@ static void RkHandle(ALK_U8 clear)//摇杆处理
 		return;
 	}
 	
-	x = (CFGb_R_DIRx(0)*2 - 1);//决定方向
-	y = (CFGb_R_DIRy(0)*2 - 1);
-	
-	adcValue[0] = LIMIT(adcValue[0], ANA_MIN(0), ANA_MAX(0));//钳位
-	adcValue[1] = LIMIT(adcValue[1], ANA_MIN(1), ANA_MAX(1));
-	
-	if(CFGb_R_DIRr(0)){//若转90度
-		if(adcValue[0] < ANA_MID(0)) x *= ((ALK_S16)adcValue[0] - (ALK_S16)ANA_MID(0)) * 4096L / ANA_DOWN(0);
-		else x *= ((ALK_S16)adcValue[0] - (ALK_S16)ANA_MID(0)) * 4096L / ANA_UP(0);//放大到正负4096
-		
-		if(adcValue[1] < ANA_MID(1)) y *= ((ALK_S16)adcValue[1] - (ALK_S16)ANA_MID(1)) * 4096L / ANA_DOWN(1);
-		else y *= ((ALK_S16)adcValue[1] - (ALK_S16)ANA_MID(1)) * 4096L / ANA_UP(1);
+	if(CFGb_R_DIRr(0)){ // 若转90度
+		x = (CFGb_R_DIRx(0)*2 - 1) * rkValue[0*0 + 1];
+		y = -(CFGb_R_DIRy(0)*2 - 1) * rkValue[0*0 + 0];
 	}
 	else{
-		if(adcValue[0] < ANA_MID(0)) y *= ((ALK_S16)adcValue[0] - (ALK_S16)ANA_MID(0)) * 4096L / ANA_DOWN(0);//向上为正
-		else y *= ((ALK_S16)adcValue[0] - (ALK_S16)ANA_MID(0)) * 4096L / ANA_UP(0);//放大到正负4096
-		
-		if(adcValue[1] < ANA_MID(1)) x *= -((ALK_S16)adcValue[1] - (ALK_S16)ANA_MID(1)) * 4096L / ANA_DOWN(1);//向右为正
-		else x *= -((ALK_S16)adcValue[1] - (ALK_S16)ANA_MID(1)) * 4096L / ANA_UP(1);
+		x = (CFGb_R_DIRx(0)*2 - 1) * rkValue[0*0 + 0];
+		y = (CFGb_R_DIRy(0)*2 - 1) * rkValue[0*0 + 1];
 	}
 	
 	equal_r = MAX(ABS(x), ABS(y)) - (ALK_U16)CFG_R_DEAD(0) * 21;//计算等效半径并减去死区
@@ -758,10 +749,8 @@ static void RkHandle(ALK_U8 clear)//摇杆处理
 //1:按键/快捷键 2:Dial
 static void EcHandle(ALK_U8 clear)//旋钮处理
 {
-//	static ALK_U32 oldTime = 0;//记录时间
-//	static ALK_S8 TIM_count[2] = {0,0};//编码器计数
-	static ALK_S8 EC_count[2] = {0,0};//执行计数
-	static ALK_U8 EC_pulse[2] = {0,0};//间隔标志
+	static ALK_S8 EC_count[ALK_EC_NUM] = {0}; // 执行计数
+	static ALK_U8 EC_pulse[ALK_EC_NUM] = {0}; // 间隔标志
 	static ALK_S16 dial_angle = 0; // 轮盘转角
 	ALK_S16 tool16 = 0; // 工具变量
 	ALK_U8 EC_flag = 0;//执行标志
@@ -769,27 +758,15 @@ static void EcHandle(ALK_U8 clear)//旋钮处理
 	ALK_U8 i;
 	
 	if(clear){ // 清除
-		ecValue[0] = EC_count[0] = EC_pulse[0] = 0;
-		ecValue[1] = EC_count[1] = EC_pulse[1] = 0;
+		for(i = 0; i < ALK_EC_NUM; i++){
+			EC_count[i] = ecValue[i]; // 直接完全跟进
+			EC_pulse[0] = 0;
+		}
 		EC_flag = dial_angle = 0;
 		return;
 	}
-
-//	TIM_count[0] -= (CFG_E_DIR(0) * 2 - 1) * (ALK_S8)(EC1val); // 编码器计数读取
-//	EC1val = 0; // 编码器清零
-//	TIM_count[1] -= (CFG_E_DIR(1) * 2 - 1) * (ALK_S8)(EC2val); // 编码器计数读取
-//	EC2val = 0; // 编码器清零
 	
-//	if(TIM_old != TIM_count){
-//		TIM_old = TIM_count;
-//		oldTime = ALK_Systime;//若计数值不一致才更新时间
-//	}
-//	if(/*ALK_Systime - oldTime > 5000*/0){//若长时间编码器无动作
-//		TIM_old = TIM_count = EC_count = EC_flag = 0;
-//		oldTime = ALK_Systime;
-//	}
-	
-	for(i = 0; i < 2; i++){//处理每个旋钮
+	for(i = 0; i < ALK_EC_NUM; i++){ // 处理每个旋钮
 		if((ALK_S8)(ecValue[i] - EC_count[i]) > 0) EC_flag = 1;
 		else if((ALK_S8)(ecValue[i] - EC_count[i]) < 0) EC_flag = 2;
 		else EC_flag = 0;
