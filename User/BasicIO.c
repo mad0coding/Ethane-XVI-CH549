@@ -1,16 +1,6 @@
 
 #include "BasicIO.h"
 
-extern uint8_t KeyBrd_data[];//键盘报文
-
-UINT8C TURN_L90[16] = {	3,	7,	11,	15,
-						2,	6,	10,	14,
-						1,	5,	9,	13,
-						0,	4,	8,	12};//左旋按键映射矩阵
-UINT8C TURN_R90[16] = {	12,	8,	4,	0,
-						13,	9,	5,	1,
-						14,	10,	6,	2,
-						15,	11,	7,	3};//右旋按键映射矩阵
 
 uint32_t Systime = 0;//系统时间
 
@@ -27,25 +17,21 @@ uint16_t Adc_Set_Mid[2*5] = {//校正值
 };
 
 uint16_t adcValue[2] = {2048,2048};	// ADC采样值
-uint8_t ecValue[2] = {0,0};			// 摇杆计数值
 
-uint8_t keyNow[KP_NUM];		//按键映射结果
-uint8_t keyOld[KP_NUM];		//按键映射结果旧值
-
-static uint8_t keyRaw[KP_NUM];		//按键原始采样
-static uint8_t keyFlt[KP_NUM];		//按键滤波结果
-static uint8_t fltOld[KP_NUM];		//按键滤波用的旧值
-static uint8_t fltCount[KP_NUM];	//按键滤波计数
+static uint8_t keyRaw[ALK_BUTTON_NUM];		//按键原始采样
+static uint8_t keyFlt[ALK_BUTTON_NUM];		//按键滤波结果
+static uint8_t fltOld[ALK_BUTTON_NUM];		//按键滤波用的旧值
+static uint8_t fltCount[ALK_BUTTON_NUM];	//按键滤波计数
 
 void ArrayInit(void){//数组初始化
 	//srand(*(PUINT16X)(2048 - 2));//填入种子
 	memset(KeyBrd_data + 1, 0, 21);//初始化键盘报文数组
 //	memset(debugBuf, 0, 64);
-	memset(keyNow, 0, KP_NUM);
-	memset(keyOld, 0, KP_NUM);
-	memset(keyFlt, 0, KP_NUM);
-	memset(fltOld, 0, KP_NUM);
-	memset(fltCount, 0, KP_NUM);
+	memset(keyNow, 0, ALK_BUTTON_NUM);
+	memset(keyOld, 0, ALK_BUTTON_NUM);
+	memset(keyFlt, 0, ALK_BUTTON_NUM);
+	memset(fltOld, 0, ALK_BUTTON_NUM);
+	memset(fltCount, 0, ALK_BUTTON_NUM);
 	
 	//读芯片唯一ID 并填入USB序列号字符串
 	*(PUINT32X)(MySrNumInfo + 18) = FlashReadOTPword(0x14);//17H,16H,15H,14H 高两字节为校验 不使用
@@ -67,8 +53,8 @@ void AdcRead(void){//摇杆读取
 		ADC_CTRL = bADC_IF;			//清标志
 		//adcValue[!ch] = ADC_DAT;	//记录采样值
 		//adcValue[!ch] = (ADC_DAT + adcValue[!ch]) >> 1;	//记录采样值 有滤波
-		adcValue[ch] += ((int16_t)ADC_DAT - (int16_t)adcValue[ch]) >> 2;	//记录采样值 有滤波
 		ch = !ch;					//切换选择
+		adcValue[ch] += ((int16_t)ADC_DAT - (int16_t)adcValue[ch]) >> 2;	//记录采样值 有滤波
 		ADC_ExChannelSelect(ch*2);	//选择通道ch 0或2
 		ADC_StartSample();			//启动下一次ADC采样
 	}
@@ -79,6 +65,15 @@ void EcRead(void){ // 旋钮读取
 	EC1val = 0; // 编码器清零
 	ecValue[1] -= (CFG_E_DIR(1) * 2 - 1) * (int8_t)(EC2val); // 编码器计数读取
 	EC2val = 0; // 编码器清零
+
+	rkValue[0] = LIMIT(adcValue[0], ANA_MIN(0), ANA_MAX(0)); // 钳位
+	rkValue[1] = LIMIT(adcValue[1], ANA_MIN(1), ANA_MAX(1));
+
+	if(rkValue[0] < ANA_MID(0)) rkValue[0] = -((ALK_S16)rkValue[0] - (ALK_S16)ANA_MID(0)) * 4096L / ANA_DOWN(0); // 向右为正
+	else rkValue[0] = -((ALK_S16)rkValue[0] - (ALK_S16)ANA_MID(0)) * 4096L / ANA_UP(0); // 放大到正负4096
+	
+	if(rkValue[1] < ANA_MID(1)) rkValue[1] = ((ALK_S16)rkValue[1] - (ALK_S16)ANA_MID(1)) * 4096L / ANA_DOWN(1); // 向上为正
+	else rkValue[1] = ((ALK_S16)rkValue[1] - (ALK_S16)ANA_MID(1)) * 4096L / ANA_UP(1);
 }
 
 void KeyRead(void){//按键读取
@@ -92,7 +87,7 @@ void KeyRead(void){//按键读取
 
 void KeyFilter(uint8_t ts){//按键滤波
 	uint8_t i;
-	for(i = 0; i < KP_NUM; i++){
+	for(i = 0; i < ALK_BUTTON_NUM; i++){
 		if(ts == 2){//若为滤波二阶段
 			if(fltCount[i]) fltCount[i]--;//若滤波计数未归零则递减
 			if(fltOld[i] == keyRaw[i] && keyFlt[i] != keyRaw[i]
@@ -107,7 +102,7 @@ void KeyFilter(uint8_t ts){//按键滤波
 
 void KeyTurn(void){//按键旋转映射
 	uint8_t i;
-	memcpy(keyOld, keyNow, KP_NUM);//存储旧值
+	memcpy(keyOld, keyNow, ALK_BUTTON_NUM);//存储旧值
 	
 	if(CFG_KB_DIR == 0){//正常方向
 		memcpy(keyNow, keyFlt, 16);
@@ -139,6 +134,8 @@ void GetTime(void){//时间获取
 	Systime += incMs;//系统时间更新
 	THTL0_old += (uint16_t)incMs * 2000;//计时器旧值跟进
 	//测试结果: /2000*2000:8960  /2000<<11:9174  >>11<<11:9177  >>11*2000:8952
+
+	alkSystime = Systime; // 给ALK授时
 }
 
 static UINT16C TONE_TIM[] = {//声调定时器计数值表
@@ -240,9 +237,6 @@ void BuzzHandle(void){//蜂鸣器处理
 	asyncFlag = 0; // 清除标志 防止蜂鸣器模式期间意外打入异步需求
 }
 
-extern uint8_t morse_key;
-extern uint8_t morse_vol;
-
 static void MorseBuzz(void){ // 摩尔斯码蜂鸣器控制
 	if(morse_key & 0x02){ // 划
 		SetPWMClkDiv(FREQ_SYS / 256 / 781);
@@ -268,7 +262,7 @@ static void MorseBuzz(void){ // 摩尔斯码蜂鸣器控制
 //FillReport()	909~991~1700(空~常态~全按)
 //SysRGB()		96~112~140(空~常态~切换)
 //KeyRGB(0)		1880~2308~3756~5426~10586(空~定色~流水~呼吸~变色)
-//UINT16D tickStart = 0, tickEnd = 0, tickDif = 0; // 时间监测
+UINT16D tickStart = 0, tickEnd = 0, tickDif = 0; // 时间监测
 
 static void PrintTest(void){ // 打印输出
 	static uint32_t printTime = 0;
@@ -284,7 +278,7 @@ static void PrintTest(void){ // 打印输出
 }
 
 void MultiFunc(void){ // 功能集合函数
-//	PrintTest(); // 测试代码
+	// PrintTest(); // 测试代码
 	KeyTurn(); // 按键旋转映射
 	
 	if(FillReport() == 1){ // 报文填写 若返回蜂鸣器模式
@@ -295,7 +289,14 @@ void MultiFunc(void){ // 功能集合函数
 	MorseBuzz(); // 摩斯码蜂鸣器控制
 	
 	SysRGB(); // 系统RGB控制
+	PWM_R = FrameRaw[ALK_KEY_NUM*3 + 0]; // 系统RGB输出
+	PWM_G = FrameRaw[ALK_KEY_NUM*3 + 1];
+	PWM_B = FrameRaw[ALK_KEY_NUM*3 + 2];
+
+	// TICK_START(TICK_SOURSE);
 	KeyRGB(0); // 键盘RGB控制
+	RgbMap(); // 键盘RGB映射
+	// TICK_END_TH(TICK_SOURSE, 100);
 //	if(WakeUpEnFlag & 1) PWM_R = 100;
 //	else PWM_R = 0;
 //	if(WakeUpEnFlag & 2) PWM_G = 100;

@@ -1,60 +1,94 @@
 
-#include "ParaUse.h"
+#include "ALK_Func.h"
+
+
+ALK_U8_CFG *DATA_CFG = DATA_CFG_BASE; // 闪存区配置信息指针
+
+ALK_U8 sysCs = 0; // 总配置选择
+
+ALK_S16 rkValue[ALK_RK_NUM*2];		// 摇杆值
+ALK_U8 ecValue[ALK_EC_NUM] = {0};	// 旋钮值
+
+ALK_U8 keyNow[ALK_BUTTON_NUM]; // 应用层按键状态
+ALK_U8 keyOld[ALK_BUTTON_NUM]; // 应用层按键旧值
+
+ALK_U16 keyAddr[ALK_CFG_NUM][ALK_KEY_NUM]; // 每组按键的数据地址
+static ALK_U16 keyWork[ALK_KEY_NUM] = {0}; // 按键工作用数组
+static ALK_U8 keyFlag[ALK_KEY_NUM] = {0}; // 按键标记用数组
 
 //******************************报文发送******************************//
-extern uint8_t KeyBrd_data[];//键盘报文
-extern uint8_t Mouse_data[];//鼠标报文
-extern uint8_t Point_data[];//指针报文
-extern uint8_t Vol_data[];//音量报文
-extern uint8_t Dial_data[];//轮盘报文
-static uint8_t KeyBrd_data_old[KB_LEN];//上次键盘报文
-static uint8_t Mouse_data_old = 0;//上次鼠标报文
-static uint8_t Vol_data_old = 0;//上次音量报文
-static uint8_t Dial_data_old = 0;//上次轮盘报文
-extern uint8_t KeyBrd_if_send;//键盘报文是否发送
-extern uint8_t Vol_if_send;//音量报文是否发送
-extern uint8_t Point_if_send;//指针报文是否发送
-extern uint8_t Mouse_if_send;//鼠标报文是否发送
-extern uint8_t Dial_if_send;//轮盘报文是否发送
+ALK_U8 KeyBrd_if_send = 0;	// 键盘报文是否发送
+ALK_U8 Mouse_if_send = 0;	// 鼠标报文是否发送
+ALK_U8 Point_if_send = 0;	// 指针报文是否发送
+ALK_U8 Vol_if_send = 0;		// 媒体报文是否发送
+ALK_U8 Dial_if_send = 0;	// 轮盘报文是否发送
+
+ALK_U8 KeyBrd_data[ALK_RPT_L_KEYBRD] = {1,0,0,0}; // 编号1,功能键,保留0,其他按键
+// 功能键:bit7-bit0分别为为右win alt shift ctrl,左win alt shift ctrl
+
+ALK_U8 Mouse_data[ALK_RPT_L_MOUSE] = {2,0,0,0,0}; // 编号2,功能键,x,y,滚轮
+// 功能键:bit0为左键,bit1为右键,bit2为中键,bit6为x是否溢出,bit7为y是否溢出
+
+ALK_U8 Point_data[ALK_RPT_L_POINT] = {3,0x10,1,0,0,0,0}; // 编号3,功能键,id,x_L,x_H,y_L,y_H
+// 功能键:bit0为Tip Switch,bit1为Barrel Switch,bit2为Invert,bit3为Eraser Switch,bit4为In Range
+
+ALK_U8 Vol_data[ALK_RPT_L_VOL] = {4,0}; // 编号4,功能键
+// 功能键:bit0音量加,bit1音量减,bit2静音,bit3播放暂停
+
+ALK_U8 Dial_data[ALK_RPT_L_DIAL] = {5,0,0}; // 编号5,功能键+dial_L,dial_H
+// 功能键:bit0按键,bit1~7为轮盘低7bit
+
+static ALK_U8 KeyBrd_data_old[ALK_RPT_L_KEYBRD]; // 上次键盘报文
+static ALK_U8 Mouse_data_old = 0; // 上次鼠标报文
+static ALK_U8 Vol_data_old = 0; // 上次音量报文
+static ALK_U8 Dial_data_old = 0; // 上次轮盘报文
 //********************************************************************//
 
 //******************************摩尔斯码******************************//
-uint8_t morse_key = 0; // bit0~2:点/划/按state bit4~bit7:点/划/按/松edge
-uint8_t morse_vol = 0; // 音量
-uint8_t morse_gap = 40; // 间隔时间 单位10ms
-uint8_t morse_long = 15; // 长按时间 单位10ms
+ALK_U8 morse_key = 0; // bit0~2:点/划/按state bit4~bit7:点/划/按/松edge
+ALK_U8 morse_vol = 0; // 音量
+static ALK_U8 morse_gap = 40; // 间隔时间 单位10ms
+static ALK_U8 morse_long = 15; // 长按时间 单位10ms
 //********************************************************************//
 
-uint8_t clickerNum = 0;//自动连点数
-uint32_t changeTime = -10000*0;//配置切换时间
+ALK_U8 clickerNum = 0; // 自动连点数
+ALK_U32 changeTime = -10000*0; // 配置切换时间
 
 //******************************数据相关******************************//
-uint8_t mode3_key = 0;//模式3按键(1-16)
-static uint16_t mode3_i = 0;//模式3源数据下标(访问mode3_data)
-static uint16_t mode3_loop_count = 0;//模式3循环计数
-static uint8_t mode3_loop_flag = 0;//模式3循环操作标志 bit7:是否结束 bit2:当前有释放沿 bit1~0:未晚于第一释放沿
-static uint8_t mode3_gap = 0;//模式3间隔标志
-static uint8_t mode3_delaying = 0;//模式3是否延时中
+ALK_U8 mode3_key = 0; // 按键组按键
+static ALK_U16 mode3_i = 0;//模式3源数据下标(访问mode3_data)
+static ALK_U16 mode3_loop_count = 0;//模式3循环计数
+static ALK_U8 mode3_loop_flag = 0;//模式3循环操作标志 bit7:是否结束 bit2:当前有释放沿 bit1~0:未晚于第一释放沿
+static ALK_U8 mode3_gap = 0;//模式3间隔标志
+static ALK_U8 mode3_delaying = 0;//模式3是否延时中
 //********************************************************************//
-static uint8_t switch_i = 0xFF, switch_count = 0;//切换键选择和计数
-static uint8_t switch_key = 0, switch_func = 0;//切换键缓存
+static ALK_U8 switch_i = 0xFF, switch_count = 0;//切换键选择和计数
+static ALK_U8 switch_key = 0, switch_cs = 0;//切换键缓存
 
 
-uint8_t FillReport(void)//报文填写
+static void KeyInsert(ALK_U8 r_i, ALK_U8 key_v); // 单键填入
+static void Mode3Handle(void); // mode3处理
+static void RkEcKeyHandle(void); // 摇杆旋钮按键处理
+static void RkHandle(ALK_U8 clear); // 摇杆处理
+static void EcHandle(ALK_U8 clear); // 旋钮处理
+static void MorseHandle(void); // 摩尔斯码处理
+
+
+ALK_U8 FillReport(void)//报文填写
 {
-	static uint32_t oldTime = 0;//记录时间
-	uint8_t mode1_num = 0, mode2_num = 0, mode7_num = 0;
-	uint8_t i = 0;//公共用
+	static ALK_U32 oldTime = 0;//记录时间
+	ALK_U8 mode127_num = 0;
+	ALK_U8 i = 0;//公共用
 	
-	uint16_t x, y;
-	uint8_t turn_old, turn_dif;
-	int8_t auto_num;
+	ALK_U16 x, y;
+	ALK_U8 turn_old;
+	ALK_S8 auto_num;
 	
 	//***********************************各报文及发送标志初始化***********************************//
 	KeyBrd_if_send = Mouse_if_send = Point_if_send = Vol_if_send = Dial_if_send = 0; // 发送标志置零
 	
-	memcpy(KeyBrd_data_old + 1, KeyBrd_data + 1, KB_LEN - 1); // 记录上一次报文
-	memset(KeyBrd_data + 1, 0, KB_LEN - 1); // 清除所有键
+	memcpy(KeyBrd_data_old + 1, KeyBrd_data + 1, ALK_RPT_L_KEYBRD - 1); // 记录上一次报文
+	memset(KeyBrd_data + 1, 0, ALK_RPT_L_KEYBRD - 1); // 清除所有键
 
 	Mouse_data_old = Mouse_data[1]; // 记录上一次报文
 	memset(Mouse_data + 1, 0, 4); // 清除鼠标报文
@@ -81,21 +115,21 @@ uint8_t FillReport(void)//报文填写
 		if(mode3_gap) Mode3Handle();//若翻转后要间隔也即翻转前不用间隔则执行处理
 	}
 	else{//空闲状态
-		for(i = 0; i < 16; i++){//统计按下的各模式数量
-			if(keyNow[i/*+1*/]){
-				if(CFG_K_MODE(keyAddr[sysCs][i]) == m1_button && i != switch_i) mode1_num++;
-				else if(CFG_K_MODE(keyAddr[sysCs][i]) == m2_shortcut && i != switch_i) mode2_num++;
-				else if(CFG_K_MODE(keyAddr[sysCs][i]) == m7_clicker && i != switch_i) mode7_num++;
+		for(i = 0; i < ALK_KEY_NUM; i++){ // 统计按下的涉及键盘的模式数量
+			if(keyNow[i] && i != switch_i){ // 按下且不是临时切换键
+				if(CFG_K_MODE(keyAddr[sysCs][i]) == m1_button 
+				|| CFG_K_MODE(keyAddr[sysCs][i]) == m2_shortcut 
+				|| CFG_K_MODE(keyAddr[sysCs][i]) == m7_clicker) mode127_num++;
 			}
 		}
-		for(i = 0; i < 16; i++){//对于16个按键
+		for(i = 0; i < ALK_KEY_NUM; i++){//对于全部键盘按键
 			if(i == switch_i){//若有正在生效的临时切换键
 				if(!keyNow[i] && !keyOld[i]){//释放沿之后一拍
 					switch_count++;//计数滤波
 					if(switch_count > 10){
 						switch_count = 0;//计数清零
 						KeyInsert(i + 3,switch_key);//填入键值
-						CsChange(switch_func, 2);//切换回来
+						CsChange(switch_cs + 1, 2);//切换回来
 						switch_i = 0xFF;//复位
 					}
 				}
@@ -110,7 +144,7 @@ uint8_t FillReport(void)//报文填写
 					KeyBrd_data[1] |= CFG_K_FUNC(keyAddr[sysCs][i]);//填入功能键
 				}
 				else if(CFG_K_MODE(keyAddr[sysCs][i]) == m3_group){//模式3:按键组
-					if(mode1_num == 0 && mode2_num == 0 && mode7_num == 0 && !keyOld[i]){//不存在1,2,7模式按键且按下沿
+					if(!keyOld[i] && mode127_num == 0){ // 按下沿 且 不存在涉及键盘的模式按键
 						mode3_key = i + 1;//记录mode3按键(要+1)
 						mode3_i = keyAddr[sysCs][i] + 3;//读取起始下标
 						mode3_loop_count = 0;//模式3循环计数清零
@@ -134,18 +168,14 @@ uint8_t FillReport(void)//报文填写
 					
 					Point_data[2] = i;
 				}
-				else if(CFG_K_MODE(keyAddr[sysCs][i]) == m6_change){//模式6:切换键
-					if((CFG_K_FUNC(keyAddr[sysCs][i]) & 0x80) && switch_i == 0xFF && !keyOld[i]){//若为临时切换且为独有且按下沿
-						switch_key = CFG_K_KEY(keyAddr[sysCs][i]);//缓存键值
-						switch_func = sysCs + 1;//缓存旧键盘选择
-						turn_old = keyDir[sysCs];//旧键盘方向
-						CsChange(CFG_K_FUNC(keyAddr[sysCs][i]), 1);//临时切换
-						turn_dif = (keyDir[sysCs] + 4 - turn_old) % 4;//相对旧键盘方向
-						if(turn_dif == 0) switch_i = i;
-						else if(turn_dif == 1) switch_i = TURN_L90[i];
-						else if(turn_dif == 2) switch_i = 16 - i;
-						else if(turn_dif == 3) switch_i = TURN_R90[i];
-						break;//跳出本次循环
+				else if(CFG_K_MODE(keyAddr[sysCs][i]) == m6_change){ // 模式6:切换键
+					if(!keyOld[i] && switch_i == 0xFF && (CFG_K_FUNC(keyAddr[sysCs][i]) & 0x80)){ // 按下沿 且 独有 且 临时切换
+						switch_key = CFG_K_KEY(keyAddr[sysCs][i]); // 缓存键值
+						switch_cs = sysCs; // 缓存旧键盘选择
+						turn_old = CFG_KB_DIR; // 旧键盘方向
+						CsChange(CFG_K_FUNC(keyAddr[sysCs][i]), 1); // 临时切换
+						switch_i = KeyiRemap(i, turn_old, CFG_KB_DIR); // 寻找本键在新配置的位置
+						break; // 跳出本次循环
 					}
 				}
 				else if(CFG_K_MODE(keyAddr[sysCs][i]) == m7_clicker){//模式7:按键连点
@@ -194,7 +224,7 @@ uint8_t FillReport(void)//报文填写
 			}
 		}//处理完16个按键的主要内容
 		
-		for(i = 0; i < 16; i++){//对于16个按键的触摸
+		for(i = 0; i < ALK_KEY_NUM; i++){//对于全部键盘按键的触摸
 			if(CFG_K_MODE(keyAddr[sysCs][i]) == m4_move || CFG_K_MODE(keyAddr[sysCs][i]) == m5_press){//模式4:光标移位,模式5:光标点击
 				if(CFG_K_FUNC(keyAddr[sysCs][i]) == 1 || CFG_K_FUNC(keyAddr[sysCs][i]) == 2){
 					x = CFG_K_X(keyAddr[sysCs][i]) * 32768 / CFG_SCN_W;
@@ -220,10 +250,10 @@ uint8_t FillReport(void)//报文填写
 			}
 		}//处理完16个按键的触摸
 		
-		/*int8_t */auto_num = 0;//正在执行自动连点的按键数量
-		for(i = 0; i < 16; i++){//对于16个按键的连点
+		auto_num = 0;//正在执行自动连点的按键数量
+		for(i = 0; i < ALK_KEY_NUM; i++){//对于全部键盘按键的连点
 			if(CFG_K_MODE(keyAddr[sysCs][i]) == m7_clicker){//模式7:按键连点
-				if(oldTime > Systime){//若系统时间重置
+				if(oldTime > ALK_Systime){//若系统时间重置
 					keyWork[i] = 0;//清空设定时间
 					keyFlag[i] &= ~0x04;//复位点击标志
 					keyFlag[i] &= ~0x02;//停止连点
@@ -236,9 +266,9 @@ uint8_t FillReport(void)//报文填写
 						keyFlag[i] &= ~0x04;//复位点击标志
 					}
 					else{//若上次未点击
-						if((uint16_t)((uint16_t)Systime - keyWork[i]) >= CFG_K_T(keyAddr[sysCs][i])){//若定时已到
+						if((ALK_U16)((ALK_U16)ALK_Systime - keyWork[i]) >= CFG_K_T(keyAddr[sysCs][i])){//若定时已到
 							KeyInsert(i + 3,CFG_K_KEY(keyAddr[sysCs][i]));//填入键值
-							keyWork[i] = Systime;//记录发送时间低16位
+							keyWork[i] = ALK_Systime;//记录发送时间低16位
 							keyFlag[i] |= 0x04;//置位点击标志
 						}
 					}
@@ -246,7 +276,7 @@ uint8_t FillReport(void)//报文填写
 				}
 			}
 		}//处理完16个按键的连点
-		oldTime = Systime;//记录时间更新
+		oldTime = ALK_Systime;//记录时间更新
 		clickerNum = auto_num;//自动连点数更新
 	}
 	//********************************************************************************************//
@@ -260,7 +290,7 @@ uint8_t FillReport(void)//报文填写
 	//**********************************************************************************//
 	
 	//***********************************判断各报文是否要发送***********************************//
-	for(i = 1; i < KB_LEN; i++){
+	for(i = 1; i < ALK_RPT_L_KEYBRD; i++){
 		if(KeyBrd_data_old[i] != KeyBrd_data[i]){ // 键盘报文与上一次不同则发送
 			KeyBrd_if_send = 1;	break;
 		}
@@ -294,10 +324,10 @@ uint8_t FillReport(void)//报文填写
 	return 0;
 }
 
-void CsChange(uint8_t change, uint8_t ifTmp)//切换
+void CsChange(ALK_U8 change, ALK_U8 ifTmp)//切换
 {
 	change &= 0x0F;//取低4位
-	if(change == 0 || change > CFG_NUM) return;
+	if(change == 0 || change > ALK_CFG_NUM) return;
 	sysCs = change - 1;
 	CFG_DATA_CSC(sysCs);//更新配置数据选择
 	
@@ -306,7 +336,7 @@ void CsChange(uint8_t change, uint8_t ifTmp)//切换
 		LIGHT_DATA_CSC(sysCs);//若不是灯效不切换则更新灯效数据选择
 	}
 	
-	changeTime = Systime;
+	changeTime = ALK_Systime;
 	
 	RkHandle(1);
 	EcHandle(1);
@@ -315,7 +345,7 @@ void CsChange(uint8_t change, uint8_t ifTmp)//切换
 	memset(keyFlag,0,sizeof(keyFlag));
 }
 
-void KeyInsert(uint8_t r_i, uint8_t key_v)//单键填入
+static void KeyInsert(ALK_U8 r_i, ALK_U8 key_v)//单键填入
 {
 	if(key_v == kv_wheel_down) Mouse_data[4] += -1;//滚轮向下
 	else if(key_v == kv_wheel_up) Mouse_data[4] += 1;//滚轮向上
@@ -334,7 +364,7 @@ void KeyInsert(uint8_t r_i, uint8_t key_v)//单键填入
 	else if(key_v == kv_win) KeyBrd_data[1] |= 0x08;//win
 	else{//普通键盘按键
 		if(r_i == 0xFF){//若使用自动填入
-			for(r_i = 3; r_i < KB_LEN; r_i++){//搜索空位
+			for(r_i = 3; r_i < ALK_RPT_L_KEYBRD; r_i++){//搜索空位
 				if(!KeyBrd_data[r_i]) break;//若此处为空
 			}
 		}
@@ -343,20 +373,20 @@ void KeyInsert(uint8_t r_i, uint8_t key_v)//单键填入
 	}
 }
 
-void Mode3Handle(void)//mode3处理(按键组处理)
+static void Mode3Handle(void)//mode3处理(按键组处理)
 {
-	static uint32_t setTime = 0, oldTime = 0;//设定时间及记录时间
-	static uint16_t loopStart = 0xFFFF;//循环起始地址
-//	static uint8_t reportCtrlState = 0;//报文控制状态记录 bit7代表是否是新的 其余复制报文控制字节
-	uint8_t report_i = 3;//报文写入位置
+	static ALK_U32 setTime = 0, oldTime = 0;//设定时间及记录时间
+	static ALK_U16 loopStart = 0xFFFF;//循环起始地址
+//	static ALK_U8 reportCtrlState = 0;//报文控制状态记录 bit7代表是否是新的 其余复制报文控制字节
+	ALK_U8 report_i = 3;//报文写入位置
 	
-	uint16_t x, y;
-	uint16_t end_i;
-	uint8_t check_i;
+	ALK_U16 x, y;
+	ALK_U16 end_i;
+	ALK_U8 check_i;
 	
-	if(oldTime > Systime) setTime = 0;//若系统时间重置则终止延时
-	oldTime = Systime;//记录时间更新
-	if(setTime > Systime){//延时未结束
+	if(oldTime > ALK_Systime) setTime = 0;//若系统时间重置则终止延时
+	oldTime = ALK_Systime;//记录时间更新
+	if(setTime > ALK_Systime){//延时未结束
 		mode3_delaying = 1;//延时标志置位
 		mode3_gap = 0;//清零间隔标志
 		return;//退出等待
@@ -366,7 +396,7 @@ void Mode3Handle(void)//mode3处理(按键组处理)
 	end_i = 0;//结束位置
 	if(mode3_key) end_i = keyAddr[sysCs][mode3_key - 1] + 3 + CFG_K_LEN(keyAddr[sysCs][mode3_key - 1]);
 	
-	for(; report_i < KB_LEN; mode3_i++){//当报文未填满
+	for(; report_i < ALK_RPT_L_KEYBRD; mode3_i++){//当报文未填满
 		if(mode3_i >= end_i){//当读完数据
 			mode3_key = 0;
 			break;
@@ -386,7 +416,7 @@ void Mode3Handle(void)//mode3处理(按键组处理)
 				continue;
 			}
 			mode3_loop_count++;//循环计数递增
-			x = ((uint16_t)CFG_ACS(mode3_i + 2) << 8) | CFG_ACS(mode3_i + 3);//借用x存储循环次数
+			x = ((ALK_U16)CFG_ACS(mode3_i + 2) << 8) | CFG_ACS(mode3_i + 3);//借用x存储循环次数
 			if(CFG_ACS(mode3_i + 1) && (mode3_loop_flag & 0x04) && !(mode3_loop_flag & 0x03) //自动 操作退出
 				|| !CFG_ACS(mode3_i + 1) && (mode3_loop_flag & 0x04) //非自动 操作退出
 				|| x && mode3_loop_count >= x){//有限循环 且 计数到位
@@ -405,8 +435,8 @@ void Mode3Handle(void)//mode3处理(按键组处理)
 			}
 		}
 		else if(CFG_ACS(mode3_i) == kv_delay){//若有延时
-			uint16_t delayTime = (CFG_ACS(mode3_i + 1) << 8) | CFG_ACS(mode3_i + 2);
-			setTime = Systime + delayTime;
+			ALK_U16 delayTime = (CFG_ACS(mode3_i + 1) << 8) | CFG_ACS(mode3_i + 2);
+			setTime = ALK_Systime + delayTime;
 			mode3_i += 3;
 			break;//独占本次报文
 		}
@@ -476,17 +506,17 @@ void Mode3Handle(void)//mode3处理(按键组处理)
 }
 
 //1:按键/快捷键,2:永久切换键
-void RkEcKeyHandle(void)//摇杆旋钮按键处理
+static void RkEcKeyHandle(void)//摇杆旋钮按键处理
 {
-	uint8_t keyM[3], keyV[3], keyF[3];//按键模式,键值,功能键
-	uint8_t i;
+	ALK_U8 keyM[3], keyV[3], keyF[3];//按键模式,键值,功能键
+	ALK_U8 i;
 	
 	keyM[0] = CFGb_Ek_MODE(0);	keyV[0] = CFG_E_KEY(0,0);	keyF[0] = CFG_E_FUNC(0,0);
 	keyM[1] = CFGb_Ek_MODE(1);	keyV[1] = CFG_E_KEY(1,0);	keyF[1] = CFG_E_FUNC(1,0);
 	keyM[2] = CFGb_Rk_MODE(0);	keyV[2] = CFG_R_KEY(0,0);	keyF[2] = CFG_R_FUNC(0);
 	
 	for(i = 0; i < 3; i++){//2个旋钮按键1个摇杆按键
-		if(keyNow[i + 16]){//若为按下状态
+		if(keyNow[i + ALK_KEY_NUM]){//若为按下状态
 			if(keyM[i] == 1){//按键/快捷键
 				if(keyV[i]) KeyInsert(0xFF, keyV[i]);//填入键值
 				KeyBrd_data[1] |= keyF[i];//填入功能键
@@ -495,7 +525,7 @@ void RkEcKeyHandle(void)//摇杆旋钮按键处理
 				Dial_data[1] |= 0x01; // 按下
 			}
 		}
-		else if(keyOld[i + 16]){//若为释放沿
+		else if(keyOld[i + ALK_KEY_NUM]){//若为释放沿
 			if(keyM[i] == 2){//永久切换键
 				switch_i = 0xFF;//直接复位临时切换键标志
 				CsChange(keyV[i] - kv_orig_1 + 1, 0);//切换 该函数内有参数检查 此处USB键值从数字键1的键值开始有效
@@ -505,41 +535,29 @@ void RkEcKeyHandle(void)//摇杆旋钮按键处理
 }
 
 //1:四向四按键,2:八向四按键,3:速度鼠标,4:光标位置
-void RkHandle(uint8_t clear)//摇杆处理
+static void RkHandle(ALK_U8 clear)//摇杆处理
 {
-	static int16_t RK_pulse = 0;//间隔标志
-	static int16_t x_pic = 0, y_pic = 0;
-	static int16_t dx = 0, dy = 0;
-	int16_t x, y;
-	int16_t equal_r;//等效半径
+	static ALK_S16 RK_pulse = 0;//间隔标志
+	static ALK_S16 x_pic = 0, y_pic = 0;
+	static ALK_S16 dx = 0, dy = 0;
+	ALK_S16 x, y;
+	ALK_S16 equal_r;//等效半径
 	
 	if(clear){//清除
 		RK_pulse = x_pic = y_pic = 0;
 		return;
 	}
 	
-	x = (CFGb_R_DIRx(0)*2 - 1);//决定方向
-	y = (CFGb_R_DIRy(0)*2 - 1);
-	
-	adcValue[0] = LIMIT(adcValue[0], ANA_MIN(0), ANA_MAX(0));//钳位
-	adcValue[1] = LIMIT(adcValue[1], ANA_MIN(1), ANA_MAX(1));
-	
-	if(CFGb_R_DIRr(0)){//若转90度
-		if(adcValue[0] < ANA_MID(0)) x *= ((int16_t)adcValue[0] - (int16_t)ANA_MID(0)) * 4096L / ANA_DOWN(0);
-		else x *= ((int16_t)adcValue[0] - (int16_t)ANA_MID(0)) * 4096L / ANA_UP(0);//放大到正负4096
-		
-		if(adcValue[1] < ANA_MID(1)) y *= ((int16_t)adcValue[1] - (int16_t)ANA_MID(1)) * 4096L / ANA_DOWN(1);
-		else y *= ((int16_t)adcValue[1] - (int16_t)ANA_MID(1)) * 4096L / ANA_UP(1);
+	if(CFGb_R_DIRr(0)){ // 若转90度
+		x = (CFGb_R_DIRx(0)*2 - 1) * rkValue[0*0 + 1];
+		y = -(CFGb_R_DIRy(0)*2 - 1) * rkValue[0*0 + 0];
 	}
 	else{
-		if(adcValue[0] < ANA_MID(0)) y *= ((int16_t)adcValue[0] - (int16_t)ANA_MID(0)) * 4096L / ANA_DOWN(0);//向上为正
-		else y *= ((int16_t)adcValue[0] - (int16_t)ANA_MID(0)) * 4096L / ANA_UP(0);//放大到正负4096
-		
-		if(adcValue[1] < ANA_MID(1)) x *= -((int16_t)adcValue[1] - (int16_t)ANA_MID(1)) * 4096L / ANA_DOWN(1);//向右为正
-		else x *= -((int16_t)adcValue[1] - (int16_t)ANA_MID(1)) * 4096L / ANA_UP(1);
+		x = (CFGb_R_DIRx(0)*2 - 1) * rkValue[0*0 + 0];
+		y = (CFGb_R_DIRy(0)*2 - 1) * rkValue[0*0 + 1];
 	}
 	
-	equal_r = MAX(ABS(x), ABS(y)) - (uint16_t)CFG_R_DEAD(0) * 21;//计算等效半径并减去死区
+	equal_r = MAX(ABS(x), ABS(y)) - (ALK_U16)CFG_R_DEAD(0) * 21;//计算等效半径并减去死区
 	if(equal_r <= 0){//在死区内
 		dx = dy = 0;
 		x_pic = y_pic = 0;
@@ -555,7 +573,7 @@ void RkHandle(uint8_t clear)//摇杆处理
 			
 			if(CFG_R_NEER(0) == 0 && CFG_R_FAR(0) == 0) RK_pulse = 0;//长按
 			else{//非长按则间隔按
-				equal_r = ((uint16_t)CFG_R_NEER(0) << 1) + (((int8_t)(CFG_R_FAR(0) - CFG_R_NEER(0)) * (equal_r >> 3)) >> 8);//计算速度 借用equal_r存储
+				equal_r = ((ALK_U16)CFG_R_NEER(0) << 1) + (((ALK_S8)(CFG_R_FAR(0) - CFG_R_NEER(0)) * (equal_r >> 3)) >> 8);//计算速度 借用equal_r存储
 
 				if(equal_r <= ABS(dx)) dx = equal_r;//减速时直接赋值不使用惯性
 				else{//加速时使用惯性
@@ -587,7 +605,7 @@ void RkHandle(uint8_t clear)//摇杆处理
 			
 			if(CFG_R_NEER(0) == 0 && CFG_R_FAR(0) == 0) RK_pulse = 0;//长按
 			else{
-				equal_r = ((uint16_t)CFG_R_NEER(0) << 1) + (((int8_t)(CFG_R_FAR(0) - CFG_R_NEER(0)) * (equal_r >> 3)) >> 8);//计算速度 借用equal_r存储
+				equal_r = ((ALK_U16)CFG_R_NEER(0) << 1) + (((ALK_S8)(CFG_R_FAR(0) - CFG_R_NEER(0)) * (equal_r >> 3)) >> 8);//计算速度 借用equal_r存储
 				
 				if(equal_r <= ABS(dx)) dx = equal_r;//减速时直接赋值不使用惯性
 				else{//加速时使用惯性
@@ -617,11 +635,11 @@ void RkHandle(uint8_t clear)//摇杆处理
 			break;
 		}
 		case 3:{//速度鼠标
-//			x = x > 0 ? MAX(0, x - (int16_t)CFG_R_DEAD(0) * 21) : MIN(0, x + (int16_t)CFG_R_DEAD(0) * 21);//应用死区
-//			y = y > 0 ? MAX(0, y - (int16_t)CFG_R_DEAD(0) * 21) : MIN(0, y + (int16_t)CFG_R_DEAD(0) * 21);//应用死区
+//			x = x > 0 ? MAX(0, x - (ALK_S16)CFG_R_DEAD(0) * 21) : MIN(0, x + (ALK_S16)CFG_R_DEAD(0) * 21);//应用死区
+//			y = y > 0 ? MAX(0, y - (ALK_S16)CFG_R_DEAD(0) * 21) : MIN(0, y + (ALK_S16)CFG_R_DEAD(0) * 21);//应用死区
 
-			x = ((int8_t)CFG_R_FAR(0) * (x >> 3)) >> 4;//计算速度 借用x存储
-			y = ((int8_t)CFG_R_FAR(0) * (y >> 3)) >> 4;//计算速度 借用y存储
+			x = ((ALK_S8)CFG_R_FAR(0) * (x >> 3)) >> 4;//计算速度 借用x存储
+			y = ((ALK_S8)CFG_R_FAR(0) * (y >> 3)) >> 4;//计算速度 借用y存储
 			//-1600~1600
 			if(ABS(x) <= ABS(dx)) dx = x;//减速时直接赋值不使用惯性
 			else if(ABS(dx) > 800) dx = x;//高速阶段不使用惯性
@@ -653,10 +671,10 @@ void RkHandle(uint8_t clear)//摇杆处理
 
 			x_pic = LIMIT(x_pic, -127 << 6, 127 << 6);//限幅
 			y_pic = LIMIT(y_pic, -127 << 6, 127 << 6);
-			Mouse_data[2] = (int8_t)(x_pic >> 6);//报文填入
-			Mouse_data[3] = -(int8_t)(y_pic >> 6);
-			x_pic -= (int8_t)Mouse_data[2] << 6;//减去已填入的
-			y_pic += (int8_t)Mouse_data[3] << 6;
+			Mouse_data[2] = (ALK_S8)(x_pic >> 6);//报文填入
+			Mouse_data[3] = -(ALK_S8)(y_pic >> 6);
+			x_pic -= (ALK_S8)Mouse_data[2] << 6;//减去已填入的
+			y_pic += (ALK_S8)Mouse_data[3] << 6;
 			break;
 		}
 		case 4:{//光标位置
@@ -692,18 +710,18 @@ void RkHandle(uint8_t clear)//摇杆处理
 			y = LIMIT(y, -4095, 4095);
 			
 			//20*4095*50/125
-			dx = (int32_t)dx * x_pic * CFG_R_FAR(0) / 125;//计算偏移量
-			dy = -(int32_t)dy * y_pic * CFG_R_FAR(0) / 125;
+			dx = (ALK_S32)dx * x_pic * CFG_R_FAR(0) / 125;//计算偏移量
+			dy = -(ALK_S32)dy * y_pic * CFG_R_FAR(0) / 125;
 			
 			x = CFG_R_PARA(0) * 32767L / 50;//计算中心位置
 			y = CFG_R_NEER(0) * 32767L / 50;
 			
-			if(dx > 0 && (int32_t)x + dx > 32767) x = 32767;//防止正溢出
-			else if(dx < 0 && (int32_t)x + dx < 0) x = 0;//防止负溢出
+			if(dx > 0 && (ALK_S32)x + dx > 32767) x = 32767;//防止正溢出
+			else if(dx < 0 && (ALK_S32)x + dx < 0) x = 0;//防止负溢出
 			else x += dx;//没有溢出
 			
-			if(dy > 0 && (int32_t)y + dy > 32767) y = 32767;
-			else if(dy < 0 && (int32_t)y + dy < 0) y = 0;
+			if(dy > 0 && (ALK_S32)y + dy > 32767) y = 32767;
+			else if(dy < 0 && (ALK_S32)y + dy < 0) y = 0;
 			else y += dy;
 
 			Point_data[3] = x & 0xFF;
@@ -723,43 +741,28 @@ void RkHandle(uint8_t clear)//摇杆处理
 }
 
 //1:按键/快捷键 2:Dial
-void EcHandle(uint8_t clear)//旋钮处理
+static void EcHandle(ALK_U8 clear)//旋钮处理
 {
-//	static uint32_t oldTime = 0;//记录时间
-//	static int TIM_old = 0;//编码器旧计数
-//	static int8_t TIM_count[2] = {0,0};//编码器计数
-	static int8_t EC_count[2] = {0,0};//执行计数
-	static uint8_t EC_pulse[2] = {0,0};//间隔标志
-	static int16_t dial_angle = 0; // 轮盘转角
-	int16_t tool16 = 0; // 工具变量
-	uint8_t EC_flag = 0;//执行标志
+	static ALK_S8 EC_count[ALK_EC_NUM] = {0}; // 执行计数
+	static ALK_U8 EC_pulse[ALK_EC_NUM] = {0}; // 间隔标志
+	static ALK_S16 dial_angle = 0; // 轮盘转角
+	ALK_S16 tool16 = 0; // 工具变量
+	ALK_U8 EC_flag = 0;//执行标志
 	
-	uint8_t i;
+	ALK_U8 i;
 	
 	if(clear){ // 清除
-		ecValue[0] = EC_count[0] = EC_pulse[0] = 0;
-		ecValue[1] = EC_count[1] = EC_pulse[1] = 0;
+		for(i = 0; i < ALK_EC_NUM; i++){
+			EC_count[i] = ecValue[i]; // 直接完全跟进
+			EC_pulse[0] = 0;
+		}
 		EC_flag = dial_angle = 0;
 		return;
 	}
-
-//	TIM_count[0] -= (CFG_E_DIR(0) * 2 - 1) * (int8_t)(EC1val); // 编码器计数读取
-//	EC1val = 0; // 编码器清零
-//	TIM_count[1] -= (CFG_E_DIR(1) * 2 - 1) * (int8_t)(EC2val); // 编码器计数读取
-//	EC2val = 0; // 编码器清零
 	
-//	if(TIM_old != TIM_count){
-//		TIM_old = TIM_count;
-//		oldTime = Systime;//若计数值不一致才更新时间
-//	}
-//	if(/*Systime - oldTime > 5000*/0){//若长时间编码器无动作
-//		TIM_old = TIM_count = EC_count = EC_flag = 0;
-//		oldTime = Systime;
-//	}
-	
-	for(i = 0; i < 2; i++){//处理每个旋钮
-		if((int8_t)(ecValue[i] - EC_count[i]) > 0) EC_flag = 1;
-		else if((int8_t)(ecValue[i] - EC_count[i]) < 0) EC_flag = 2;
+	for(i = 0; i < ALK_EC_NUM; i++){ // 处理每个旋钮
+		if((ALK_S8)(ecValue[i] - EC_count[i]) > 0) EC_flag = 1;
+		else if((ALK_S8)(ecValue[i] - EC_count[i]) < 0) EC_flag = 2;
 		else EC_flag = 0;
 		
 		switch(CFGb_E_MODE(i)){
@@ -820,7 +823,7 @@ void EcHandle(uint8_t clear)//旋钮处理
 
 #define MORSE_COUNT_MAX		7 // 摩尔斯码最大位数
 
-UINT8C MORSE_TABLE[] = { // 摩尔斯码表(转USB键值)
+static ALK_U8C MORSE_TABLE[] = { // 摩尔斯码表(转USB键值)
 	// 26字母 A~Z
 	0x02, 8,	0x03, 23,	0x04, 12,	0x05, 4,	0x06, 17,	0x07, 16,	0x08, 22,
 	0x09, 24,	0x0A, 21,	0x0B, 26,	0x0C, 7,	0x0D, 14,	0x0E, 10,	0x0F, 18,
@@ -836,15 +839,15 @@ UINT8C MORSE_TABLE[] = { // 摩尔斯码表(转USB键值)
 	// 非标符号 \ [ ] ↓ ← ↑ →
 	0x33, 49,	0x34, 47,	0x35, 48,	0x24, 81,	0x37, 80,	0x3B, 82,	0x3D, 79,
 };
-UINT8C MORSE_TABLE_S[] = { // 摩尔斯码表(带Shift)
+static ALK_U8C MORSE_TABLE_S[] = { // 摩尔斯码表(带Shift)
 	// 标准符号 & + ( ? _ " @ ! ) : $
 	0x28, 36,	0x2A, 46,	0x36, 38,	0x4C, 56,	0x4D, 45,	0x52, 52,	0x5A, 31,	0x6B, 30,	0x6D, 39,	0x78, 51,	0x89, 33,
 	// 非标符号 * # < > ^ % Shift
 	0x22, 37,	0x25, 32,	0x29, 54,	0x2B, 55,	0x2C, 35,	0x2E, 34,	0x39, 0,
 };
 
-static void MorseOutput(uint8_t mCode){ // 输出
-	uint8_t i;
+static void MorseOutput(ALK_U8 mCode){ // 输出
+	ALK_U8 i;
 	for(i = 0; i < sizeof(MORSE_TABLE); i += 2){ // 查表
 		if(mCode == MORSE_TABLE[i]) KeyInsert(0xFF, MORSE_TABLE[i + 1]);
 	}
@@ -856,9 +859,9 @@ static void MorseOutput(uint8_t mCode){ // 输出
 	}
 }
 
-static void MorseInput(uint8_t input){ // 输入
-	static uint8_t morseCount = 0;
-	static uint8_t morseCode = 0x01; // 起始位
+static void MorseInput(ALK_U8 input){ // 输入
+	static ALK_U8 morseCount = 0;
+	static ALK_U8 morseCode = 0x01; // 起始位
 	if(input <= 1){ // bit0或bit1
 		morseCode = (morseCode << 1) | input; // 从左往右
 		if(++morseCount < MORSE_COUNT_MAX) return;
@@ -871,20 +874,20 @@ static void MorseInput(uint8_t input){ // 输入
 	}
 }
 
-void MorseHandle(void){ // 摩尔斯码处理
-	static uint32_t morseTime = 0; // 任何动作时刻
-	static uint32_t pressTime = 0; // 按下时刻
-	if(Systime - morseTime > morse_gap * 10){ // 超过间隔时间
-		morseTime = Systime;
+static void MorseHandle(void){ // 摩尔斯码处理
+	static ALK_U32 morseTime = 0; // 任何动作时刻
+	static ALK_U32 pressTime = 0; // 按下时刻
+	if(ALK_Systime - morseTime > morse_gap * 10){ // 超过间隔时间
+		morseTime = ALK_Systime;
 		MorseInput(0xFF); // 输入中止
 	}
-	if(morse_key & 0xF7) morseTime = Systime; // 任何动作都更新时间
+	if(morse_key & 0xF7) morseTime = ALK_Systime; // 任何动作都更新时间
 	else return;
 	if(morse_key & 0x10) MorseInput(0); // 直接输入点
 	if(morse_key & 0x20) MorseInput(1); // 直接输入划
-	if(morse_key & 0x40) pressTime = Systime; // 记录按下时刻
+	if(morse_key & 0x40) pressTime = ALK_Systime; // 记录按下时刻
 	if(morse_key & 0x80){ // 松开
-		if(Systime - pressTime < morse_long * 10) MorseInput(0); // 判断为点
+		if(ALK_Systime - pressTime < morse_long * 10) MorseInput(0); // 判断为点
 		else MorseInput(1); // 判断为划
 	}
 	morse_key &= ~0xF0; // 复位边沿标志

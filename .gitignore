@@ -1,3 +1,4 @@
+/.vscode
 /Project/Listings
 /Project/Output/*
 !/Project/Output/Ethane-XVI.hex

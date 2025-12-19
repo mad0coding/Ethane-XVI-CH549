@@ -10,10 +10,8 @@
 
 #include "CompositeHID.H"
 #include "RgbDrv.h"
-#include "ParaUse.h"
+#include "ALK_Func.h"
 
-#define KB_LEN		22//键盘报文长度
-#define KP_NUM		19//按键个数
 
 //XDATA地址分配
 #define XBASE_EP0_BUF		(XBASE_FLASH_BUF - 64*7)
@@ -70,8 +68,6 @@ extern UINT16D tickStart, tickEnd, tickDif;
 
 extern uint32_t Systime;//系统时间
 
-extern UINT8C TURN_L90[16];//左旋按键映射矩阵
-extern UINT8C TURN_R90[16];//右旋按键映射矩阵
 extern UINT16D TONE_TIMValue;//声调定时器计数值
 extern UINT16D buzzTimVol;//声调定时器延时值
 extern uint8_t cmdBuzzTone, cmdBuzzVol; // 命令音符 命令音量
@@ -81,12 +77,8 @@ extern bit EC1freq, EC2freq;
 
 extern uint16_t adcValue[];
 extern uint16_t Adc_Set_Mid[];
-extern uint8_t ecValue[];
 extern UINT8D keyFltNum;//按键滤波参数
 
-extern uint8_t keyNow[KP_NUM];//按键映射结果
-extern uint8_t keyOld[KP_NUM];//按键映射结果旧值
-//extern uint8_t keyFlt[KP_NUM];
 extern uint8_t debugBuf[];
 
 

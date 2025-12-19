@@ -3,25 +3,17 @@
 
 UINT8X FlashBuf[512] _at_ XBASE_FLASH_BUF;//配置缓存数组
 
-uint16_t keyAddr[CFG_NUM][16];//每组16按键的数据地址
-uint16_t keyWork[16];//16按键的工作用数组
-uint8_t keyFlag[16];//16按键的标记用数组
 
-uint8_t keyDir[CFG_NUM];//键盘方向
-
-uint8_t sysCs = 0;//总配置选择
-
-PUINT8C DATA_CFG = DATA_CFG_BASE;//闪存区配置信息指针
 //PUINT8C GLOB_CFG = DATA_GLOB_BASE;//闪存区全局信息指针
 
 void AsyncHandle(uint8_t flag){//异步处理
 	uint8_t ret = 0;
-	if(flag >= ASYNC_FLAG_CFG && flag < ASYNC_FLAG_CFG + CFG_NUM){			//键盘配置存储
+	if(flag >= ASYNC_FLAG_CFG && flag < ASYNC_FLAG_CFG + ALK_CFG_NUM){			//键盘配置存储
 		ret = ParaWrite(CFG_ADDR_CSC(flag - ASYNC_FLAG_CFG), FlashBuf, 8);
 		ParaUpdate(flag - ASYNC_FLAG_CFG);//键盘配置参数更新
 		if(ret) DiagCountInc(DIAG_FMT_LOAD | DIAG_FMT_SAVE, DIAG_I_CFG + flag - ASYNC_FLAG_CFG);//诊断计数增加
 	}
-	else if(flag >= ASYNC_FLAG_LIGHT && flag < ASYNC_FLAG_LIGHT + CFG_NUM){	//灯效配置存储
+	else if(flag >= ASYNC_FLAG_LIGHT && flag < ASYNC_FLAG_LIGHT + ALK_CFG_NUM){	//灯效配置存储
 		ret = ParaWrite(LIGHT_ADDR_CSC(flag - ASYNC_FLAG_LIGHT), FlashBuf, 4);
 		KeyRGB(1);//键盘RGB控制清零
 		if(ret) DiagCountInc(DIAG_FMT_LOAD | DIAG_FMT_SAVE, DIAG_I_LIGHT + flag - ASYNC_FLAG_LIGHT);//诊断计数增加
@@ -126,56 +118,7 @@ uint8_t ParaWrite(uint16_t addr, uint8_t *buf, uint8_t num){//参数写入
 void ParaLoad(void){//参数读取
 	uint8_t i;
 	GlobalParaLoad();//全局参数读取
-	for(i = CFG_NUM - 1; i != 255; i--) ParaUpdate(i);//倒序装载以实现小序号优先
-	memset(keyWork, 0, sizeof(keyWork));
-	memset(keyFlag, 0, sizeof(keyFlag));
-}
-
-void ParaUpdate(uint8_t pos){//参数更新
-	uint16_t addr;
-	uint8_t i;
-	
-	if(pos < CFG_NUM) addr = DATA_CFG_BASE - pos * 512;//计算本套配置的起始地址
-	else return;
-	
-	keyDir[pos] = CFG_ACS(addr + (&CFG_KB_DIR - CFG_THIS));//读取键盘方向
-	
-	if(CFG_ACS(addr + (&CFG_ALL_PRI - CFG_THIS)) == 1){//若本配置为优先配置
-		sysCs = pos;//总选择为本配置
-		CFG_DATA_CSC(sysCs);//更新配置数据选择
-		LIGHT_DATA_CSC(sysCs);//更新灯效数据选择
-		KeyRGB(1);//键盘RGB控制清零
-	}
-	
-	for(i = 0; i < 16; i++){
-		keyAddr[pos][i] = addr;//存储地址
-		if(CFG_K_ID(addr) != i + 1){//若ID不对
-			keyAddr[pos][0] = 0;//置零以标记为无效
-			break;
-		}
-		if(CFG_K_MODE(addr) == m0_none || CFG_K_MODE(addr) == m8_buzz){
-			addr += 2;
-		}
-		else if(CFG_K_MODE(addr) == m1_button){
-			addr += 3;
-		}
-		else if(CFG_K_MODE(addr) == m2_shortcut || CFG_K_MODE(addr) == m6_change){
-			addr += 4;
-		}
-		else if(CFG_K_MODE(addr) == m9_morse){
-			addr += 5;
-		}
-		else if(CFG_K_MODE(addr) == m4_move || CFG_K_MODE(addr) == m5_press || CFG_K_MODE(addr) == m7_clicker){
-			addr += 6;
-		}
-		else if(CFG_K_MODE(addr) == m3_group){
-			addr += 3 + CFG_K_LEN(addr);
-		}
-		else{//模式不对
-			keyAddr[pos][0] = 0;//置零以标记为无效
-			break;
-		}
-	}
+	for(i = ALK_CFG_NUM - 1; i != 255; i--) ParaUpdate(i);//倒序装载以实现小序号优先
 }
 
 void GlobalParaLoad(void){//全局参数读取
