@@ -6,11 +6,14 @@
 #define DE_PRINTF 1
 #endif
 
-//USB端点缓存,必须是偶地址
-static UINT8X Ep0Buffer[MIN(64,THIS_ENDP0_SIZE+2)] _at_ XBASE_EP0_BUF;							//端点0 OUT&IN
+//USB端点缓存,必须是偶地址。EP4 的 OUT/IN 缓冲紧随 EP0，三者共用 UEP0_DMA。
+static UINT8X Ep0Buffer[3*MAX_PACKET_SIZE] _at_ XBASE_EP0_BUF;
 static UINT8X Ep1Buffer[MIN(64,ENDP1_OUT_SIZE+2)+MIN(64,ENDP1_IN_SIZE+2)] _at_ XBASE_EP1_BUF;	//端点1 OUT&IN
 static UINT8X Ep2Buffer[64] _at_ XBASE_EP2_BUF;	//端点2 仅IN
-static UINT8X Ep3Buffer[MIN(64,ENDP3_OUT_SIZE+2)+MIN(64,ENDP3_IN_SIZE+2)] _at_ XBASE_EP3_BUF;	//端点3 OUT&IN
+static UINT8X Ep3Buffer[64] _at_ XBASE_EP3_BUF;	//端点3 仅IN
+
+#define Ep4OutBuffer	(Ep0Buffer + MAX_PACKET_SIZE)
+#define Ep4InBuffer	(Ep0Buffer + MAX_PACKET_SIZE * 2)
 
 
 UINT8X WakeUpEnFlag = 0;	//远程唤醒使能标志
@@ -94,6 +97,7 @@ static bit Ready = 0;			//USB就绪标志
 static bit Endp1Busy = 0;		//传输完成控制标志
 static bit Endp2Busy = 0;		//传输完成控制标志
 static bit Endp3Busy = 0;		//传输完成控制标志
+static bit Endp4Busy = 0;		//传输完成控制标志
 
 
 #pragma  NOAREGS
@@ -130,8 +134,7 @@ static UINT8C MyManuInfo[] = {36,0x03,
 UINT8X MySrNumInfo[26];//序列号字符串 初始化时加载
 
 /*HID类报文描述符*/
-/* 主 HID（键盘、鼠标、触摸与媒体）使用 EP2 IN。 */
-#if 1
+/* 主 HID（键盘、鼠标、媒体与 Dial）使用 EP2 IN。触摸单独使用 EP3 IN。 */
 static UINT8C KeyRepDesc[/*285*/] = { // HID报文描述符
 	//键盘
 	0x05, 0x01,					//	USAGE_PAGE (Generic Desktop)
@@ -201,8 +204,8 @@ static UINT8C KeyRepDesc[/*285*/] = { // HID报文描述符
 	0xc0,						//		END_COLLECTION
 	0xc0,						//	END_COLLECTION
 	
-	/* Android 定位测试：恢复触摸 collection，媒体 collection 暂时不声明。 */
-	#if 1
+	/* 触摸必须不出现在主 HID 接口中，否则 Android 会将整个接口绑定为 hid-multitouch。 */
+	#if 0
 	//指针位置
 	0x05, 0x0d,					// USAGE_PAGE (Digitizers)
 	//0x09, 0x02,					// USAGE (Pen)
@@ -241,8 +244,8 @@ static UINT8C KeyRepDesc[/*285*/] = { // HID报文描述符
 	0xc0,						//	END_COLLECTION
 	#endif
 	
-	/* Android 定位测试：暂时排除媒体 collection。 */
-	#if 0
+	//媒体控制
+	#if 1
 	//媒体控制
 	0x05,0x0C,					//	USAGE_PAGE (Consumer)
 	0x09,0x01,					//	USAGE (Consumer Control)
@@ -269,8 +272,8 @@ static UINT8C KeyRepDesc[/*285*/] = { // HID报文描述符
 	0xC0,						//	END_COLLECTION
 	#endif
 	
-	/* 定位测试：Dial collection 暂时不进入 Report Descriptor。 */
-#if 0
+	/* Dial 保留原始描述符写法，归入不含 Touch Screen 的主 HID 接口。 */
+#if 1
 	// Dial
 	0x05,0x01,          		//	USAGE_PAGE(Generic Desktop Controls)
 	0x09,0x0E,          		//	LOCAL_USAGE(Reserved)
@@ -300,9 +303,44 @@ static UINT8C KeyRepDesc[/*285*/] = { // HID报文描述符
 	0xC0,               		//		END_COLLECTION
 	0xC0,               		//	END_COLLECTION
 #endif
-#endif
 };
-#endif
+
+/* 触摸独占 HID 接口/EP3，使 Android 仅对该接口绑定 hid-multitouch。 */
+static UINT8C TouchRepDesc[] = {
+	0x05, 0x0d,					// USAGE_PAGE (Digitizers)
+	0x09, 0x04,					// USAGE (Touch Screen)
+	0xa1, 0x01,					// COLLECTION (Application)
+	0x85, 0x03,					//   REPORT_ID (3)
+	0x09, 0x22,					//   USAGE (Finger)
+	0xa1, 0x00,					//   COLLECTION (Physical)
+	0x09, 0x42,					//     USAGE (Tip Switch)
+	0x09, 0x44,					//     USAGE (Barrel Switch)
+	0x09, 0x3c,					//     USAGE (Invert)
+	0x09, 0x45,					//     USAGE (Eraser Switch)
+	0x09, 0x32,					//     USAGE (In Range)
+	0x15, 0x00,
+	0x25, 0x01,
+	0x75, 0x01,
+	0x95, 0x05,
+	0x81, 0x02,
+	0x95, 0x01,
+	0x75, 0x03,
+	0x81, 0x03,
+	0x75, 0x08,
+	0x09, 0x51,					//     USAGE (Contact Identifier)
+	0x95, 0x01,
+	0x81, 0x02,
+	0x05, 0x01,					//     USAGE_PAGE (Generic Desktop)
+	0x75, 0x10,
+	0x26, 0xFF, 0x7F,
+	0x46, 0xFF, 0x7F,
+	0x09, 0x30,					//     USAGE (X)
+	0x09, 0x31,					//     USAGE (Y)
+	0x95, 0x02,
+	0x81, 0x02,
+	0xc0,
+	0xc0
+};
 
 /* 最小 HID 相对鼠标描述符暂时停用，保留以便回退测试。 */
 #if 0
@@ -360,17 +398,23 @@ static UINT8C RgbRepDesc[/*34*/] = { // RGB自定义HID报文描述符
 };
 #endif
 
-/* 两个 HID class descriptor，亦用于主机单独请求 0x21 描述符。 */
+/* 四个 HID class descriptor，亦用于主机单独请求 0x21 描述符。 */
 static UINT8C CustomHidDesc[] = { 0x09,0x21,0x11,0x01,0x00,0x01,0x22,sizeof(ComRepDesc)&0xFF,sizeof(ComRepDesc)>>8 };
+static UINT8C RgbHidDesc[]    = { 0x09,0x21,0x11,0x01,0x00,0x01,0x22,sizeof(RgbRepDesc)&0xFF,sizeof(RgbRepDesc)>>8 };
 static UINT8C MainHidDesc[]   = { 0x09,0x21,0x11,0x01,0x00,0x01,0x22,sizeof(KeyRepDesc)&0xFF,sizeof(KeyRepDesc)>>8 };
+static UINT8C TouchHidDesc[]  = { 0x09,0x21,0x11,0x01,0x00,0x01,0x22,sizeof(TouchRepDesc)&0xFF,sizeof(TouchRepDesc)>>8 };
 
-/*配置描述符：布局与 Methane 相同，Custom HID 为接口0/端点1，主 HID 为接口1/端点2。*/
+/*
+ * 接口0: Custom HID/EP1；接口1: RGB HID/EP4；
+ * 接口2: 键盘、鼠标、媒体、Dial/EP2；接口3: 触摸/EP3。
+ * 触摸必须是独立接口，使 Android 只对接口3 绑定 hid-multitouch。
+ */
 static UINT8C CfgDesc[] = {//配置描述符
 	0x09,	// 1. 第一个字节 0x09 表示该配置描述符的长度为 9 字节
 	0x02,	// 2. 第二个字节 0x02 表示该描述符的类型为配置描述符 (Configuration Descriptor)
-	9+32+25,	// 3. 配置 + Custom HID(32) + 主HID(25) = 66字节
+	9+32+32+25+25,	// 配置 + Custom HID + RGB HID + 主 HID + 触摸 HID = 123字节
 	0x00,	// 4. 第四个字节 0x00 表示配置描述符的总长度的高字节
-	USBD_MAX_NUM_INTERFACES,	// 5. 两个接口
+	USBD_MAX_NUM_INTERFACES,	// 5. 四个接口
 	0x01,	// 6. 第六个字节 0x01 表示配置描述符的标识符 (Configuration Value)
 	0x00,	// 7. 第七个字节 0x00 表示该配置的描述字符串索引 (Configuration String Index)
 	0xA0,	// 8. 第八个字节 0xA0 表示该配置的特性标志 (Attributes)，A0=0b10100000，bit7必须1，bit6为是否自供电，bit5为是否远程唤醒
@@ -381,9 +425,18 @@ static UINT8C CfgDesc[] = {//配置描述符
 	0x07,0x05,CUSTOM_HID_EPIN_ADDR,0x03,ENDP1_IN_SIZE,0x00,CUSTOM_HID_FS_BINTERVAL,	// 端点1 IN
 	0x07,0x05,CUSTOM_HID_EPOUT_ADDR,0x03,ENDP1_OUT_SIZE,0x00,CUSTOM_HID_FS_BINTERVAL,	// 端点1 OUT
 
-	0x09,0x04,USBD_HID_INTERFACE,0x00,1,0x03,0x01,0x00,0x00,							// 主 HID 接口1
+	0x09,0x04,USBD_RGB_HID_INTERFACE,0x00,2,0x03,0x00,0x00,0x00,						// RGB Custom HID 接口1
+	0x09,0x21,0x11,0x01,0x00,0x01,0x22,sizeof(RgbRepDesc)&0xFF,sizeof(RgbRepDesc)>>8,	// RGB HID类描述符
+	0x07,0x05,RGB_HID_EPIN_ADDR,0x03,ENDP4_IN_SIZE,0x00,RGB_HID_FS_BINTERVAL,				// 端点4 IN
+	0x07,0x05,RGB_HID_EPOUT_ADDR,0x03,ENDP4_OUT_SIZE,0x00,RGB_HID_FS_BINTERVAL,			// 端点4 OUT
+
+	0x09,0x04,USBD_HID_INTERFACE,0x00,1,0x03,0x00,0x00,0x00,							// 主 HID 接口2
 	0x09,0x21,0x11,0x01,0x00,0x01,0x22,sizeof(KeyRepDesc)&0xFF,sizeof(KeyRepDesc)>>8,	// HID类描述符
 	0x07,0x05,HID_EPIN_ADDR,0x03,ENDP2_IN_SIZE,0x00,HID_FS_BINTERVAL,					// 端点2 IN
+
+	0x09,0x04,USBD_TOUCH_HID_INTERFACE,0x00,1,0x03,0x00,0x00,0x00,					// 触摸 HID 接口3
+	0x09,0x21,0x11,0x01,0x00,0x01,0x22,sizeof(TouchRepDesc)&0xFF,sizeof(TouchRepDesc)>>8,	// HID类描述符
+	0x07,0x05,TOUCH_HID_EPIN_ADDR,0x03,ENDP3_IN_SIZE,0x00,HID_FS_BINTERVAL,				// 端点3 IN
 };
 
 
@@ -417,15 +470,26 @@ void USBDeviceInit(){
 	
 	UEP1_T_LEN = 0;
 	UEP2_T_LEN = 0;
-	/* RGB 接口未在本轮定位中枚举。 */
-	UEP2_3_MOD &= ~(bUEP3_TX_EN | bUEP3_RX_EN | bUEP2_RX_EN | bUEP2_BUF_MOD);
-	UEP2_3_MOD |= bUEP2_TX_EN;
-	
-	UEP0_DMA = Ep0Buffer;							//端点0数据传输地址
-	UEP4_1_MOD &= ~(bUEP4_RX_EN | bUEP4_TX_EN);		//端点0单64字节收发缓冲区
+	UEP3_T_LEN = 0;
+	UEP4_T_LEN = 0;
+
+	/* EP4 与 EP0 共享 UEP0_DMA 的三个连续 64B 缓冲区，见 BasicIO.h。 */
+	UEP0_DMA = Ep0Buffer;							//端点0、端点4数据传输地址
 	UEP1_DMA = Ep1Buffer;							//端点1数据传输地址
-	UEP4_1_MOD = (UEP4_1_MOD & ~bUEP1_BUF_MOD) | bUEP1_TX_EN | bUEP1_RX_EN;
 	UEP2_DMA = Ep2Buffer;							//端点2数据传输地址
+	UEP3_DMA = Ep3Buffer;							//端点3数据传输地址
+
+	/* EP1/EP4 为双向 Custom HID；EP2 为主 HID IN；EP3 为触摸 HID IN。 */
+	UEP4_1_MOD &= ~(bUEP1_BUF_MOD | bUEP4_RX_EN | bUEP4_TX_EN);
+	UEP4_1_MOD |= bUEP1_TX_EN | bUEP1_RX_EN | bUEP4_TX_EN | bUEP4_RX_EN;
+	UEP2_3_MOD &= ~(bUEP3_RX_EN | bUEP3_BUF_MOD | bUEP2_RX_EN | bUEP2_BUF_MOD);
+	UEP2_3_MOD |= bUEP3_TX_EN | bUEP2_TX_EN;
+	/* 即使主机尚未来得及发总线复位，各端点也从确定的 DATA0/NAK 状态开始。 */
+	UEP0_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
+	UEP1_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
+	UEP2_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
+	UEP3_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
+	UEP4_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
 	
 	USB_DEV_AD = 0x00;
 	USB_CTRL |= bUC_DEV_PU_EN | bUC_INT_BUSY | bUC_DMA_EN;			//启动USB设备及DMA，在中断期间中断标志未清除前自动返回NAK
@@ -487,11 +551,24 @@ void Enp2IntIn(UINT8 *buf, UINT8 len){
 * Return         : None
 *******************************************************************************/
 void Enp3IntIn(UINT8 *buf, UINT8 len){
-	memcpy(Ep3Buffer+MAX_PACKET_SIZE, buf, len);	//加载上传数据
+	memcpy(Ep3Buffer, buf, len);	//端点3仅 IN，DMA 从基地址读取
 	if(Ready && !Endp3Busy){						//USB就绪且端点3空闲
-		UEP3_T_LEN = 64;												//设置发送长度 固定为64
+		UEP3_T_LEN = len;												//设置实际触摸报告长度
 		UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;		//有数据时上传数据并应答ACK
 		Endp3Busy = 1;
+	}
+}
+
+/*******************************************************************************
+* Function Name  : Enp4IntIn()
+* Description    : USB设备模式端点4（RGB Custom HID）的中断上传
+*******************************************************************************/
+void Enp4IntIn(UINT8 *buf, UINT8 len){
+	memcpy(Ep4InBuffer, buf, len);
+	if(Ready && !Endp4Busy){
+		UEP4_T_LEN = len;
+		UEP4_CTRL = UEP4_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
+		Endp4Busy = 1;
 	}
 }
 
@@ -514,7 +591,20 @@ void DeviceInterrupt( void ) interrupt INT_NO_USB using 1				//USB中断服务�
 			Endp3Busy = 0;
 			UEP3_CTRL = UEP3_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_NAK;           //默认应答NAK
 			break;
-		case UIS_TOKEN_OUT | 3:							//端点3下传
+		case UIS_TOKEN_IN | 4:							//端点4（RGB Custom HID）上传
+			UEP4_T_LEN = 0;
+			UEP4_CTRL ^= bUEP_T_TOG;
+			Endp4Busy = 0;
+			UEP4_CTRL = UEP4_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_NAK;
+			break;
+		case UIS_TOKEN_OUT | 4:							//端点4（RGB Custom HID）下传
+			/* 保留原处理段供回退对照；实际 EP4 处理见下方。 */
+#if 0
+			/* 保留既有 SignalRGB 解析代码；其读写缓冲区迁移到 EP4。 */
+			memcpy(Ep4InBuffer, Ep4OutBuffer, MAX_PACKET_SIZE);
+#define UEP3_CTRL UEP4_CTRL
+#define UEP3_T_LEN UEP4_T_LEN
+#define Ep3Buffer Ep4InBuffer
 			if(U_TOG_OK){														//不同步的数据包将丢弃
 				UEP3_CTRL ^= bUEP_R_TOG;									    //手动翻转同步标志位
 				len = USB_RX_LEN;                                               //接收数据长度，数据从Ep3Buffer首地址开始存放
@@ -531,6 +621,29 @@ void DeviceInterrupt( void ) interrupt INT_NO_USB using 1				//USB中断服务�
 					}
 					else if(Ep3Buffer[3] == 2){	// 结束帧
 						rgbHidFlag &= ~0xF0; // 回到硬件模式
+					}
+				}
+			}
+			break;
+#undef Ep3Buffer
+#undef UEP3_T_LEN
+#undef UEP3_CTRL
+#endif
+			if(U_TOG_OK){
+				len = USB_RX_LEN;
+				UEP4_CTRL ^= bUEP_R_TOG;
+				/* EP4 的 OUT 为 UEP0_DMA+64，IN 为 UEP0_DMA+128。 */
+				memcpy(Ep4InBuffer, Ep4OutBuffer, len);
+				UEP4_T_LEN = len;
+				Endp4Busy = 1;
+				if(Ep4OutBuffer[0] == 0xA5 && Ep4OutBuffer[1] == 0x5A
+					&& Ep4OutBuffer[2] == 3){ // Sender: SignalRGB
+					if(Ep4OutBuffer[3] == 0){
+						rgbHidFlag = (rgbHidFlag & ~0xF0) | 0x80 | 0x20;
+						memcpy(FrameRaw, Ep4OutBuffer + 4, 16*3);
+					}
+					else if(Ep4OutBuffer[3] == 2){
+						rgbHidFlag &= ~0xF0;
 					}
 				}
 			}
@@ -761,12 +874,19 @@ else{//若未在接收状态 则监听各种命令
 							switch(UsbSetupBuf->wValueL){
 							case 1: pDescr = KeyBrd_data; len = ALK_RPT_L_KEYBRD; break;
 							case 2: pDescr = Mouse_data;  len = ALK_RPT_L_MOUSE;  break;
-							case 3: pDescr = Point_data;  len = ALK_RPT_L_POINT;  break;
 							case 4: pDescr = Vol_data;    len = ALK_RPT_L_VOL;    break;
+							case 5: pDescr = Dial_data;   len = ALK_RPT_L_DIAL;   break;
 							default: errflag = 0xFF; break;
 							}
 							if(errflag == 0 && SetupLen < len) len = SetupLen;
 							if(errflag == 0) memcpy(Ep0Buffer, pDescr, len);
+						}
+						else if(UsbSetupBuf->wIndexL == USBD_TOUCH_HID_INTERFACE
+							&& UsbSetupBuf->wValueH == 1 && UsbSetupBuf->wValueL == 3){
+							pDescr = Point_data;
+							len = ALK_RPT_L_POINT;
+							if(SetupLen < len) len = SetupLen;
+							memcpy(Ep0Buffer, pDescr, len);
 						}
 						else if((UsbSetupBuf->wIndexL == USBD_CUSTOM_HID_INTERFACE
 							|| UsbSetupBuf->wIndexL == USBD_RGB_HID_INTERFACE)
@@ -869,9 +989,17 @@ else{//若未在接收状态 则监听各种命令
 								pDescr = CustomHidDesc;
 								len = sizeof(CustomHidDesc);
 							}
+							else if(UsbSetupBuf->wIndexL == USBD_RGB_HID_INTERFACE){
+								pDescr = RgbHidDesc;
+								len = sizeof(RgbHidDesc);
+							}
 							else if(UsbSetupBuf->wIndexL == USBD_HID_INTERFACE){
 								pDescr = MainHidDesc;
 								len = sizeof(MainHidDesc);
+							}
+							else if(UsbSetupBuf->wIndexL == USBD_TOUCH_HID_INTERFACE){
+								pDescr = TouchHidDesc;
+								len = sizeof(TouchHidDesc);
 							}
 							else errflag = 0xFF;
 							break;
@@ -880,9 +1008,17 @@ else{//若未在接收状态 则监听各种命令
 								pDescr = ComRepDesc;
 								len = sizeof(ComRepDesc);
 							}
+							else if(UsbSetupBuf->wIndexL == USBD_RGB_HID_INTERFACE){
+								pDescr = RgbRepDesc;
+								len = sizeof(RgbRepDesc);
+							}
 							else if(UsbSetupBuf->wIndexL == USBD_HID_INTERFACE){
 								pDescr = KeyRepDesc;
 								len = sizeof(KeyRepDesc);
+							}
+							else if(UsbSetupBuf->wIndexL == USBD_TOUCH_HID_INTERFACE){
+								pDescr = TouchRepDesc;
+								len = sizeof(TouchRepDesc);
 							}
 							else errflag = 0xFF;
 							break;
@@ -939,6 +1075,12 @@ else{//若未在接收状态 则监听各种命令
 							}
 							switch( UsbSetupBuf->wIndexL )
 							{
+							case 0x84:
+								UEP4_CTRL = UEP4_CTRL & ~ ( bUEP_T_TOG | MASK_UEP_T_RES ) | UEP_T_RES_NAK;
+								break;
+							case 0x04:
+								UEP4_CTRL = UEP4_CTRL & ~ ( bUEP_R_TOG | MASK_UEP_R_RES ) | UEP_R_RES_ACK;
+								break;
 							case 0x83:
 								UEP3_CTRL = UEP3_CTRL & ~ ( bUEP_T_TOG | MASK_UEP_T_RES ) | UEP_T_RES_NAK;
 								break;
@@ -991,6 +1133,12 @@ else{//若未在接收状态 则监听各种命令
 							{
 								switch( ( (UINT16)UsbSetupBuf->wIndexH << 8 ) | UsbSetupBuf->wIndexL )
 								{
+								case 0x84:
+									UEP4_CTRL = UEP4_CTRL & (~bUEP_T_TOG) | UEP_T_RES_STALL;/* 设置端点4 IN STALL */
+									break;
+								case 0x04:
+									UEP4_CTRL = UEP4_CTRL & (~bUEP_R_TOG) | UEP_R_RES_STALL;/* 设置端点4 OUT STALL */
+									break;
 								case 0x83:
 									UEP3_CTRL = UEP3_CTRL & (~bUEP_T_TOG) | UEP_T_RES_STALL;/* 设置端点3 IN STALL */
 									break;
@@ -1107,6 +1255,11 @@ else{//若未在接收状态 则监听各种命令
 		UEP1_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
 		UEP2_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
 		UEP3_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
+		UEP4_CTRL = UEP_R_RES_ACK | UEP_T_RES_NAK;
+		UEP1_T_LEN = 0;
+		UEP2_T_LEN = 0;
+		UEP3_T_LEN = 0;
+		UEP4_T_LEN = 0;
 		USB_DEV_AD = 0x00;
 		UIF_SUSPEND = 0;
 		UIF_TRANSFER = 0;
@@ -1118,6 +1271,7 @@ else{//若未在接收状态 则监听各种命令
 		Endp1Busy = 0;
 		Endp2Busy = 0;
 		Endp3Busy = 0;
+		Endp4Busy = 0;
 		memset(HidIdle, 0, sizeof(HidIdle));
 		HidProtocol = 1;
 		HidKeyboardLedState = 0;

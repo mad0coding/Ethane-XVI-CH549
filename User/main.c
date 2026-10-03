@@ -16,7 +16,7 @@
 
 #pragma  NOAREGS
 
-UINT8C FIRMWARE_VERSION[4] = {1,6,2,12}; // 固件版本
+UINT8C FIRMWARE_VERSION[4] = {1,6,2,15}; // 固件版本
 
 uint8_t asyncFlag = 0;//异步操作标志
 
@@ -110,8 +110,12 @@ void main()
 		if(All_if_send == 0){ // 若总发送标志已清空
 			MultiFunc(); // 处理各种功能
 			
-			/* 保持单一发送源：本轮只测试完整描述符下的鼠标 ID=2 报告。 */
-			All_if_send = Mouse_if_send << 1;
+			/* EP2 发送键盘、鼠标、媒体和 Dial；触摸由 EP3 独立发送。 */
+			All_if_send = KeyBrd_if_send
+				| (Mouse_if_send << 1)
+				| (Point_if_send << 2)
+				| (Vol_if_send << 3)
+				| (Dial_if_send << 4);
 		}
 		
 		if((uint8_t)((uint8_t)Systime - reportSendTime) < 8) continue;	//延时未到则跳过发送
@@ -124,9 +128,26 @@ void main()
 			mDelaymS(50);
 		}
 		
-		if(All_if_send & 0x02){//鼠标
-			All_if_send &= ~0x02;	//清除bit1
+		/* 同一 IN 端点一次只排队一份报告；下轮继续发送余下报告。 */
+		if(All_if_send & 0x01){//键盘
+			All_if_send &= ~0x01;
+			Enp2IntIn(KeyBrd_data, ALK_RPT_L_KEYBRD);
+		}
+		else if(All_if_send & 0x02){//鼠标
+			All_if_send &= ~0x02;
 			Enp2IntIn(Mouse_data, ALK_RPT_L_MOUSE);
+		}
+		else if(All_if_send & 0x08){//媒体
+			All_if_send &= ~0x08;
+			Enp2IntIn(Vol_data, ALK_RPT_L_VOL);
+		}
+		else if(All_if_send & 0x10){//Dial
+			All_if_send &= ~0x10;
+			Enp2IntIn(Dial_data, ALK_RPT_L_DIAL);
+		}
+		else if(All_if_send & 0x04){//触摸：独立接口/端点
+			All_if_send &= ~0x04;
+			Enp3IntIn(Point_data, ALK_RPT_L_POINT);
 		}
 	}
 }

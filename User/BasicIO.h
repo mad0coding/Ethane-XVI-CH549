@@ -15,9 +15,13 @@
 
 //XDATA地址分配
 #define XBASE_EP0_BUF		(XBASE_FLASH_BUF - 64*7)
-#define XBASE_EP1_BUF		(XBASE_EP0_BUF + 64*1)
-#define XBASE_EP2_BUF		(XBASE_EP0_BUF + 64*3)
-#define XBASE_EP3_BUF		(XBASE_EP0_BUF + 64*5)
+/*
+ * EP4 与 EP0 共用 UEP0_DMA：EP0、EP4 OUT、EP4 IN 依次占用三个 64B 块。
+ * 其余端点随后顺序分配，避免 RGB EP4 覆盖 Custom HID 的 EP1 缓冲区。
+ */
+#define XBASE_EP1_BUF		(XBASE_EP0_BUF + 64*3)
+#define XBASE_EP2_BUF		(XBASE_EP0_BUF + 64*5)
+#define XBASE_EP3_BUF		(XBASE_EP0_BUF + 64*6)
 #define XBASE_FLASH_BUF		(1024+512)
 
 //IO定义
