@@ -16,7 +16,7 @@
 
 #pragma  NOAREGS
 
-UINT8C FIRMWARE_VERSION[4] = {1,6,2,11}; // 固件版本
+UINT8C FIRMWARE_VERSION[4] = {1,6,2,12}; // 固件版本
 
 uint8_t asyncFlag = 0;//异步操作标志
 
@@ -109,8 +109,8 @@ void main()
 		if(All_if_send == 0){ // 若总发送标志已清空
 			MultiFunc(); // 处理各种功能
 			
-			All_if_send = KeyBrd_if_send | (Mouse_if_send << 1) | (Point_if_send << 2) | (Vol_if_send << 3) 
-						| (Dial_if_send << 4); // 生成总发送标志
+			/* 临时 USB 最小鼠标测试：上层只允许鼠标报文进入 EP1。 */
+			All_if_send = Mouse_if_send << 1;
 		}
 		
 		if((uint8_t)((uint8_t)Systime - reportSendTime) < 8) continue;	//延时未到则跳过发送
@@ -123,25 +123,10 @@ void main()
 			mDelaymS(50);
 		}
 		
-		if(All_if_send & 0x01){		//键盘
-			All_if_send &= ~0x01;	//清除bit0
-			Enp1IntIn(KeyBrd_data, ALK_RPT_L_KEYBRD);
-		}
-		else if(All_if_send & 0x02){//鼠标
+		if(All_if_send & 0x02){//鼠标
 			All_if_send &= ~0x02;	//清除bit1
-			Enp1IntIn(Mouse_data, ALK_RPT_L_MOUSE);
-		}
-		else if(All_if_send & 0x04){//指针
-			All_if_send &= ~0x04;	//清除bit2
-			Enp1IntIn(Point_data, ALK_RPT_L_POINT);
-		}
-		else if(All_if_send & 0x08){//媒体
-			All_if_send &= ~0x08;	//清除bit3
-			Enp1IntIn(Vol_data, ALK_RPT_L_VOL);
-		}
-		else if(All_if_send & 0x10){//轮盘
-			All_if_send &= ~0x10;	//清除bit4
-			Enp1IntIn(Dial_data, ALK_RPT_L_DIAL);
+			/* 最小鼠标测试没有 Report ID：跳过上层 staging 包的第 0 字节 ID=2。 */
+			Enp1IntIn(Mouse_data + 1, ALK_RPT_L_MOUSE - 1);
 		}
 	}
 }

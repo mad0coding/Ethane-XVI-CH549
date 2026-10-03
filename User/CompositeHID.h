@@ -18,14 +18,14 @@
 #define RGB_HID_EPOUT_ADDR					0x03U // RGB自定义HID使用下行端点3
 
 #define THIS_ENDP0_SIZE         64 // 端点0数据包大小
-#define ENDP1_IN_SIZE           22 // HID端点IN数据包大小
+#define ENDP1_IN_SIZE           22 // 恢复复合 HID 报告描述符后的最大输入报告长度
 #define ENDP1_OUT_SIZE          64 // HID端点OUT数据包大小
 #define ENDP2_IN_SIZE           64 // 自定义HID端点IN数据包大小
 #define ENDP2_OUT_SIZE          64 // 自定义HID端点OUT数据包大小
 #define ENDP3_IN_SIZE           64 // RGB自定义HID端点IN数据包大小
 #define ENDP3_OUT_SIZE          64 // RGB自定义HID端点OUT数据包大小
 
-#define USBD_MAX_NUM_INTERFACES				3 // 接口个数
+#define USBD_MAX_NUM_INTERFACES				3 // HID + Custom HID + RGB HID
 #define USBD_HID_INTERFACE					0 // HID接口编号
 #define USBD_CUSTOM_HID_INTERFACE			1 // 自定义HID接口编号
 #define USBD_RGB_HID_INTERFACE				2 // RGB自定义HID接口编号
