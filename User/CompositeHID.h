@@ -10,25 +10,23 @@
 #include "ParaConfig.h"
 #include "ALK_Func.h"
 
-#define HID_EPIN_ADDR						0x81U // HID使用上行端点1
-#define HID_EPOUT_ADDR						0x01U // HID使用下行端点1
-#define CUSTOM_HID_EPIN_ADDR				0x82U // 自定义HID使用上行端点2
-#define CUSTOM_HID_EPOUT_ADDR				0x02U // 自定义HID使用下行端点2
+#define CUSTOM_HID_EPIN_ADDR				0x81U // 自定义HID使用上行端点1
+#define CUSTOM_HID_EPOUT_ADDR				0x01U // 自定义HID使用下行端点1
+#define HID_EPIN_ADDR						0x82U // 主HID使用上行端点2
 #define RGB_HID_EPIN_ADDR					0x83U // RGB自定义HID使用上行端点3
 #define RGB_HID_EPOUT_ADDR					0x03U // RGB自定义HID使用下行端点3
 
 #define THIS_ENDP0_SIZE         64 // 端点0数据包大小
-#define ENDP1_IN_SIZE           22 // 恢复复合 HID 报告描述符后的最大输入报告长度
-#define ENDP1_OUT_SIZE          64 // HID端点OUT数据包大小
-#define ENDP2_IN_SIZE           64 // 自定义HID端点IN数据包大小
-#define ENDP2_OUT_SIZE          64 // 自定义HID端点OUT数据包大小
+#define ENDP1_IN_SIZE           64 // 自定义HID端点IN数据包大小
+#define ENDP1_OUT_SIZE          64 // 自定义HID端点OUT数据包大小
+#define ENDP2_IN_SIZE           22 // 主HID端点IN数据包大小
 #define ENDP3_IN_SIZE           64 // RGB自定义HID端点IN数据包大小
 #define ENDP3_OUT_SIZE          64 // RGB自定义HID端点OUT数据包大小
 
-#define USBD_MAX_NUM_INTERFACES				1 // 定位测试：仅完整 Report Descriptor 所在的 HID 接口
-#define USBD_HID_INTERFACE					0 // HID接口编号
-#define USBD_CUSTOM_HID_INTERFACE			1 // 自定义HID接口编号
-#define USBD_RGB_HID_INTERFACE				2 // RGB自定义HID接口编号
+#define USBD_MAX_NUM_INTERFACES				2 // Custom HID + 主HID
+#define USBD_CUSTOM_HID_INTERFACE			0 // 自定义HID接口编号
+#define USBD_HID_INTERFACE					1 // HID接口编号
+#define USBD_RGB_HID_INTERFACE				2 // 保留旧代码中的未枚举接口号
 
 #define HID_FS_BINTERVAL			0x1 // HID轮询间隔
 #define CUSTOM_HID_FS_BINTERVAL		0x1 // 自定义HID轮询间隔
@@ -51,6 +49,9 @@ extern UINT8X MySrNumInfo[]; // 序列号
 
 void Enp1IntIn(UINT8 *buf, UINT8 len);
 void Enp2IntIn(UINT8 *buf, UINT8 len);
+
+/* USB 中断只记录事件；由主循环调用本函数通过串口输出。 */
+void USBTracePrint(void);
 
 void CH554USBDevWakeup();
 void USBDeviceInit();

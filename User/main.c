@@ -29,7 +29,7 @@ void main()
 	P2_0 = P2_1 = P2_3 = 0;			//RGB灯GPIO置低
 	CfgFsys( );						//CH549时钟选择配置
 	mDelaymS(5);					//修改主频等待内部晶振稳定,必加
-//    mInitSTDIO( );					//串口0初始化
+    mInitSTDIO( );					//串口0初始化
 	if(!(PCON & bRST_FLAG0)) mDelaymS(50);	//若为软复位或看门狗复位 则额外追加延时
 	
 	ArrayInit();	//数组初始化
@@ -83,6 +83,7 @@ void main()
 	
 	while(1){
 		WDOG_COUNT = 0;//清零看门狗计数
+		USBTracePrint(); // 每轮至多输出一条 USB 诊断事件，绝不在 USB 中断内 printf
 //		if(!KP_E2) WDOG_COUNT = 0xFF;//按下旋钮2则触发看门狗 测试代码！！！！！！！！！！
 		/********************基本IO********************/
 		GetTime();//时间获取
@@ -125,7 +126,7 @@ void main()
 		
 		if(All_if_send & 0x02){//鼠标
 			All_if_send &= ~0x02;	//清除bit1
-			Enp1IntIn(Mouse_data, ALK_RPT_L_MOUSE);
+			Enp2IntIn(Mouse_data, ALK_RPT_L_MOUSE);
 		}
 	}
 }
