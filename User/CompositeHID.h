@@ -25,11 +25,11 @@
 #define ENDP4_IN_SIZE           64 // RGB自定义HID端点IN数据包大小
 #define ENDP4_OUT_SIZE          64 // RGB自定义HID端点OUT数据包大小
 
-#define USBD_MAX_NUM_INTERFACES				4 // Custom HID + RGB HID + 主HID + 触摸HID
-#define USBD_CUSTOM_HID_INTERFACE			0 // 自定义HID接口编号
-#define USBD_RGB_HID_INTERFACE				1 // RGB自定义HID接口编号
-#define USBD_HID_INTERFACE					2 // 键盘/鼠标/媒体/Dial接口编号
-#define USBD_TOUCH_HID_INTERFACE				3 // 触摸接口编号
+#define USBD_MAX_NUM_INTERFACES				4 // 主HID + 触摸HID + RGB HID + Custom HID
+#define USBD_HID_INTERFACE					0 // 键盘/鼠标/媒体/Dial接口编号
+#define USBD_TOUCH_HID_INTERFACE				1 // 触摸接口编号
+#define USBD_RGB_HID_INTERFACE				2 // RGB自定义HID接口编号（SignalRGB 固定匹配接口2）
+#define USBD_CUSTOM_HID_INTERFACE			3 // 自定义HID接口编号
 
 #define HID_FS_BINTERVAL			0x1 // HID轮询间隔
 #define CUSTOM_HID_FS_BINTERVAL		0x1 // 自定义HID轮询间隔
