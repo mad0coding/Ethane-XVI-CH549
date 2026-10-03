@@ -109,7 +109,7 @@ void main()
 		if(All_if_send == 0){ // 若总发送标志已清空
 			MultiFunc(); // 处理各种功能
 			
-			/* 临时 USB 最小鼠标测试：上层只允许鼠标报文进入 EP1。 */
+			/* 保持单一发送源：本轮只测试完整描述符下的鼠标 ID=2 报告。 */
 			All_if_send = Mouse_if_send << 1;
 		}
 		
@@ -125,8 +125,7 @@ void main()
 		
 		if(All_if_send & 0x02){//鼠标
 			All_if_send &= ~0x02;	//清除bit1
-			/* 最小鼠标测试没有 Report ID：跳过上层 staging 包的第 0 字节 ID=2。 */
-			Enp1IntIn(Mouse_data + 1, ALK_RPT_L_MOUSE - 1);
+			Enp1IntIn(Mouse_data, ALK_RPT_L_MOUSE);
 		}
 	}
 }

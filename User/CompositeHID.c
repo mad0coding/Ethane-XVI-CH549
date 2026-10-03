@@ -133,6 +133,8 @@ static UINT8C KeyRepDesc[/*285*/] = { // HID报文描述符
 	0xc0,						//		END_COLLECTION
 	0xc0,						//	END_COLLECTION
 	
+	/* 定位测试：以下触摸、媒体、Dial collection 暂时不进入 Report Descriptor。 */
+#if 0
 	//指针位置
 	0x05, 0x0d,					// USAGE_PAGE (Digitizers)
 	//0x09, 0x02,					// USAGE (Pen)
@@ -223,6 +225,7 @@ static UINT8C KeyRepDesc[/*285*/] = { // HID报文描述符
 	0x81,0x06,          		//		INPUT(data var relative NoWrap linear) Input 2.0
 	0xC0,               		//		END_COLLECTION
 	0xC0,               		//	END_COLLECTION
+#endif
 };
 #endif
 
@@ -286,9 +289,9 @@ static UINT8C RgbRepDesc[/*34*/] = { // RGB自定义HID报文描述符
 static UINT8C CfgDesc[] = {//配置描述符
 	0x09,	// 1. 第一个字节 0x09 表示该配置描述符的长度为 9 字节
 	0x02,	// 2. 第二个字节 0x02 表示该描述符的类型为配置描述符 (Configuration Descriptor)
-	9+25+32+32,	// 3. HID 仅 IN（25 bytes）+ 两个原始 Custom HID 接口
+	9+9+9+7,	// 3. 定位测试：完整 HID Report Descriptor，但仅一个 IN endpoint
 	0x00,	// 4. 第四个字节 0x00 表示配置描述符的总长度的高字节
-	USBD_MAX_NUM_INTERFACES,	// 5. 三个接口
+	USBD_MAX_NUM_INTERFACES,	// 5. 仅接口0
 	0x01,	// 6. 第六个字节 0x01 表示配置描述符的标识符 (Configuration Value)
 	0x00,	// 7. 第七个字节 0x00 表示该配置的描述字符串索引 (Configuration String Index)
 	0xA0,	// 8. 第八个字节 0xA0 表示该配置的特性标志 (Attributes)，A0=0b10100000，bit7必须1，bit6为是否自供电，bit5为是否远程唤醒
@@ -297,16 +300,6 @@ static UINT8C CfgDesc[] = {//配置描述符
 	0x09,0x04,USBD_HID_INTERFACE,0x00,1,0x03,0x01,0x00,0x00,							// 原 HID 报告描述符，保留唯一 IN endpoint
 	0x09,0x21,0x11,0x01,0x00,0x01,0x22,sizeof(KeyRepDesc)&0xFF,sizeof(KeyRepDesc)>>8,	// HID类描述符
 	0x07,0x05,HID_EPIN_ADDR,0x03,ENDP1_IN_SIZE,0x00,HID_FS_BINTERVAL,					// 端点描述符,IN端点1
-
-	0x09,0x04,USBD_CUSTOM_HID_INTERFACE,0x00,2,0x03,0x00,0x00,0x00,						// CustomHID接口描述符,2端点
-	0x09,0x21,0x10,0x01,0x21,0x01,0X22,sizeof(ComRepDesc),0x00,							// HID类描述符
-	0x07,0x05,CUSTOM_HID_EPIN_ADDR,0x03,ENDP2_IN_SIZE,0x00,CUSTOM_HID_FS_BINTERVAL,		// 端点描述符,IN端点2
-	0x07,0x05,CUSTOM_HID_EPOUT_ADDR,0x03,ENDP2_OUT_SIZE,0x00,CUSTOM_HID_FS_BINTERVAL,	// 端点描述符,OUT端点2
-
-	0x09,0x04,USBD_RGB_HID_INTERFACE,0x00,2,0x03,0x00,0x00,0x00,				// RgbHID接口描述符,2端点
-	0x09,0x21,0x10,0x01,0x21,0x01,0X22,sizeof(RgbRepDesc),0x00,					// HID类描述符
-	0x07,0x05,RGB_HID_EPIN_ADDR,0x03,ENDP3_IN_SIZE,0x00,RGB_HID_FS_BINTERVAL,	// 端点描述符,IN端点3
-	0x07,0x05,RGB_HID_EPOUT_ADDR,0x03,ENDP3_OUT_SIZE,0x00,RGB_HID_FS_BINTERVAL,	// 端点描述符,OUT端点3
 };
 
 
@@ -339,14 +332,8 @@ void USBDeviceInit(){
 	USB_CTRL &= ~bUC_LOW_SPEED;
 	
 	UEP1_T_LEN = 0;									//预使用发送长度一定要清空
-	UEP2_T_LEN = 0;
-	UEP3_T_LEN = 0;
-	UEP3_DMA = Ep3Buffer;
-	UEP2_3_MOD |= bUEP3_TX_EN | bUEP3_RX_EN;
-	UEP2_3_MOD &= ~bUEP3_BUF_MOD;
-	UEP2_DMA = Ep2Buffer;
-	UEP2_3_MOD |= bUEP2_TX_EN | bUEP2_RX_EN;
-	UEP2_3_MOD &= ~bUEP2_BUF_MOD;
+	/* 定位测试：接口1/2未枚举，端点2/3也在硬件上停用。 */
+	UEP2_3_MOD &= ~(bUEP3_TX_EN | bUEP3_RX_EN | bUEP2_TX_EN | bUEP2_RX_EN);
 	
 	UEP0_DMA = Ep0Buffer;							//端点0数据传输地址
 	UEP4_1_MOD &= ~(bUEP4_RX_EN | bUEP4_TX_EN);		//端点0单64字节收发缓冲区
@@ -641,13 +628,21 @@ else{//若未在接收状态 则监听各种命令
 							errflag = 0xFF;
 							break;
 						}
-						if(UsbSetupBuf->wIndexL == USBD_HID_INTERFACE
-							&& UsbSetupBuf->wValueH == 1 && UsbSetupBuf->wValueL == 0){
-							/* 上层仍保留旧的 ID=2 staging 格式；USB 上仅返回四字节鼠标包。 */
-							pDescr = Mouse_data + 1;
-							len = ALK_RPT_L_MOUSE - 1;
-							if(SetupLen < len) len = SetupLen;
-							memcpy(Ep0Buffer, pDescr, len);
+						if(UsbSetupBuf->wIndexL == USBD_HID_INTERFACE && UsbSetupBuf->wValueH == 1){
+							switch(UsbSetupBuf->wValueL){
+							case 1: pDescr = KeyBrd_data; len = ALK_RPT_L_KEYBRD; break;
+							case 2: pDescr = Mouse_data;  len = ALK_RPT_L_MOUSE;  break;
+							default: errflag = 0xFF; break;
+							}
+							if(errflag == 0 && SetupLen < len) len = SetupLen;
+							if(errflag == 0) memcpy(Ep0Buffer, pDescr, len);
+						}
+						else if((UsbSetupBuf->wIndexL == USBD_CUSTOM_HID_INTERFACE
+							|| UsbSetupBuf->wIndexL == USBD_RGB_HID_INTERFACE)
+							&& (UsbSetupBuf->wValueH == 1 || UsbSetupBuf->wValueH == 2)
+							&& UsbSetupBuf->wValueL == 0){
+							len = SetupLen > THIS_ENDP0_SIZE ? THIS_ENDP0_SIZE : SetupLen;
+							memset(Ep0Buffer, 0, len);
 						}
 						else errflag = 0xFF;
 						break;

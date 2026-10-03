@@ -25,7 +25,7 @@
 #define ENDP3_IN_SIZE           64 // RGB自定义HID端点IN数据包大小
 #define ENDP3_OUT_SIZE          64 // RGB自定义HID端点OUT数据包大小
 
-#define USBD_MAX_NUM_INTERFACES				3 // HID + Custom HID + RGB HID
+#define USBD_MAX_NUM_INTERFACES				1 // 定位测试：仅完整 Report Descriptor 所在的 HID 接口
 #define USBD_HID_INTERFACE					0 // HID接口编号
 #define USBD_CUSTOM_HID_INTERFACE			1 // 自定义HID接口编号
 #define USBD_RGB_HID_INTERFACE				2 // RGB自定义HID接口编号
