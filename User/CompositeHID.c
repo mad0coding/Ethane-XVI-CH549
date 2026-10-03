@@ -1,11 +1,6 @@
 
 #include "CompositeHID.H"
 
-/* 临时打开 USB 串口诊断；定位完成后删除或改为 0。 */
-#ifndef DE_PRINTF
-#define DE_PRINTF 1
-#endif
-
 //USB端点缓存,必须是偶地址。EP4 的 OUT/IN 缓冲紧随 EP0，三者共用 UEP0_DMA。
 static UINT8X Ep0Buffer[3*MAX_PACKET_SIZE] _at_ XBASE_EP0_BUF;
 static UINT8X Ep1Buffer[MIN(64,ENDP1_OUT_SIZE+2)+MIN(64,ENDP1_IN_SIZE+2)] _at_ XBASE_EP1_BUF;	//端点1 OUT&IN
@@ -29,69 +24,6 @@ static UINT8X HidProtocol = 1;                 // 1: Report protocol, 0: Boot pr
 static UINT8X HidKeyboardLedState = 0;
 static UINT8X HidSetReportInterface = 0xFF;
 static UINT8X HidSetReportType = 0;
-
-/* 串口定位：USB 中断只写入事件队列，printf 始终在主循环中执行。 */
-#ifdef DE_PRINTF
-static UINT8X UsbTraceSetupBudget = 12;
-static UINT8X UsbTraceEp2Budget = 12;
-#define USB_TRACE_DEPTH 16
-static UINT8X UsbTraceCode[USB_TRACE_DEPTH];
-static UINT8X UsbTraceA[USB_TRACE_DEPTH];
-static UINT8X UsbTraceB[USB_TRACE_DEPTH];
-static UINT8X UsbTraceC[USB_TRACE_DEPTH];
-static UINT8X UsbTraceD[USB_TRACE_DEPTH];
-static UINT8X UsbTraceE[USB_TRACE_DEPTH];
-static UINT8X UsbTraceF[USB_TRACE_DEPTH];
-static UINT8X UsbTraceRead;
-static UINT8X UsbTraceWrite;
-
-static void USBTracePush(UINT8 code1, UINT8 a, UINT8 b, UINT8 c, UINT8 d, UINT8 e, UINT8 f)
-{
-	UINT8 next = (UsbTraceWrite + 1) & (USB_TRACE_DEPTH - 1);
-	if(next == UsbTraceRead) return;
-	UsbTraceCode[UsbTraceWrite] = code1;
-	UsbTraceA[UsbTraceWrite] = a;
-	UsbTraceB[UsbTraceWrite] = b;
-	UsbTraceC[UsbTraceWrite] = c;
-	UsbTraceD[UsbTraceWrite] = d;
-	UsbTraceE[UsbTraceWrite] = e;
-	UsbTraceF[UsbTraceWrite] = f;
-	UsbTraceWrite = next;
-}
-
-/* 主循环写队列时暂时屏蔽 USB 中断，避免与 ISR 同时占用写指针。 */
-static void USBTracePushMain(UINT8 code1, UINT8 a, UINT8 b, UINT8 c, UINT8 d, UINT8 e, UINT8 f)
-{
-	UINT8 usbIe = IE_USB;
-	IE_USB = 0;
-	USBTracePush(code1, a, b, c, d, e, f);
-	IE_USB = usbIe;
-}
-
-void USBTracePrint(void)
-{
-	UINT8 index;
-	UINT8 code1, a, b, c, d, e, f;
-	if(UsbTraceRead == UsbTraceWrite) return;
-	index = UsbTraceRead;
-	code1 = UsbTraceCode[index];
-	a = UsbTraceA[index]; b = UsbTraceB[index]; c = UsbTraceC[index];
-	d = UsbTraceD[index]; e = UsbTraceE[index]; f = UsbTraceF[index];
-	UsbTraceRead = (index + 1) & (USB_TRACE_DEPTH - 1);
-	switch(code1){
-	case 'R': printf("USB RST\n"); break;
-	case 'C': printf("SET CFG %bu\n", a); break;
-	case 'Q': printf("E2Q l%bu d%02bx %02bx %02bx %02bx %02bx\n", a, b, c, d, e, f); break;
-	case 'B': printf("E2B r%bu b%bu\n", a, b); break;
-	case 'A': printf("E2A c%02bx\n", a); break;
-	case 'S': printf("S t%02bx r%02bx v%02bx%02bx i%02bx l%02bx\n", a, b, c, d, e, f); break;
-	case 'X': printf("STALL r%02bx i%02bx\n", a, b); break;
-	default: break;
-	}
-}
-#else
-void USBTracePrint(void) {}
-#endif
 
 static bit Ready = 0;			//USB就绪标志
 static bit Endp1Busy = 0;		//传输完成控制标志
@@ -204,48 +136,6 @@ static UINT8C KeyRepDesc[/*285*/] = { // HID报文描述符
 	0xc0,						//		END_COLLECTION
 	0xc0,						//	END_COLLECTION
 	
-	/* 触摸必须不出现在主 HID 接口中，否则 Android 会将整个接口绑定为 hid-multitouch。 */
-	#if 0
-	//指针位置
-	0x05, 0x0d,					// USAGE_PAGE (Digitizers)
-	//0x09, 0x02,					// USAGE (Pen)
-	0x09, 0x04,					// USAGE (Touch Screen)
-	0xa1, 0x01,					// COLLECTION (Application)
-	0x85, 0x03,					//		REPORT_ID (3)
-	0x09, 0x22,					//		USAGE (Finger)
-	//0x09, 0x20,					//		USAGE (Stylus)
-	0xa1, 0x00,					//		COLLECTION (Physical)
-	0x09, 0x42,					//			USAGE (Tip Switch)
-	0x09, 0x44,					//			USAGE (Barrel Switch)
-	0x09, 0x3c,					//			USAGE (Invert)
-	0x09, 0x45,					//			USAGE (Eraser Switch)
-	0x09, 0x32,					//			USAGE (In Range)
-	0x15, 0x00,					//			LOGICAL_MINIMUM (0)
-	0x25, 0x01,					//			LOGICAL_MAXIMUM (1)
-	0x75, 0x01,					//			REPORT_SIZE (1)
-	0x95, 0x05,					//			REPORT_COUNT (5)
-	0x81, 0x02,					//			INPUT (Data,Var,Abs)
-	0x95, 0x01,					//			REPORT_COUNT (1)
-	0x75, 0x03,					//			REPORT_SIZE (3)
-	0x81, 0x03,					//			INPUT (Cnst,Var,Abs)
-	0x75, 0x08,					//			REPORT_SIZE (8)
-	0x09, 0x51,					//			USAGE (Contact Identifier)
-	0x95, 0x01,					//			REPORT_COUNT (1)
-	0x81, 0x02,					//			INPUT (Data,Var,Abs)
-	0x05, 0x01,					//			USAGE_PAGE (Generic Desktop)
-	0x75, 0x10,					//			REPORT_SIZE (16)
-	0x26, 0xFF, 0x7F,			//			LOGICAL_MAXIMUM (32767)
-	0x46, 0xFF, 0x7F,			//			PHYSICAL_MAXIMUM (32767)
-	0x09, 0x30,					//			USAGE (X)
-	0x09, 0x31,					//			USAGE (Y)
-	0x95, 0x02,					//			REPORT_COUNT (2)
-	0x81, 0x02,					//			INPUT (Data,Var,Abs)Rel相对值,Abs绝对值
-	0xc0,						//		END_COLLECTION
-	0xc0,						//	END_COLLECTION
-	#endif
-	
-	//媒体控制
-	#if 1
 	//媒体控制
 	0x05,0x0C,					//	USAGE_PAGE (Consumer)
 	0x09,0x01,					//	USAGE (Consumer Control)
@@ -270,10 +160,8 @@ static UINT8C KeyRepDesc[/*285*/] = { // HID报文描述符
 	0x81,0x01,					//			INPUT (Cnst,Ary,Abs)
 	0xC0,						//		END_COLLECTION
 	0xC0,						//	END_COLLECTION
-	#endif
 	
 	/* Dial 保留原始描述符写法，归入不含 Touch Screen 的主 HID 接口。 */
-#if 1
 	// Dial
 	0x05,0x01,          		//	USAGE_PAGE(Generic Desktop Controls)
 	0x09,0x0E,          		//	LOCAL_USAGE(Reserved)
@@ -302,7 +190,6 @@ static UINT8C KeyRepDesc[/*285*/] = { // HID报文描述符
 	0x81,0x06,          		//		INPUT(data var relative NoWrap linear) Input 2.0
 	0xC0,               		//		END_COLLECTION
 	0xC0,               		//	END_COLLECTION
-#endif
 };
 
 /* 触摸独占 HID 接口/EP3，使 Android 仅对该接口绑定 hid-multitouch。 */
@@ -342,24 +229,7 @@ static UINT8C TouchRepDesc[] = {
 	0xc0
 };
 
-/* 最小 HID 相对鼠标描述符暂时停用，保留以便回退测试。 */
-#if 0
-static UINT8C KeyRepDesc[] = {
-	0x05, 0x01, 0x09, 0x02, 0xA1, 0x01,       // Generic Desktop / Mouse / Application
-	0x09, 0x01, 0xA1, 0x00,                   // Pointer / Physical
-	0x05, 0x09, 0x19, 0x01, 0x29, 0x03,       // Buttons 1..3
-	0x15, 0x00, 0x25, 0x01, 0x95, 0x03, 0x75, 0x01,
-	0x81, 0x02,                               // buttons: Data,Var,Abs
-	0x95, 0x01, 0x75, 0x05, 0x81, 0x03,       // padding
-	0x05, 0x01, 0x09, 0x30, 0x09, 0x31, 0x09, 0x38,
-	0x15, 0x81, 0x25, 0x7F, 0x75, 0x08, 0x95, 0x03,
-	0x81, 0x06,                               // X, Y, wheel: Data,Var,Rel
-	0xC0, 0xC0
-};
-#endif
-
-/* 恢复两个原始自定义 HID 报告描述符。 */
-#if 1
+/* 两个自定义 HID 报告描述符。 */
 static UINT8C ComRepDesc[/*34*/] = { // 自定义HID报文描述符
 	0x06, 0x00, 0xff, 	// Usage page Vendor defined ( FF00H )
 	0x09, 0x01, 		// Local usage 1
@@ -396,7 +266,6 @@ static UINT8C RgbRepDesc[/*34*/] = { // RGB自定义HID报文描述符
 	0x91, 0x06, 		// Output ( Data, Relative, Wrap )
 	0xc0,				// END_COLLECTION
 };
-#endif
 
 /* 四个 HID class descriptor，亦用于主机单独请求 0x21 描述符。 */
 static UINT8C CustomHidDesc[] = { 0x09,0x21,0x11,0x01,0x00,0x01,0x22,sizeof(ComRepDesc)&0xFF,sizeof(ComRepDesc)>>8 };
@@ -442,7 +311,7 @@ static UINT8C CfgDesc[] = {//配置描述符
 
 /*******************************************************************************
 * Function Name  : CH554USBDevWakeup()
-* Description    : CH554设备模式唤醒主机，发送K信号
+* Description    : USB设备模式唤醒主机，发送K信号
 * Input          : None
 * Output         : None
 * Return         : None
@@ -528,24 +397,12 @@ void Enp2IntIn(UINT8 *buf, UINT8 len){
 		UEP2_T_LEN = len;												//设置发送长度
 		UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;		//有数据时上传数据并应答ACK
 		Endp2Busy = 1;
-#ifdef DE_PRINTF
-		if(UsbTraceEp2Budget){
-			UsbTraceEp2Budget--;
-			USBTracePushMain('Q', len, buf[0], buf[1], buf[2], buf[3], buf[4]);
-		}
-#endif
 	}
-#ifdef DE_PRINTF
-	else if(UsbTraceEp2Budget){
-		UsbTraceEp2Budget--;
-		USBTracePushMain('B', (UINT8)Ready, (UINT8)Endp2Busy, 0, 0, 0, 0);
-	}
-#endif
 }
 
 /*******************************************************************************
 * Function Name  : Enp3IntIn()
-* Description    : USB设备模式端点2的中断上传
+* Description    : USB设备模式端点3的中断上传
 * Input          : None
 * Output         : None
 * Return         : None
@@ -574,7 +431,7 @@ void Enp4IntIn(UINT8 *buf, UINT8 len){
 
 /*******************************************************************************
 * Function Name  : DeviceInterrupt()
-* Description    : CH559USB中断处理函数
+* Description    : CH549 USB中断处理函数
 *******************************************************************************/
 void DeviceInterrupt( void ) interrupt INT_NO_USB using 1				//USB中断服务程序,使用寄存器组1
 {
@@ -598,37 +455,6 @@ void DeviceInterrupt( void ) interrupt INT_NO_USB using 1				//USB中断服务�
 			UEP4_CTRL = UEP4_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_NAK;
 			break;
 		case UIS_TOKEN_OUT | 4:							//端点4（RGB Custom HID）下传
-			/* 保留原处理段供回退对照；实际 EP4 处理见下方。 */
-#if 0
-			/* 保留既有 SignalRGB 解析代码；其读写缓冲区迁移到 EP4。 */
-			memcpy(Ep4InBuffer, Ep4OutBuffer, MAX_PACKET_SIZE);
-#define UEP3_CTRL UEP4_CTRL
-#define UEP3_T_LEN UEP4_T_LEN
-#define Ep3Buffer Ep4InBuffer
-			if(U_TOG_OK){														//不同步的数据包将丢弃
-				UEP3_CTRL ^= bUEP_R_TOG;									    //手动翻转同步标志位
-				len = USB_RX_LEN;                                               //接收数据长度，数据从Ep3Buffer首地址开始存放
-				UEP3_T_LEN = len;												//设置发送长度
-				
-				if(!(Ep3Buffer[0] == 0xA5 && Ep3Buffer[1] == 0x5A)) break; // 检查帧头
-				if(Ep3Buffer[2] == 3 && 1){ // Sender:SignalRGB
-					if(Ep3Buffer[3] == 0){		// 数据帧
-						rgbHidFlag = (rgbHidFlag & ~0xF0) | 0x80 | 0x20; // 新帧标志+SignalRGB模式
-						memcpy(FrameRaw, Ep3Buffer + 4, 16*3); // 帧拷贝
-					}
-					else if(Ep3Buffer[3] == 1){	// 起始帧
-						
-					}
-					else if(Ep3Buffer[3] == 2){	// 结束帧
-						rgbHidFlag &= ~0xF0; // 回到硬件模式
-					}
-				}
-			}
-			break;
-#undef Ep3Buffer
-#undef UEP3_T_LEN
-#undef UEP3_CTRL
-#endif
 			if(U_TOG_OK){
 				len = USB_RX_LEN;
 				UEP4_CTRL ^= bUEP_R_TOG;
@@ -636,6 +462,7 @@ void DeviceInterrupt( void ) interrupt INT_NO_USB using 1				//USB中断服务�
 				memcpy(Ep4InBuffer, Ep4OutBuffer, len);
 				UEP4_T_LEN = len;
 				Endp4Busy = 1;
+				UEP4_CTRL = UEP4_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;
 				if(Ep4OutBuffer[0] == 0xA5 && Ep4OutBuffer[1] == 0x5A
 					&& Ep4OutBuffer[2] == 3){ // Sender: SignalRGB
 					if(Ep4OutBuffer[3] == 0){
@@ -808,22 +635,20 @@ else{//若未在接收状态 则监听各种命令
 	UEP2_CTRL = UEP2_CTRL & ~MASK_UEP_T_RES | UEP_T_RES_ACK;//启动上传响应主机
 }
 /**************************************************以上CustomHID通信部分独立缩进**************************************************/
+#undef index
+#undef packs
+#undef count
+#undef Offset
+#undef Buf
 #undef Ep2Buffer
 #undef UEP2_T_LEN
 #undef UEP2_CTRL
 			}
 			break;
 		case UIS_TOKEN_IN | 2:							//端点2（主HID）上传
-			/* 主 HID 的发送完成处理从端点1迁移至端点2。 */
 #define UEP1_CTRL UEP2_CTRL
 #define UEP1_T_LEN UEP2_T_LEN
 #define Endp1Busy Endp2Busy
-#ifdef DE_PRINTF
-			if(UsbTraceEp2Budget){
-				UsbTraceEp2Budget--;
-				USBTracePush('A', UEP2_CTRL, 0, 0, 0, 0, 0);
-			}
-#endif
 			UEP1_T_LEN = 0;														//预使用发送长度一定要清空
 			UEP1_CTRL ^= bUEP_T_TOG;											//手动翻转
 			Endp1Busy = 0;
@@ -845,17 +670,6 @@ else{//若未在接收状态 则监听各种命令
 				SetupReq = UsbSetupBuf->bRequest;
 				HidSetReportInterface = 0xFF;
 				HidSetReportType = 0;
-#ifdef DE_PRINTF
-				if(UsbTraceSetupBudget
-					&& (((UsbSetupBuf->bRequestType & USB_REQ_TYP_MASK) == USB_REQ_TYP_CLASS)
-						|| (SetupReq == USB_GET_DESCRIPTOR
-							&& (UsbSetupBuf->wValueH == 0x21 || UsbSetupBuf->wValueH == 0x22))
-						|| SetupReq == USB_SET_CONFIGURATION)){
-					UsbTraceSetupBudget--;
-					USBTracePush('S', UsbSetupBuf->bRequestType, SetupReq, UsbSetupBuf->wValueH,
-						UsbSetupBuf->wValueL, UsbSetupBuf->wIndexL, UsbSetupBuf->wLengthL);
-				}
-#endif
 				if((UsbSetupBuf->bRequestType & USB_REQ_TYP_MASK) == USB_REQ_TYP_CLASS){//HID类命令
 					if((UsbSetupBuf->bRequestType & USB_REQ_RECIP_MASK) != USB_REQ_RECIP_INTERF
 						|| UsbSetupBuf->wIndexH != 0
@@ -1044,9 +858,6 @@ else{//若未在接收状态 则监听各种命令
 					case USB_SET_CONFIGURATION:
 						UsbConfig = UsbSetupBuf->wValueL;
 						if(UsbConfig){
-#ifdef DE_PRINTF
-							USBTracePush('C', UsbConfig, 0, 0, 0, 0, 0);
-#endif
 							Ready = 1;	//SetConfig命令一般代表USB枚举完成的标志
 						}
 						break;
@@ -1110,7 +921,6 @@ else{//若未在接收状态 则监听各种命令
 								break;
 							}
 							WakeUpEnFlag &= ~0x01;
-//                            printf("Wake up\n");
 						}
 						else errflag = 0xFF;                                                //不是端点不支持
 						break;
@@ -1121,7 +931,6 @@ else{//若未在接收状态 则监听各种命令
 							{
 								if( CfgDesc[ 7 ] & 0x20 ){
 									WakeUpEnFlag |= 0x01;                                   /* 设置唤醒使能标志 */
-//                                    printf("Enable Remote Wakeup.\n");
 								}
 								else errflag = 0xFF;                                        /* 操作失败 */
 							}
@@ -1192,12 +1001,6 @@ else{//若未在接收状态 则监听各种命令
 			}
 			if(errflag == 0xFF){
 				UEP0_CTRL = bUEP_R_TOG | bUEP_T_TOG | UEP_R_RES_STALL | UEP_T_RES_STALL;//STALL
-#ifdef DE_PRINTF
-				if(UsbTraceSetupBudget){
-					UsbTraceSetupBudget--;
-					USBTracePush('X', SetupReq, UsbSetupBuf->wIndexL, 0, 0, 0, 0);
-				}
-#endif
 			}
 			else if(len){                                                //上传数据或者状态阶段返回0长度包
 				UEP0_T_LEN = len;
@@ -1278,25 +1081,12 @@ else{//若未在接收状态 则监听各种命令
 		HidSetReportInterface = 0xFF;
 		HidSetReportType = 0;
 		WakeUpEnFlag = 0;
-#ifdef DE_PRINTF
-		UsbTraceSetupBudget = 12;
-		UsbTraceEp2Budget = 12;
-		UsbTraceRead = 0;
-		UsbTraceWrite = 0;
-		USBTracePush('R', 0, 0, 0, 0, 0, 0);
-#endif
 		UIF_BUS_RST = 0;                                                 //清中断标志
 	}
 	else if(UIF_SUSPEND){		//USB总线挂起/唤醒完成
 		UIF_SUSPEND = 0;
 		if( USB_MIS_ST & bUMS_SUSPEND ){		//挂起
 			WakeUpEnFlag |= 0x02;
-#ifdef DE_PRINTF
-//             while ( XBUS_AUX & bUART0_TX )
-//             {
-//                 ;    //等待发送完成
-//             }
-#endif
 //             SAFE_MOD = 0x55;
 //             SAFE_MOD = 0xAA;
 //             WAKE_CTRL = bWAK_BY_USB | bWAK_RXD0_LO;                              //USB或者RXD0有信号时可被唤醒
@@ -1307,14 +1097,10 @@ else{//若未在接收状态 则监听各种命令
 		}
 		else{									//唤醒
 			WakeUpEnFlag &= ~0x02;
-#ifdef DE_PRINTF
-#endif
 		}
 	}
 	else{										//意外的中断,不可能发生的情况
 		USB_INT_FG = 0xFF;						//清中断标志
-#ifdef DE_PRINTF
-#endif
 	}
 }
 

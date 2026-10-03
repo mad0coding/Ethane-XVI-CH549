@@ -16,7 +16,7 @@
 
 #pragma  NOAREGS
 
-UINT8C FIRMWARE_VERSION[4] = {1,6,2,15}; // 固件版本
+UINT8C FIRMWARE_VERSION[4] = {1,6,2,16}; // 固件版本
 
 uint8_t asyncFlag = 0;//异步操作标志
 
@@ -29,7 +29,7 @@ void main()
 	P2_0 = P2_1 = P2_3 = 0;			//RGB灯GPIO置低
 	CfgFsys( );						//CH549时钟选择配置
 	mDelaymS(5);					//修改主频等待内部晶振稳定,必加
-    mInitSTDIO( );					//串口0初始化
+//    mInitSTDIO( );					//串口0初始化
 	if(!(PCON & bRST_FLAG0)) mDelaymS(50);	//若为软复位或看门狗复位 则额外追加延时
 	
 	ArrayInit();	//数组初始化
@@ -83,8 +83,6 @@ void main()
 	
 	while(1){
 		WDOG_COUNT = 0;//清零看门狗计数
-		USBTracePrint(); // 每轮至多输出一条 USB 诊断事件，绝不在 USB 中断内 printf
-//		if(!KP_E2) WDOG_COUNT = 0xFF;//按下旋钮2则触发看门狗 测试代码！！！！！！！！！！
 		/********************基本IO********************/
 		GetTime();//时间获取
 		
@@ -128,7 +126,7 @@ void main()
 			mDelaymS(50);
 		}
 		
-		/* 同一 IN 端点一次只排队一份报告；下轮继续发送余下报告。 */
+		/* 每轮仅向共享的 EP2 排队一份主 HID 报告。 */
 		if(All_if_send & 0x01){//键盘
 			All_if_send &= ~0x01;
 			Enp2IntIn(KeyBrd_data, ALK_RPT_L_KEYBRD);

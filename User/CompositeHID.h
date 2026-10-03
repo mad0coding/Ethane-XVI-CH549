@@ -55,9 +55,6 @@ void Enp2IntIn(UINT8 *buf, UINT8 len);
 void Enp3IntIn(UINT8 *buf, UINT8 len);
 void Enp4IntIn(UINT8 *buf, UINT8 len);
 
-/* USB 中断只记录事件；由主循环调用本函数通过串口输出。 */
-void USBTracePrint(void);
-
 void CH554USBDevWakeup();
 void USBDeviceInit();
 
