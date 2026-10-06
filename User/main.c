@@ -1,7 +1,7 @@
 /*******************************************************************************
 * File Name          : main.c
 * Author             : Light&Electricity
-* Version            : V1.5
+* Version            : V1.7
 * Date               : 2025/8/16
 * Description        : Ethane-XVI
 ********************************************************************************/
@@ -16,7 +16,7 @@
 
 #pragma  NOAREGS
 
-UINT8C FIRMWARE_VERSION[4] = {1,6,2,11}; // 固件版本
+UINT8C FIRMWARE_VERSION[4] = {1,7,0,0}; // 固件版本
 
 uint8_t asyncFlag = 0;//异步操作标志
 
@@ -109,7 +109,10 @@ void main()
 		if(All_if_send == 0){ // 若总发送标志已清空
 			MultiFunc(); // 处理各种功能
 			
-			All_if_send = KeyBrd_if_send | (Mouse_if_send << 1) | (Point_if_send << 2) | (Vol_if_send << 3) 
+			All_if_send = (KeyBrd_if_send << 0)
+						| (Mouse_if_send << 1)
+						| (Point_if_send << 2)
+						| (Vol_if_send << 3)
 						| (Dial_if_send << 4); // 生成总发送标志
 		}
 		
@@ -123,25 +126,26 @@ void main()
 			mDelaymS(50);
 		}
 		
+		// 每轮仅发送一份 HID 报告
 		if(All_if_send & 0x01){		//键盘
 			All_if_send &= ~0x01;	//清除bit0
-			Enp1IntIn(KeyBrd_data, ALK_RPT_L_KEYBRD);
+			Enp2IntIn(KeyBrd_data, ALK_RPT_L_KEYBRD);
 		}
 		else if(All_if_send & 0x02){//鼠标
 			All_if_send &= ~0x02;	//清除bit1
-			Enp1IntIn(Mouse_data, ALK_RPT_L_MOUSE);
+			Enp2IntIn(Mouse_data, ALK_RPT_L_MOUSE);
 		}
-		else if(All_if_send & 0x04){//指针
+		else if(All_if_send & 0x04){//触摸
 			All_if_send &= ~0x04;	//清除bit2
-			Enp1IntIn(Point_data, ALK_RPT_L_POINT);
+			Enp3IntIn(Point_data, ALK_RPT_L_POINT); // 独立接口/端点
 		}
 		else if(All_if_send & 0x08){//媒体
 			All_if_send &= ~0x08;	//清除bit3
-			Enp1IntIn(Vol_data, ALK_RPT_L_VOL);
+			Enp2IntIn(Vol_data, ALK_RPT_L_VOL);
 		}
-		else if(All_if_send & 0x10){//轮盘
+		else if(All_if_send & 0x10){//Dial
 			All_if_send &= ~0x10;	//清除bit4
-			Enp1IntIn(Dial_data, ALK_RPT_L_DIAL);
+			Enp2IntIn(Dial_data, ALK_RPT_L_DIAL);
 		}
 	}
 }

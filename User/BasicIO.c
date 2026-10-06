@@ -272,7 +272,7 @@ static void PrintTest(void){ // 打印输出
 		
 //		sprintf(debugBuf, "%u", tickDif); // 时间监测打印
 		
-		Enp2IntIn(debugBuf, 64); // 端点2打印输出
+		Enp1IntIn(debugBuf, 64); // Custom HID 端点1打印输出
 	}
 //	mDelaymS(10);
 }

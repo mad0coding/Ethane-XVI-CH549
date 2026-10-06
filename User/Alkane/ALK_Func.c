@@ -194,9 +194,7 @@ ALK_U8 FillReport(void)//报文填写
 			}
 			else if(keyOld[i]){//若刚抬起(释放沿)
 				if(CFG_K_MODE(keyAddr[sysCs][i]) == m5_press){//模式5:光标点击
-					if(keyOld[i]){//释放沿
-						keyFlag[i] = 1;//待抬起态
-					}
+					keyFlag[i] = 1;//待抬起态
 				}
 				else if(CFG_K_MODE(keyAddr[sysCs][i]) == m6_change){//模式6:切换键
 					if(!(CFG_K_FUNC(keyAddr[sysCs][i]) & 0x80)){//若为非临时切换
@@ -226,7 +224,7 @@ ALK_U8 FillReport(void)//报文填写
 		
 		for(i = 0; i < ALK_KEY_NUM; i++){//对于全部键盘按键的触摸
 			if(CFG_K_MODE(keyAddr[sysCs][i]) == m4_move || CFG_K_MODE(keyAddr[sysCs][i]) == m5_press){//模式4:光标移位,模式5:光标点击
-				if(CFG_K_FUNC(keyAddr[sysCs][i]) == 1 || CFG_K_FUNC(keyAddr[sysCs][i]) == 2){
+				if(keyFlag[i] == 1 || keyFlag[i] == 2){
 					x = CFG_K_X(keyAddr[sysCs][i]) * 32768 / CFG_SCN_W;
 					y = CFG_K_Y(keyAddr[sysCs][i]) * 32768 / CFG_SCN_H;
 					Point_data[3] = x & 0xFF;
@@ -236,7 +234,7 @@ ALK_U8 FillReport(void)//报文填写
 					
 					Point_data[2] = i;
 					
-					if(CFG_K_FUNC(keyAddr[sysCs][i]) == 2){
+					if(keyFlag[i] == 2){
 						if(CFG_K_MODE(keyAddr[sysCs][i]) == m5_press) Point_data[1] |= 0x01;
 						else Point_data[1] &= ~0x01;
 						keyFlag[i] = 3;
